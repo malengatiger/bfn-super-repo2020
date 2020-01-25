@@ -1,4 +1,4 @@
-package com.bfn.client
+package com.bfn.client.local
 
 import com.bfn.client.dto.*
 import com.bfn.contractstates.states.*
@@ -43,7 +43,6 @@ private class Client {
 
     }
 
-
     lateinit var proxyPartyA: CordaRPCOps
     lateinit var proxyPartyB: CordaRPCOps
     lateinit var proxyPartyC: CordaRPCOps
@@ -51,7 +50,7 @@ private class Client {
 
     fun main(args: Array<String>) {
 
-        setupNodes()
+        setupLocalNodes()
 //        startAccounts(generateAccounts = true, deleteFirestore = true, numberOfAccounts = 10);
 //        startAccounts(generateAccounts = true, deleteFirestore = false, numberOfAccounts = 20);
 
@@ -109,11 +108,10 @@ private class Client {
         getOfferAndTokens(proxyReg)
     }
 
-    private fun setupNodes() {
+    private fun setupRemoteNodes() {
         val nodeAddressNotary = NetworkHostAndPort(host = "localhost", port = 10019)
         val nodeAddressPartyA = NetworkHostAndPort(host = "localhost", port = 10006)
         val nodeAddressPartyB = NetworkHostAndPort(host = "localhost", port = 10009)
-        val nodeAddressPartyC = NetworkHostAndPort(host = "localhost", port = 10012)
         val nodeAddressRegulator = NetworkHostAndPort(host = "localhost", port = 10017)
         val rpcUsername = "user1"
         val rpcPassword = "test"
@@ -130,9 +128,31 @@ private class Client {
         proxyPartyB = clientB.start(rpcUsername, rpcPassword).proxy
         getThisNode(proxyPartyB)
 
-        val clientC = CordaRPCClient(nodeAddressPartyC)
-        proxyPartyC = clientC.start(rpcUsername, rpcPassword).proxy
-        getThisNode(proxyPartyC)
+        val clientReg = CordaRPCClient(nodeAddressRegulator)
+        proxyReg = clientReg.start(rpcUsername, rpcPassword).proxy
+
+        getThisNode(proxyReg)
+        doNodesAndAggregates(proxyPartyA, proxyPartyB, proxyPartyC, proxyReg)
+    }
+    private fun setupLocalNodes() {
+        val nodeAddressNotary = NetworkHostAndPort(host = "localhost", port = 10019)
+        val nodeAddressPartyA = NetworkHostAndPort(host = "localhost", port = 10006)
+        val nodeAddressPartyB = NetworkHostAndPort(host = "localhost", port = 10009)
+        val nodeAddressRegulator = NetworkHostAndPort(host = "localhost", port = 10017)
+        val rpcUsername = "user1"
+        val rpcPassword = "test"
+
+        val clientNotary = CordaRPCClient(nodeAddressNotary)
+        val proxyNotary = clientNotary.start(rpcUsername, rpcPassword).proxy
+        getThisNode(proxyNotary)
+
+        val clientA = CordaRPCClient(nodeAddressPartyA)
+        proxyPartyA = clientA.start(rpcUsername, rpcPassword).proxy
+        getThisNode(proxyPartyA)
+
+        val clientB = CordaRPCClient(nodeAddressPartyB)
+        proxyPartyB = clientB.start(rpcUsername, rpcPassword).proxy
+        getThisNode(proxyPartyB)
 
         val clientReg = CordaRPCClient(nodeAddressRegulator)
         proxyReg = clientReg.start(rpcUsername, rpcPassword).proxy
@@ -507,7 +527,7 @@ private class Client {
                                      deleteFirestore: Boolean, numberOfAccounts: Int): Int {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
                 "\uD83D\uDD35 \uD83D\uDD35 generateAccounts: $url deleteFirestore: $deleteFirestore")
-        var params: MutableMap<String, String> = mutableMapOf()
+        val params: MutableMap<String, String> = mutableMapOf()
         params["deleteFirestore"] = deleteFirestore.toString()
         params["numberOfAccounts"] = numberOfAccounts.toString()
         val response = httpGet(

@@ -1,7 +1,6 @@
-package com.bfn.client.web
+package com.bfn.client.local
 
 import com.google.gson.GsonBuilder
-import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.utilities.loggerFor
 
 fun main(args: Array<String>) = InvoiceIntegration().main(args)

@@ -1,0 +1,7 @@
+dockerbuild/bfn.json
+dockerbuild/clients-0.1.jar
+build
+contracts/build
+workflows/build
+workflows/logs
+clients/build

@@ -1,9 +1,11 @@
-package com.bfn.client.web
+package com.bfn.client.local
 
 import com.google.gson.GsonBuilder
 import com.bfn.client.dto.*
+import com.bfn.client.web.FirebaseUtil
 import com.bfn.client.web.FirebaseUtil.deleteCollections
 import com.bfn.client.web.FirebaseUtil.deleteUsers
+import com.bfn.client.web.WorkerBee
 import com.bfn.client.web.WorkerBee.getNetworkAccounts
 import com.bfn.client.web.WorkerBee.getNodeAccounts
 import com.bfn.client.web.WorkerBee.startAccountRegistrationFlow

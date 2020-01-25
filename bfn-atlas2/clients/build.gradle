@@ -20,14 +20,13 @@ dependencies {
         exclude group: "org.springframework.boot", module: "spring-boot-starter-logging"
     }
 
-    compile "org.apache.logging.log4j:log4j-slf4j-impl:${log4j_version}"
-    compile "org.apache.logging.log4j:log4j-web:${log4j_version}"
-    compile "org.slf4j:jul-to-slf4j:$slf4j_version"
-
     compile group: 'com.fasterxml.jackson.module', name: 'jackson-module-kotlin', version: '2.10.1'
     compile group: 'com.google.code.gson', name: 'gson', version: '2.8.5'
     compile group: 'com.google.firebase', name: 'firebase-admin', version: '6.11.0'
     compile group: 'khttp', name: 'khttp', version: '1.0.0'
+
+    compile "org.apache.logging.log4j:log4j-slf4j-impl:${log4j_version}"
+    compile "org.apache.logging.log4j:log4j-web:${log4j_version}"
 }
 
 
@@ -69,6 +68,11 @@ task runRegulator(type: JavaExec, dependsOn: assemble) {
 }
 
 task runRemoteBFN1(type: JavaExec, dependsOn: assemble) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'com.bfn.client.web.ServerKt'
+}
+
+task runGeneric(type: JavaExec, dependsOn: assemble) {
     classpath = sourceSets.main.runtimeClasspath
     main = 'com.bfn.client.web.ServerKt'
 }

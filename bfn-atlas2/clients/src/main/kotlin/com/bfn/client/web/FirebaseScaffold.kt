@@ -5,6 +5,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.ApplicationContext
 import org.springframework.stereotype.Component
 import java.io.FileInputStream
@@ -17,11 +18,16 @@ class FirebaseScaffold {
     private lateinit var appProperties: AppProperties
     @Autowired
     private lateinit var context: ApplicationContext
-
+    @Value("\${spring.profiles.active}")
+    private var profile: String = ""
+    @Value("\${projectId}")
+    private var projectId: String? = null
+    @Value("\${databaseUrl}")
+    private var databaseUrl: String? = null
     @PostConstruct
     fun init() {
         logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D " +
-                "PostConstruct: \uD83C\uDF3F Alexa and AI are coming for you! $context")
+                "PostConstruct: \uD83C\uDF3F Alexa and AI are coming for you! \uD83C\uDF1E PROFILE $profile \uD83C\uDF1E")
 
         logger.info("\uD83D\uDC4C\uD83C\uDFFE \uD83D\uDC4C\uD83C\uDFFE YEBO! appProperties are cool. " +
                 "\uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F this shit is hanging in there ..." )
@@ -31,8 +37,8 @@ class FirebaseScaffold {
         try {
             val options = FirebaseOptions.Builder()
                     .setCredentials(GoogleCredentials.getApplicationDefault())
-                    .setProjectId("bfn-mobile-backend")
-                    .setDatabaseUrl("https://bfn-mobile-backend.firebaseio.com").build()
+                    .setProjectId(projectId)
+                    .setDatabaseUrl(databaseUrl).build()
             val app = FirebaseApp.initializeApp(options)
             logger.info("\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9  \uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9 "
                     + "Firebase Admin SDK Setup OK:  \uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9 app: "

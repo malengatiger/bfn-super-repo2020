@@ -1,6 +1,7 @@
 package com.bfn.client.web
 
 import com.bfn.client.dto.*
+import com.bfn.client.local.DemoUtil
 import com.bfn.client.web.WorkerBee.getAccount
 import com.bfn.client.web.WorkerBee.getDashboardData
 import com.bfn.client.web.WorkerBee.getNodeAccounts

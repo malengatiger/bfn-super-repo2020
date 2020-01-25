@@ -29,7 +29,7 @@ import kotlin.reflect.full.functions
 
 fun main(args: Array<String>) {
     println("\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 " +
-            "BFN Web API (Kotlin) starting on AppEngine or should we move to Azure??? ... Senor! ...");
+            "BFN Web API (Kotlin) starting  ... Senor! ...");
             val p = SpringApplicationBuilder().sources(
                     RestApiApplication::class.java)
             .bannerMode(Banner.Mode.OFF)
@@ -37,13 +37,12 @@ fun main(args: Array<String>) {
             .run(*args)
 
     println("\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 " +
-            "BFN Web API (Kotlin) started: in a container, if in production " +
+            "BFN Web API (Kotlin) started " +
             "\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83C\uDF50️ " +
             "isRunning: ${p.isRunning} \uD83C\uDF50️")
 
 }
 
-//@EnableConfigServer
 @SpringBootApplication
 @EnableScheduling
 private open class RestApiApplication: ApplicationListener<ApplicationReadyEvent> {
@@ -53,14 +52,16 @@ private open class RestApiApplication: ApplicationListener<ApplicationReadyEvent
     private lateinit var context: ApplicationContext
     @Value("\${interval}")
     private var interval: String = "900"
+    @Value("\${spring.profiles.active}")
+    private var profile: String = ""
 
     override fun onApplicationEvent(contextRefreshedEvent: ApplicationReadyEvent) {
-        logger.info("\uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C  STARTED SPRINGBOOT APP:  " +
+        logger.info("\uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C  STARTED BFN WEB APP:  " +
                 "\uD83E\uDDE9 onApplicationEvent: mainApplicationClass: " +
                 "\uD83D\uDC7D ${contextRefreshedEvent.springApplication.mainApplicationClass}  \uD83D\uDC7D ")
 
         logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 host: \uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C \uD83D\uDE21 " +
-                "${InetAddress.getLocalHost()} \uD83D\uDE21")
+                "${InetAddress.getLocalHost()} profile: $profile \uD83D\uDE21")
         printAppInfo()
         setTimer()
         logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 WE ARE DONE STARTING UP!!! \uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C \uD83D\uDE21 ")
@@ -122,9 +123,11 @@ private open class RestApiApplication: ApplicationListener<ApplicationReadyEvent
             }
         }, ms, ms)
     }
+
     @Bean
     open fun webServerFactoryCustomizer(): WebServerFactoryCustomizer<ConfigurableServletWebServerFactory>? {
-        logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E ... setting context path to /bfn")
+        logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E ... setting context path to /bfn; " +
+                "profile:  \uD83C\uDF4E $profile \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E ")
         return WebServerFactoryCustomizer { factory: ConfigurableServletWebServerFactory -> factory.setContextPath("/bfn") };
     }
 
