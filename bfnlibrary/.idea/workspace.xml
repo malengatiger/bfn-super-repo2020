@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="9d7dc9f9-5ce6-477e-bc11-1c62f7846993" name="Default Changelist" comment=" added bfnlibrary" />
+    <list default="true" id="9d7dc9f9-5ce6-477e-bc11-1c62f7846993" name="Default Changelist" comment=" added bfnlibrary">
+      <change afterPath="$PROJECT_DIR$/../bfn_front_end/ios/Podfile" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../bfn_front_end/lib/splash.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.yaml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -32,6 +37,7 @@
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/lib/data" />
       <recent name="$PROJECT_DIR$/lib/util" />
       <recent name="$PROJECT_DIR$/lib" />
     </key>
@@ -63,7 +69,14 @@
       <option name="project" value="LOCAL" />
       <updated>1568651779046</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary=" added bfnlibrary">
+      <created>1580125263797</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1580125263797</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -88,7 +101,8 @@
     </ignored-roots>
     <option name="FORCE_NON_EMPTY_COMMENT" value="true" />
     <MESSAGE value=" added bfnlibrary    " />
-    <option name="LAST_COMMIT_MESSAGE" value=" added bfnlibrary    " />
+    <MESSAGE value=" added bfnlibrary" />
+    <option name="LAST_COMMIT_MESSAGE" value=" added bfnlibrary" />
     <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="REFORMAT_BEFORE_PROJECT_COMMIT" value="true" />
   </component>
@@ -101,5 +115,13 @@
       <screen x="0" y="23" width="2560" height="1371" />
     </state>
     <state x="678" y="347" key="SettingsEditor/-1920.23.1920.1057/0.23.2560.1371@0.23.2560.1371" timestamp="1580125047604" />
+    <state x="776" y="448" key="Vcs.Push.Dialog.v2" timestamp="1580125270383">
+      <screen x="0" y="23" width="2560" height="1371" />
+    </state>
+    <state x="776" y="448" key="Vcs.Push.Dialog.v2/-1920.23.1920.1057/0.23.2560.1371@0.23.2560.1371" timestamp="1580125270383" />
+    <state x="716" y="412" width="1246" height="652" key="new project wizard" timestamp="1580139949442">
+      <screen x="0" y="23" width="2560" height="1371" />
+    </state>
+    <state x="716" y="412" width="1246" height="652" key="new project wizard/-1920.23.1920.1057/0.23.2560.1371@0.23.2560.1371" timestamp="1580139949442" />
   </component>
 </project>
