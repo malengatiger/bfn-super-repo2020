@@ -24,13 +24,11 @@ class FirebaseScaffold {
     private var projectId: String? = null
     @Value("\${databaseUrl}")
     private var databaseUrl: String? = null
+
     @PostConstruct
     fun init() {
         logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D " +
                 "PostConstruct: \uD83C\uDF3F Alexa and AI are coming for you! \uD83C\uDF1E PROFILE $profile \uD83C\uDF1E")
-
-        logger.info("\uD83D\uDC4C\uD83C\uDFFE \uD83D\uDC4C\uD83C\uDFFE YEBO! appProperties are cool. " +
-                "\uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F this shit is hanging in there ..." )
 
         logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06  BFNWebApi: setting up Firebase service account ...."
                 + " \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06")
@@ -43,7 +41,6 @@ class FirebaseScaffold {
             logger.info("\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9  \uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9 "
                     + "Firebase Admin SDK Setup OK:  \uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9 app: "
                     + app.toString())
-            //
             listAccountsFromFirebase()
             logger.info("\uD83D\uDD06  \uD83D\uDD06  \uD83D\uDD06  Getting bean to start refreshing nodes on Firestore  \uD83D\uDD06 ")
             try {

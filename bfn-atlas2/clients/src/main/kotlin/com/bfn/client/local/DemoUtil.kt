@@ -320,9 +320,9 @@ object DemoUtil {
             invoice.customer = customer
             var num = random.nextInt(500)
             if (num == 0) num = 92
-            invoice.amount = num * 1000.0
+            invoice.amount = BigDecimal.valueOf(num * 1000.0)
             invoice.valueAddedTax = 15.0
-            invoice.totalAmount = num * 1.15
+            invoice.totalAmount = BigDecimal.valueOf(num * 1.15)
             invoice.description = "Demo Invoice at " + Date().toString()
             invoice.dateRegistered = Date()
         }
@@ -357,7 +357,7 @@ object DemoUtil {
             invoiceOffer.discount = 3.5
         }
         val percentageOfAmount = 100.0 - invoiceOffer.discount!!
-        invoiceOffer.offerAmount = (percentageOfAmount / 100) * invoice.totalAmount!!
+        invoiceOffer.offerAmount = BigDecimal.valueOf(percentageOfAmount / 100) * invoice.totalAmount!!
         invoiceOffer.originalAmount = invoice.totalAmount
         try {
             val offer = startInvoiceOfferFlow(proxy!!, invoiceOffer)

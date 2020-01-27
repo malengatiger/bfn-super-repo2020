@@ -6,9 +6,10 @@ import java.util.*
 class InvoiceDTO {
     var invoiceId: String? = null
     var invoiceNumber: String? = null
+    var externalId: String? = null
     var description: String? = null
-    var amount: Double? = null
-    var totalAmount: Double? = null
+    var amount: BigDecimal? = null
+    var totalAmount: BigDecimal? = null
     var valueAddedTax: Double? = null
     var dateRegistered: Date? = null
     var supplier: AccountInfoDTO? = null
@@ -18,7 +19,7 @@ class InvoiceDTO {
 
     constructor() {}
     constructor(invoiceId: String?, invoiceNumber: String?,
-                description: String?, amount: Double, totalAmount: Double,
+                description: String?, amount: BigDecimal, totalAmount: BigDecimal,
                 valueAddedTax: Double, dateRegistered: Date?,
                 supplier: AccountInfoDTO?, customer: AccountInfoDTO?, supplierPublicKey: String?, customerPublicKey: String?) {
         this.invoiceId = invoiceId

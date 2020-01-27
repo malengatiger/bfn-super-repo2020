@@ -2,6 +2,9 @@ dockerbuild/bfn.json
 dockerbuild/clients-0.1.jar
 build
 contracts/build
+contracts/logs
 workflows/build
 workflows/logs
 clients/build
+clients/logs
+clients/src/main/resources/application-prod.properties

@@ -233,7 +233,7 @@ class BestOfferForInvoiceFlow(private val supplierAccountId: String,
         val myIssuedTokenType: IssuedTokenType = ZAR issuedBy issuer
 
         val anonParty = subFlow(RequestKeyForAccount(investorAccount))
-        val fungibleToken: FungibleToken = BigDecimal(selected.originalAmount) of myIssuedTokenType heldBy anonParty
+        val fungibleToken: FungibleToken = selected.originalAmount of myIssuedTokenType heldBy anonParty
         Companion.logger.info("\uD83E\uDDE9 \uD83E\uDDE9 Token: ${fungibleToken.issuedTokenType.tokenType.tokenIdentifier} " +
                 "created for \uD83C\uDF3F  ${investorAccount.name} anonParty: $anonParty  \uD83C\uDF3F ")
 

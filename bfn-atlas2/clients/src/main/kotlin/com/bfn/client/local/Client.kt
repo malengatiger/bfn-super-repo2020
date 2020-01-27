@@ -16,6 +16,7 @@ import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.utilities.NetworkHostAndPort
 import net.corda.core.utilities.loggerFor
 import org.json.JSONArray
+import java.math.BigDecimal
 import java.util.*
 import kotlin.collections.MutableList
 import kotlin.collections.MutableMap
@@ -267,7 +268,9 @@ private class Client {
         return SupplierProfileStateDTO(
                 issuedBy = a.issuedBy.toString(),
                 accountId = a.accountId, date = a.date,
-                maximumDiscount = a.maximumDiscount
+                maximumDiscount = a.maximumDiscount,
+                bankAccount = a.bankAccount,
+                bank = a.bank
         )
     }
 
@@ -562,9 +565,9 @@ private class Client {
                 issuedBy = "thisNode", accountId = it.state.data.identifier.id.toString(),
                 date = Date(),
                 defaultDiscount = disc,
-                minimumInvoiceAmount = random.nextInt(100) * 1000.0,
-                totalInvestment = 900000000.0,
-                maximumInvoiceAmount = 750000.0
+                minimumInvoiceAmount = BigDecimal.valueOf(random.nextInt(100) * 1000.0),
+                totalInvestment = BigDecimal.valueOf(900000000.0),
+                maximumInvoiceAmount = BigDecimal.valueOf(750000.0)
         )
         val params: MutableMap<String, String> = mutableMapOf()
         params["issuedBy"] = "me"
@@ -593,7 +596,7 @@ private class Client {
                 issuedBy = "thisNode",
                 accountId = account.state.data.identifier.id.toString(),
                 date = Date(),
-                maximumDiscount = disc
+                maximumDiscount = disc, bank = "Standard Bank", bankAccount = "12346787"
         )
         val params: MutableMap<String, String> = mutableMapOf()
         params["issuedBy"] = "me"

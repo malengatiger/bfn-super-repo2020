@@ -6,9 +6,9 @@ import java.util.*
 class InvoiceOfferDTO {
     var invoiceId: String? = null
     var invoiceNumber: String? = null
-    var offerAmount: Double? = null
+    var offerAmount: BigDecimal? = null
     var discount: Double? = null
-    var originalAmount: Double? = null
+    var originalAmount: BigDecimal? = null
     var supplier: AccountInfoDTO? = null
     var investor: AccountInfoDTO? = null
     var owner: AccountInfoDTO? = null
@@ -17,10 +17,12 @@ class InvoiceOfferDTO {
     var investorDate: Date? = null
     var supplierPublicKey: String? = null
     var investorPublicKey: String? = null
+    var accepted: Boolean? = false
+    var externalId: String? = null
 
     constructor(invoiceId: String?, invoiceNumber: String?,
-                offerAmount: Double, discount: Double,
-                originalAmount: Double,
+                offerAmount: BigDecimal, discount: Double,
+                originalAmount: BigDecimal,
                 supplier: AccountInfoDTO?, investor: AccountInfoDTO?,
                 owner: AccountInfoDTO?, offerDate: Date?, investorDate: Date?,
                 supplierPublicKey: String?, investorPublicKey: String?, customer: AccountInfoDTO?) {

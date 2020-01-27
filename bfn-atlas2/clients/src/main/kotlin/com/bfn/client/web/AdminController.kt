@@ -97,6 +97,12 @@ class AdminController(rpc: NodeRPCConnection) {
         return offerAndTokenDTO
     }
 
+    @PostMapping(value = ["/createAnchor"], produces = ["application/json"])
+    @Throws(Exception::class)
+    private fun createAnchor(@RequestBody anchor: AnchorDTO): AnchorDTO? {
+        return AnchorBee.createAnchor(anchor = anchor, proxy = proxy)
+    }
+
     @PostMapping(value = ["/startAccountRegistrationFlow"], produces = ["application/json"])
     @Throws(Exception::class)
     private fun startAccountRegistrationFlow(@RequestBody user: UserDTO): AccountInfoDTO {

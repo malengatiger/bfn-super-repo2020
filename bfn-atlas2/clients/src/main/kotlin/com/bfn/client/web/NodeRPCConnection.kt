@@ -35,7 +35,7 @@ open class NodeRPCConnection(
         @Value("\${$CORDA_USER_PASSWORD}")
         private val password: String,
         @Value("\${$CORDA_RPC_PORT}")
-        private val rpcPort: Int): AutoCloseable {
+        private val rpcPort: Int) : AutoCloseable {
 
     private lateinit var rpcConnection: CordaRPCConnection
     lateinit var proxy: CordaRPCOps
@@ -44,18 +44,21 @@ open class NodeRPCConnection(
 
     @PostConstruct
     fun initialiseNodeRPCConnection() {
-        logger.info("\n\uD83D\uDD37\uD83D\uDD37\uD83D\uDD37\uD83D\uDD37 Node Access Properties: " +
+        logger.info("\n\uD83D\uDD37\uD83D\uDD37\uD83D\uDD37\uD83D\uDD37 initialiseNodeRPCConnection: Node Access Properties: " +
                 "\uD83D\uDD37 host: $host :  \uD83C\uDF4E port: $rpcPort \uD83D\uDD37 " +
                 "username: $username \uD83C\uDF4F pass: $password \uD83D\uDD37\uD83D\uDD37")
-            val rpcAddress = NetworkHostAndPort(host, rpcPort)
-            val rpcClient = CordaRPCClient(rpcAddress)
-            val rpcConnection = rpcClient.start(username, password)
-            proxy = rpcConnection.proxy
+
+        val rpcAddress = NetworkHostAndPort(host, rpcPort)
+        val rpcClient = CordaRPCClient(rpcAddress)
+        val rpcConnection = rpcClient.start(username, password)
+        proxy = rpcConnection.proxy
+
         logger.info("\uD83D\uDD35 \uD83D\uDD35 initialiseNodeRPCConnection  \uD83C\uDF4E completed \uD83D\uDD35 \uD83D\uDD35")
     }
 
     @PreDestroy
     override fun close() {
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 PreDestroy close: closing CordaRPCClient ... ")
         rpcConnection.notifyServerAndClose()
     }
 }

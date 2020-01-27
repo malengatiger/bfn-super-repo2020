@@ -15,6 +15,8 @@ import java.util.*
 class SupplierProfileState(val issuedBy: Party,
                            val accountId: String,
                            val maximumDiscount: Double,
+                           val bank: String,
+                           val bankAccount: String,
                            val date: Date = Date()
                    ) : ContractState {
 

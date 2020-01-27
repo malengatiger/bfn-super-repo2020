@@ -23,7 +23,6 @@ import com.bfn.client.web.FirebaseUtil.sendInvoiceMessage
 import com.bfn.client.web.FirebaseUtil.sendInvoiceOfferMessage
 import com.bfn.contractstates.states.*
 import com.bfn.flows.SupplierProfileFlow
-import com.bfn.flows.regulator.BroadcastTransactionFlow
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.messaging.CordaRPCOps
@@ -33,6 +32,7 @@ import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.node.services.vault.QueryCriteria.VaultQueryCriteria
 import net.corda.core.utilities.getOrThrow
 import org.slf4j.LoggerFactory
+import java.math.BigDecimal
 import java.util.*
 
 object WorkerBee {
@@ -324,6 +324,8 @@ object WorkerBee {
                 issuedBy = proxy.nodeInfo().legalIdentities.first(),
                 accountId = profile.accountId,
                 maximumDiscount = profile.maximumDiscount,
+                bank = profile.bank,
+                bankAccount = profile.bankAccount,
                 date = Date()
         )
         val fut = proxy.startTrackedFlowDynamic(
@@ -614,7 +616,7 @@ object WorkerBee {
                 throw Exception("Customer is bloody missing")
             }
             val taxPercentage = (invoice.valueAddedTax?.div(100.0) ?: 0.0)
-            val totalTaxAmt = invoice.amount!! * taxPercentage
+            val totalTaxAmt = invoice.amount!! * BigDecimal.valueOf(taxPercentage)
             invoice.totalAmount = totalTaxAmt + invoice.amount!!;
             //
             val invoiceState = InvoiceState(UUID.randomUUID(),
@@ -625,6 +627,7 @@ object WorkerBee {
                     invoice.totalAmount!!,
                     supplierInfo,
                     customerInfo,
+                    invoice.externalId!!,
                     Date())
             val issueTx = proxy.startTrackedFlowDynamic(
                     InvoiceRegistrationFlow::class.java, invoiceState).returnValue.getOrThrow()
@@ -752,7 +755,7 @@ object WorkerBee {
                 throw Exception("Discount not found")
             }
             val nPercentage = 100.0 - invoiceOffer.discount!!
-            invoiceOffer.offerAmount = invoiceOffer.originalAmount!! * (nPercentage / 100)
+            invoiceOffer.offerAmount = invoiceOffer.originalAmount!! * BigDecimal.valueOf((nPercentage / 100))
             processInvoiceOffer(proxy, invoiceOffer, invoiceState, investorInfo)
         } catch (e: Exception) {
             if (e.message != null) {
@@ -775,7 +778,9 @@ object WorkerBee {
                 offerAmount = invoiceOffer.offerAmount!!,
                 offerDate = Date(),
                 originalAmount = invoiceState.totalAmount,
-                ownerDate = Date()
+                ownerDate = Date(),
+                accepted = false,
+                externalId = invoiceState.externalId
         )
         val signedTransactionCordaFuture = proxy.startTrackedFlowDynamic(
                 InvoiceOfferFlow::class.java, invoiceOfferState)
@@ -831,12 +836,12 @@ object WorkerBee {
 
     @JvmStatic
     fun getDTO(token: FungibleToken, accountId: String,
-               invoiceId: String, account: AccountInfo, invoiceAmount: Double): TokenDTO {
+               invoiceId: String, account: AccountInfo, invoiceAmount: BigDecimal): TokenDTO {
         return TokenDTO(
                 accountId = accountId,
                 invoiceId = invoiceId,
                 tokenIdentifier = token.issuedTokenType.tokenIdentifier,
-                amount = token.amount.toDecimal().toDouble(),
+                amount = token.amount.toDecimal(),
                 issuer = token.issuer.toString(),
                 holder = token.holder.toString(),
                 invoiceAmount = invoiceAmount,
@@ -905,7 +910,9 @@ object WorkerBee {
         return SupplierProfileStateDTO(
                 issuedBy = a.issuedBy.toString(),
                 accountId = a.accountId, date = a.date,
-                maximumDiscount = a.maximumDiscount
+                maximumDiscount = a.maximumDiscount,
+                bank = a.bank,
+                bankAccount = a.bankAccount
         )
     }
 }

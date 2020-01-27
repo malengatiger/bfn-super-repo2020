@@ -31,7 +31,7 @@ fun main(args: Array<String>) {
     println("\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 " +
             "BFN Web API (Kotlin) starting  ... Senor! ...");
             val p = SpringApplicationBuilder().sources(
-                    RestApiApplication::class.java)
+                    ApiApp::class.java)
             .bannerMode(Banner.Mode.OFF)
             .web(WebApplicationType.SERVLET)
             .run(*args)
@@ -45,8 +45,9 @@ fun main(args: Array<String>) {
 
 @SpringBootApplication
 @EnableScheduling
-private open class RestApiApplication: ApplicationListener<ApplicationReadyEvent> {
-    private val logger = Logger.getLogger(RestApiApplication::class.java.name)
+
+private open class ApiApp: ApplicationListener<ApplicationReadyEvent> {
+    private val logger = Logger.getLogger(ApiApp::class.java.name)
 
     @Autowired
     private lateinit var context: ApplicationContext
@@ -62,15 +63,14 @@ private open class RestApiApplication: ApplicationListener<ApplicationReadyEvent
 
         logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 host: \uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C \uD83D\uDE21 " +
                 "${InetAddress.getLocalHost()} profile: $profile \uD83D\uDE21")
-        printAppInfo()
+        info()
         setTimer()
         logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 WE ARE DONE STARTING UP!!! \uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C \uD83D\uDE21 ")
 
     }
 
-    private fun printAppInfo() {
-//        logger.info("\n\uD83D\uDECE\uD83D\uDECE\uD83D\uDECE\uD83D\uDECE BFN User from GitHub Configuration Properties: " +
-//                "\uD83D\uDECE $bfnUser \uD83D\uDECE \n");
+    private fun info() {
+
         var cnt = 0
         val c = AdminController::class
         val functions = c.functions
@@ -79,6 +79,15 @@ private open class RestApiApplication: ApplicationListener<ApplicationReadyEvent
         sorted.forEach() {
             cnt++
             logger.info("\uD83E\uDD6C AdminController Function: #$cnt \t\uD83C\uDF38 ${it.name} \uD83C\uDF38 ")
+        }
+        cnt = 0
+        val d = SupplierController::class
+        val functions2 = d.functions
+        val sorted3 = functions2.sortedBy { it.name }
+        logger.info("\n..... \uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 Functions available from SupplierController")
+        sorted3.forEach() {
+            cnt++
+            logger.info(" \uD83D\uDE21 SupplierController Function: #$cnt \t\uD83D\uDE21 ${it.name}  \uD83D\uDE21 ")
         }
         cnt = 0
         logger.info("\n..... \uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0  Functions available from WorkerBee ...")
