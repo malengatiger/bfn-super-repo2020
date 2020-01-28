@@ -1,0 +1,1 @@
+{"isEntrypoint":true,"deps":["flutter|lib/services.dart","meta|lib/meta.dart"],"parts":["firebase_auth_platform_interface|lib/src/method_channel_firebase_auth.dart","firebase_auth_platform_interface|lib/src/types.dart"],"conditionalDeps":[],"sdkDeps":["async"],"hasMain":false}

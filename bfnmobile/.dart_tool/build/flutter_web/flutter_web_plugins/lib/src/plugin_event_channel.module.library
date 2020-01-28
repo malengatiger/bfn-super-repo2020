@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["flutter|lib/services.dart","flutter_web_plugins|lib/src/plugin_registry.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["async"],"hasMain":false}

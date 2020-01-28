@@ -24,6 +24,8 @@ class AnchorUpdateFlow(
                        private val maximumInvoiceAmount: BigDecimal,
                        private val maximumInvestment: BigDecimal,
                        private val tradeFrequencyInMinutes: Int,
+                       private val email: String,
+                       private val cellphone: String,
                        private val tradeMatrices: MutableList<TradeMatrix>,
                        private val defaultOfferDiscount: Double ) : FlowLogic<AnchorState>() {
 
@@ -40,7 +42,8 @@ class AnchorUpdateFlow(
                 account = existingAnchor.state.data.account, minimumInvoiceAmount = minimumInvoiceAmount,
                 maximumInvoiceAmount = maximumInvoiceAmount, maximumInvestment = maximumInvestment,
                 defaultOfferDiscount = defaultOfferDiscount, tradeFrequencyInMinutes = tradeFrequencyInMinutes,
-                tradeMatrices = tradeMatrices, date = Date())
+                tradeMatrices = tradeMatrices, date = Date(), name = existingAnchor.state.data.name,
+                    email = email, cellphone = cellphone)
 
         val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
         txBuilder.addCommand(command, serviceHub.ourIdentity.owningKey)

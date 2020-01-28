@@ -1,0 +1,1 @@
+{"isEntrypoint":true,"deps":["bfnmobile|lib/main.dart","flutter|lib/material.dart","flutter_test|lib/flutter_test.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":[],"hasMain":true}

@@ -1,0 +1,91 @@
+Flutter crash report; please file at https://github.com/flutter/flutter/issues.
+
+## command
+
+flutter --no-color run --machine --track-widget-creation --device-id=emulator-5554 lib/main.dart
+
+## exception
+
+ArgumentError: Invalid argument(s): Cannot find executable for /Users/aubs/WORK/flutter/bin/cache/dart-sdk/bin/dart.
+
+```
+#0      _getExecutable (package:process/src/interface/local_process_manager.dart:127:5)
+#1      LocalProcessManager.start (package:process/src/interface/local_process_manager.dart:43:30)
+#2      ResidentCompiler._compile (package:flutter_tools/src/compile.dart:594:36)
+<asynchronous suspension>
+#3      ResidentCompiler._recompile (package:flutter_tools/src/compile.dart:508:14)
+<asynchronous suspension>
+#4      _RecompileRequest._run (package:flutter_tools/src/compile.dart:382:16)
+<asynchronous suspension>
+#5      _CompilationRequest.run (package:flutter_tools/src/compile.dart:362:30)
+<asynchronous suspension>
+#6      ResidentCompiler._handleCompilationRequest (package:flutter_tools/src/compile.dart:542:23)
+<asynchronous suspension>
+#7      _rootRunUnary (dart:async/zone.dart:1132:38)
+#8      _CustomZone.runUnary (dart:async/zone.dart:1029:19)
+#9      _CustomZone.runUnaryGuarded (dart:async/zone.dart:931:7)
+#10     _BufferingStreamSubscription._sendData (dart:async/stream_impl.dart:336:11)
+#11     _DelayedData.perform (dart:async/stream_impl.dart:591:14)
+#12     _StreamImplEvents.handleNext (dart:async/stream_impl.dart:707:11)
+#13     _PendingEvents.schedule.<anonymous closure> (dart:async/stream_impl.dart:667:7)
+#14     _rootRun (dart:async/zone.dart:1120:38)
+#15     _CustomZone.run (dart:async/zone.dart:1021:19)
+#16     _CustomZone.runGuarded (dart:async/zone.dart:923:7)
+#17     _CustomZone.bindCallbackGuarded.<anonymous closure> (dart:async/zone.dart:963:23)
+#18     _rootRun (dart:async/zone.dart:1124:13)
+#19     _CustomZone.run (dart:async/zone.dart:1021:19)
+#20     _CustomZone.runGuarded (dart:async/zone.dart:923:7)
+#21     _CustomZone.bindCallbackGuarded.<anonymous closure> (dart:async/zone.dart:963:23)
+#22     _microtaskLoop (dart:async/schedule_microtask.dart:41:21)
+#23     _startMicrotaskLoop (dart:async/schedule_microtask.dart:50:5)
+#24     _runPendingImmediateCallback (dart:isolate-patch/isolate_patch.dart:116:13)
+#25     _RawReceivePortImpl._handleMessage (dart:isolate-patch/isolate_patch.dart:173:5)
+```
+
+## flutter doctor
+
+```
+[✓] Flutter (Channel master, v1.10.5-pre.23, on Mac OS X 10.14.4 18E2034, locale en-GB)
+    • Flutter version 1.10.5-pre.23 at /Users/aubs/WORK/flutter
+    • Framework revision e026bd3d33 (2 days ago), 2019-09-20 14:57:05 -0700
+    • Engine revision 99092a0436
+    • Dart version 2.6.0 (build 2.6.0-dev.0.0 ea969c358e)
+
+[!] Android toolchain - develop for Android devices (Android SDK version 29.0.2)
+    • Android SDK at /Users/aubs/Library/Android/sdk
+    • Android NDK location not configured (optional; useful for native profiling support)
+    • Platform android-29, build-tools 29.0.2
+    • Java binary at: /Applications/Android Studio.app/Contents/jre/jdk/Contents/Home/bin/java
+    • Java version OpenJDK Runtime Environment (build 1.8.0_202-release-1483-b49-5587405)
+    ! Some Android licenses not accepted.  To resolve this, run: flutter doctor --android-licenses
+
+[✓] Xcode - develop for iOS and macOS (Xcode 11.0)
+    • Xcode at /Applications/Xcode.app/Contents/Developer
+    • Xcode 11.0, Build version 11A420a
+    • CocoaPods version 1.7.4
+
+[✓] Chrome - develop for the web
+    • Chrome at /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+
+[✓] Android Studio (version 3.5)
+    • Android Studio at /Applications/Android Studio.app/Contents
+    • Flutter plugin version 39.0.3
+    • Dart plugin version 191.8423
+    • Java version OpenJDK Runtime Environment (build 1.8.0_202-release-1483-b49-5587405)
+
+[✓] IntelliJ IDEA Community Edition (version 2019.2.2)
+    • IntelliJ at /Applications/IntelliJ IDEA CE.app
+    • Flutter plugin version 39.0.5
+    • Dart plugin version 192.6603.23
+
+[✓] VS Code (version 1.38.1)
+    • VS Code at /Applications/Visual Studio Code.app/Contents
+    • Flutter extension version 3.4.1
+
+[✓] Connected device (3 available)
+    • Android SDK built for x86 • emulator-5554 • android-x86    • Android 9 (API 28) (emulator)
+    • Chrome                    • chrome        • web-javascript • Google Chrome 76.0.3809.132
+    • Server                    • web           • web-javascript • Flutter Tools
+
+! Doctor found issues in 1 category.
+```

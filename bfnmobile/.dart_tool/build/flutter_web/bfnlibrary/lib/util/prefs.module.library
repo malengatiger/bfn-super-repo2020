@@ -1,0 +1,1 @@
+{"isEntrypoint":true,"deps":["bfnlibrary|lib/data/account.dart","bfnlibrary|lib/data/node_info.dart","shared_preferences|lib/shared_preferences.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["convert"],"hasMain":false}

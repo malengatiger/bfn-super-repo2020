@@ -1,0 +1,287 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.bfn.bfnmobile"
+4    android:versionCode="1"
+5    android:versionName="1.0.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="21"
+9        android:targetSdkVersion="29" />
+10    <!--
+11         Flutter needs it to communicate with the running application
+12         to allow setting breakpoints, to provide hot reload, etc.
+13    -->
+14    <uses-permission android:name="android.permission.INTERNET" />
+14-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/debug/AndroidManifest.xml:6:5-66
+14-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/debug/AndroidManifest.xml:6:22-64
+15    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+15-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:24:5-79
+15-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:24:22-76
+16    <uses-permission android:name="android.permission.WAKE_LOCK" />
+16-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:25:5-68
+16-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:25:22-65
+17    <uses-permission android:name="com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE" /> <!-- Required by older versions of Google Play services to create IID tokens -->
+17-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:26:5-110
+17-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:26:22-107
+18    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
+18-->[com.google.firebase:firebase-iid:20.0.1] /Users/aubs/.gradle/caches/transforms-2/files-2.1/a042f32daf9a8d1dd424e6cf0a6f038f/firebase-iid-20.0.1/AndroidManifest.xml:26:5-82
+18-->[com.google.firebase:firebase-iid:20.0.1] /Users/aubs/.gradle/caches/transforms-2/files-2.1/a042f32daf9a8d1dd424e6cf0a6f038f/firebase-iid-20.0.1/AndroidManifest.xml:26:22-79
+19    <!--
+20 io.flutter.app.FlutterApplication is an android.app.Application that
+21         calls FlutterMain.startInitialization(this); in its onCreate method.
+22         In most cases you can leave this as-is, but you if you want to provide
+23         additional functionality it is fine to subclass or reimplement
+24         FlutterApplication and put your custom class here.
+25    -->
+26    <application
+26-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/main/AndroidManifest.xml:10:5-38:19
+27        android:name="io.flutter.app.FlutterApplication"
+27-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/main/AndroidManifest.xml:11:9-57
+28        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+28-->[androidx.core:core:1.0.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/df6cf23cc51da578d8b158de17d0c9cb/core-1.0.0/AndroidManifest.xml:22:18-86
+29        android:debuggable="true"
+30        android:icon="@mipmap/ic_launcher"
+30-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/main/AndroidManifest.xml:13:9-43
+31        android:label="BFNapp" >
+31-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/main/AndroidManifest.xml:12:9-31
+32        <activity
+32-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/main/AndroidManifest.xml:15:9-37:20
+33            android:name="com.bfn.bfnmobile.MainActivity"
+33-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/main/AndroidManifest.xml:16:13-41
+34            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+34-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/main/AndroidManifest.xml:19:13-144
+35            android:hardwareAccelerated="true"
+35-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/main/AndroidManifest.xml:20:13-47
+36            android:launchMode="singleTop"
+36-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/main/AndroidManifest.xml:17:13-43
+37            android:theme="@style/LaunchTheme"
+37-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/main/AndroidManifest.xml:18:13-47
+38            android:windowSoftInputMode="adjustResize" >
+38-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/main/AndroidManifest.xml:21:13-55
+39
+40            <!--
+41                 This keeps the window background of the activity showing
+42                 until Flutter renders its first frame. It can be removed if
+43                 there is no splash screen (such as the default splash screen
+44                 defined in @style/LaunchTheme).
+45            -->
+46            <meta-data
+46-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/main/AndroidManifest.xml:26:13-28:40
+47                android:name="io.flutter.app.android.SplashScreenUntilFirstFrame"
+47-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/main/AndroidManifest.xml:27:17-82
+48                android:value="true" />
+48-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/main/AndroidManifest.xml:28:17-37
+49
+50            <intent-filter>
+50-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/main/AndroidManifest.xml:29:13-32:29
+51                <action android:name="android.intent.action.MAIN" />
+51-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/main/AndroidManifest.xml:30:17-68
+51-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/main/AndroidManifest.xml:30:25-66
+52
+53                <category android:name="android.intent.category.LAUNCHER" />
+53-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/main/AndroidManifest.xml:31:17-76
+53-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/main/AndroidManifest.xml:31:27-74
+54            </intent-filter>
+55            <intent-filter>
+55-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/main/AndroidManifest.xml:33:13-36:29
+56                <action android:name="FLUTTER_NOTIFICATION_CLICK" />
+56-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/main/AndroidManifest.xml:34:17-69
+56-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/main/AndroidManifest.xml:34:25-66
+57
+58                <category android:name="android.intent.category.DEFAULT" />
+58-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/main/AndroidManifest.xml:35:17-76
+58-->/Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/android/app/src/main/AndroidManifest.xml:35:27-73
+59            </intent-filter>
+60        </activity>
+61
+62        <service
+62-->[:firebase_auth] /Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/build/firebase_auth/intermediates/library_manifest/debug/AndroidManifest.xml:8:9-12:19
+63            android:name="com.google.firebase.components.ComponentDiscoveryService"
+63-->[:firebase_auth] /Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/build/firebase_auth/intermediates/library_manifest/debug/AndroidManifest.xml:8:18-89
+64            android:directBootAware="true"
+64-->[com.google.firebase:firebase-common:19.3.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/e7bc7cff57462c9bee57b903ed04024a/jetified-firebase-common-19.3.0/AndroidManifest.xml:34:13-43
+65            android:exported="false" >
+65-->[com.google.firebase:firebase-auth:19.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/ae936e42205d23ddab410b388bea9015/firebase-auth-19.2.0/AndroidManifest.xml:35:13-37
+66            <meta-data
+66-->[:firebase_auth] /Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/build/firebase_auth/intermediates/library_manifest/debug/AndroidManifest.xml:9:13-11:85
+67                android:name="com.google.firebase.components:io.flutter.plugins.firebaseauth.FlutterFirebaseAppRegistrar"
+67-->[:firebase_auth] /Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/build/firebase_auth/intermediates/library_manifest/debug/AndroidManifest.xml:10:17-122
+68                android:value="com.google.firebase.components.ComponentRegistrar" />
+68-->[:firebase_auth] /Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/build/firebase_auth/intermediates/library_manifest/debug/AndroidManifest.xml:11:17-82
+69            <meta-data
+69-->[:cloud_firestore] /Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/build/cloud_firestore/intermediates/library_manifest/debug/AndroidManifest.xml:9:13-11:85
+70                android:name="com.google.firebase.components:io.flutter.plugins.firebase.cloudfirestore.FlutterFirebaseAppRegistrar"
+70-->[:cloud_firestore] /Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/build/cloud_firestore/intermediates/library_manifest/debug/AndroidManifest.xml:10:17-133
+71                android:value="com.google.firebase.components.ComponentRegistrar" />
+71-->[:cloud_firestore] /Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/build/cloud_firestore/intermediates/library_manifest/debug/AndroidManifest.xml:11:17-82
+72            <meta-data
+72-->[:firebase_core] /Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/build/firebase_core/intermediates/library_manifest/debug/AndroidManifest.xml:9:13-11:85
+73                android:name="com.google.firebase.components:io.flutter.plugins.firebase.core.FlutterFirebaseAppRegistrar"
+73-->[:firebase_core] /Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/build/firebase_core/intermediates/library_manifest/debug/AndroidManifest.xml:10:17-123
+74                android:value="com.google.firebase.components.ComponentRegistrar" />
+74-->[:firebase_core] /Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/build/firebase_core/intermediates/library_manifest/debug/AndroidManifest.xml:11:17-82
+75            <meta-data
+75-->[:firebase_messaging] /Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/build/firebase_messaging/intermediates/library_manifest/debug/AndroidManifest.xml:14:13-16:85
+76                android:name="com.google.firebase.components:io.flutter.plugins.firebasemessaging.FlutterFirebaseAppRegistrar"
+76-->[:firebase_messaging] /Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/build/firebase_messaging/intermediates/library_manifest/debug/AndroidManifest.xml:15:17-127
+77                android:value="com.google.firebase.components.ComponentRegistrar" />
+77-->[:firebase_messaging] /Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/build/firebase_messaging/intermediates/library_manifest/debug/AndroidManifest.xml:16:17-82
+78            <meta-data
+78-->[com.google.firebase:firebase-auth:19.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/ae936e42205d23ddab410b388bea9015/firebase-auth-19.2.0/AndroidManifest.xml:36:13-38:85
+79                android:name="com.google.firebase.components:com.google.firebase.auth.FirebaseAuthRegistrar"
+79-->[com.google.firebase:firebase-auth:19.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/ae936e42205d23ddab410b388bea9015/firebase-auth-19.2.0/AndroidManifest.xml:37:17-109
+80                android:value="com.google.firebase.components.ComponentRegistrar" />
+80-->[com.google.firebase:firebase-auth:19.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/ae936e42205d23ddab410b388bea9015/firebase-auth-19.2.0/AndroidManifest.xml:38:17-82
+81            <meta-data
+81-->[com.google.android.gms:play-services-measurement-api:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/192166dd83cbbfd73ea18c910cc55de2/play-services-measurement-api-17.2.0/AndroidManifest.xml:30:13-32:85
+82                android:name="com.google.firebase.components:com.google.firebase.analytics.connector.internal.AnalyticsConnectorRegistrar"
+82-->[com.google.android.gms:play-services-measurement-api:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/192166dd83cbbfd73ea18c910cc55de2/play-services-measurement-api-17.2.0/AndroidManifest.xml:31:17-139
+83                android:value="com.google.firebase.components.ComponentRegistrar" />
+83-->[com.google.android.gms:play-services-measurement-api:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/192166dd83cbbfd73ea18c910cc55de2/play-services-measurement-api-17.2.0/AndroidManifest.xml:32:17-82
+84            <meta-data
+84-->[com.google.firebase:firebase-firestore:21.3.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/fa31cd8458f41b6ee1f15509aa4b289d/jetified-firebase-firestore-21.3.0/AndroidManifest.xml:20:13-22:85
+85                android:name="com.google.firebase.components:com.google.firebase.firestore.FirestoreRegistrar"
+85-->[com.google.firebase:firebase-firestore:21.3.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/fa31cd8458f41b6ee1f15509aa4b289d/jetified-firebase-firestore-21.3.0/AndroidManifest.xml:21:17-111
+86                android:value="com.google.firebase.components.ComponentRegistrar" />
+86-->[com.google.firebase:firebase-firestore:21.3.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/fa31cd8458f41b6ee1f15509aa4b289d/jetified-firebase-firestore-21.3.0/AndroidManifest.xml:22:17-82
+87            <meta-data
+87-->[com.google.firebase:firebase-iid:20.0.1] /Users/aubs/.gradle/caches/transforms-2/files-2.1/a042f32daf9a8d1dd424e6cf0a6f038f/firebase-iid-20.0.1/AndroidManifest.xml:32:13-34:85
+88                android:name="com.google.firebase.components:com.google.firebase.iid.Registrar"
+88-->[com.google.firebase:firebase-iid:20.0.1] /Users/aubs/.gradle/caches/transforms-2/files-2.1/a042f32daf9a8d1dd424e6cf0a6f038f/firebase-iid-20.0.1/AndroidManifest.xml:33:17-96
+89                android:value="com.google.firebase.components.ComponentRegistrar" />
+89-->[com.google.firebase:firebase-iid:20.0.1] /Users/aubs/.gradle/caches/transforms-2/files-2.1/a042f32daf9a8d1dd424e6cf0a6f038f/firebase-iid-20.0.1/AndroidManifest.xml:34:17-82
+90        </service>
+91        <service android:name="io.flutter.plugins.firebasemessaging.FlutterFirebaseMessagingService" >
+91-->[:firebase_messaging] /Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/build/firebase_messaging/intermediates/library_manifest/debug/AndroidManifest.xml:8:9-12:19
+91-->[:firebase_messaging] /Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/build/firebase_messaging/intermediates/library_manifest/debug/AndroidManifest.xml:8:18-101
+92            <intent-filter>
+92-->[:firebase_messaging] /Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/build/firebase_messaging/intermediates/library_manifest/debug/AndroidManifest.xml:9:13-11:29
+93                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+93-->[:firebase_messaging] /Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/build/firebase_messaging/intermediates/library_manifest/debug/AndroidManifest.xml:10:17-78
+93-->[:firebase_messaging] /Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/build/firebase_messaging/intermediates/library_manifest/debug/AndroidManifest.xml:10:25-75
+94            </intent-filter>
+95        </service>
+96
+97        <activity
+97-->[com.google.firebase:firebase-auth:19.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/ae936e42205d23ddab410b388bea9015/firebase-auth-19.2.0/AndroidManifest.xml:24:9-31:50
+98            android:name="com.google.firebase.auth.internal.FederatedSignInActivity"
+98-->[com.google.firebase:firebase-auth:19.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/ae936e42205d23ddab410b388bea9015/firebase-auth-19.2.0/AndroidManifest.xml:25:13-85
+99            android:excludeFromRecents="true"
+99-->[com.google.firebase:firebase-auth:19.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/ae936e42205d23ddab410b388bea9015/firebase-auth-19.2.0/AndroidManifest.xml:26:13-46
+100            android:exported="true"
+100-->[com.google.firebase:firebase-auth:19.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/ae936e42205d23ddab410b388bea9015/firebase-auth-19.2.0/AndroidManifest.xml:27:13-36
+101            android:launchMode="singleTask"
+101-->[com.google.firebase:firebase-auth:19.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/ae936e42205d23ddab410b388bea9015/firebase-auth-19.2.0/AndroidManifest.xml:28:13-44
+102            android:permission="com.google.firebase.auth.api.gms.permission.LAUNCH_FEDERATED_SIGN_IN"
+102-->[com.google.firebase:firebase-auth:19.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/ae936e42205d23ddab410b388bea9015/firebase-auth-19.2.0/AndroidManifest.xml:29:13-102
+103            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+103-->[com.google.firebase:firebase-auth:19.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/ae936e42205d23ddab410b388bea9015/firebase-auth-19.2.0/AndroidManifest.xml:30:13-72
+104
+105        <receiver
+105-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:29:9-33:20
+106            android:name="com.google.android.gms.measurement.AppMeasurementReceiver"
+106-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:30:13-85
+107            android:enabled="true"
+107-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:31:13-35
+108            android:exported="false" >
+108-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:32:13-37
+109        </receiver>
+110        <receiver
+110-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:34:9-42:20
+111            android:name="com.google.android.gms.measurement.AppMeasurementInstallReferrerReceiver"
+111-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:35:13-100
+112            android:enabled="true"
+112-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:36:13-35
+113            android:exported="true"
+113-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:37:13-36
+114            android:permission="android.permission.INSTALL_PACKAGES" >
+114-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:38:13-69
+115            <intent-filter>
+115-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:39:13-41:29
+116                <action android:name="com.android.vending.INSTALL_REFERRER" />
+116-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:40:17-79
+116-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:40:25-76
+117            </intent-filter>
+118        </receiver>
+119
+120        <service
+120-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:44:9-47:40
+121            android:name="com.google.android.gms.measurement.AppMeasurementService"
+121-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:45:13-84
+122            android:enabled="true"
+122-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:46:13-35
+123            android:exported="false" />
+123-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:47:13-37
+124        <service
+124-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:48:9-52:72
+125            android:name="com.google.android.gms.measurement.AppMeasurementJobService"
+125-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:49:13-87
+126            android:enabled="true"
+126-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:50:13-35
+127            android:exported="false"
+127-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:51:13-37
+128            android:permission="android.permission.BIND_JOB_SERVICE" />
+128-->[com.google.android.gms:play-services-measurement:17.2.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/6570256977e83c7cf37235ba156a235b/play-services-measurement-17.2.0/AndroidManifest.xml:52:13-69
+129        <!--
+130             FirebaseMessagingService performs security checks at runtime,
+131             but set to not exported to explicitly avoid allowing another app to call it.
+132        -->
+133        <service
+133-->[com.google.firebase:firebase-messaging:20.0.1] /Users/aubs/.gradle/caches/transforms-2/files-2.1/0d510764a4e439a1babb0102e8cc3904/jetified-firebase-messaging-20.0.1/AndroidManifest.xml:28:9-34:19
+134            android:name="com.google.firebase.messaging.FirebaseMessagingService"
+134-->[com.google.firebase:firebase-messaging:20.0.1] /Users/aubs/.gradle/caches/transforms-2/files-2.1/0d510764a4e439a1babb0102e8cc3904/jetified-firebase-messaging-20.0.1/AndroidManifest.xml:29:13-82
+135            android:exported="false" >
+135-->[com.google.firebase:firebase-messaging:20.0.1] /Users/aubs/.gradle/caches/transforms-2/files-2.1/0d510764a4e439a1babb0102e8cc3904/jetified-firebase-messaging-20.0.1/AndroidManifest.xml:30:13-37
+136            <intent-filter android:priority="-500" >
+136-->[:firebase_messaging] /Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/build/firebase_messaging/intermediates/library_manifest/debug/AndroidManifest.xml:9:13-11:29
+137                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+137-->[:firebase_messaging] /Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/build/firebase_messaging/intermediates/library_manifest/debug/AndroidManifest.xml:10:17-78
+137-->[:firebase_messaging] /Users/aubs/WORK/CORDA/BFN_SUPER_REPO/bfn-super-repo2020/bfnmobile/build/firebase_messaging/intermediates/library_manifest/debug/AndroidManifest.xml:10:25-75
+138            </intent-filter>
+139        </service>
+140
+141        <receiver
+141-->[com.google.firebase:firebase-iid:20.0.1] /Users/aubs/.gradle/caches/transforms-2/files-2.1/a042f32daf9a8d1dd424e6cf0a6f038f/firebase-iid-20.0.1/AndroidManifest.xml:37:9-44:20
+142            android:name="com.google.firebase.iid.FirebaseInstanceIdReceiver"
+142-->[com.google.firebase:firebase-iid:20.0.1] /Users/aubs/.gradle/caches/transforms-2/files-2.1/a042f32daf9a8d1dd424e6cf0a6f038f/firebase-iid-20.0.1/AndroidManifest.xml:38:13-78
+143            android:exported="true"
+143-->[com.google.firebase:firebase-iid:20.0.1] /Users/aubs/.gradle/caches/transforms-2/files-2.1/a042f32daf9a8d1dd424e6cf0a6f038f/firebase-iid-20.0.1/AndroidManifest.xml:39:13-36
+144            android:permission="com.google.android.c2dm.permission.SEND" >
+144-->[com.google.firebase:firebase-iid:20.0.1] /Users/aubs/.gradle/caches/transforms-2/files-2.1/a042f32daf9a8d1dd424e6cf0a6f038f/firebase-iid-20.0.1/AndroidManifest.xml:40:13-73
+145            <intent-filter>
+145-->[com.google.firebase:firebase-iid:20.0.1] /Users/aubs/.gradle/caches/transforms-2/files-2.1/a042f32daf9a8d1dd424e6cf0a6f038f/firebase-iid-20.0.1/AndroidManifest.xml:41:13-43:29
+146                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+146-->[com.google.firebase:firebase-iid:20.0.1] /Users/aubs/.gradle/caches/transforms-2/files-2.1/a042f32daf9a8d1dd424e6cf0a6f038f/firebase-iid-20.0.1/AndroidManifest.xml:42:17-81
+146-->[com.google.firebase:firebase-iid:20.0.1] /Users/aubs/.gradle/caches/transforms-2/files-2.1/a042f32daf9a8d1dd424e6cf0a6f038f/firebase-iid-20.0.1/AndroidManifest.xml:42:25-78
+147            </intent-filter>
+148        </receiver>
+149
+150        <provider
+150-->[com.google.firebase:firebase-common:19.3.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/e7bc7cff57462c9bee57b903ed04024a/jetified-firebase-common-19.3.0/AndroidManifest.xml:26:9-30:39
+151            android:name="com.google.firebase.provider.FirebaseInitProvider"
+151-->[com.google.firebase:firebase-common:19.3.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/e7bc7cff57462c9bee57b903ed04024a/jetified-firebase-common-19.3.0/AndroidManifest.xml:27:13-77
+152            android:authorities="com.bfn.bfnmobile.firebaseinitprovider"
+152-->[com.google.firebase:firebase-common:19.3.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/e7bc7cff57462c9bee57b903ed04024a/jetified-firebase-common-19.3.0/AndroidManifest.xml:28:13-72
+153            android:exported="false"
+153-->[com.google.firebase:firebase-common:19.3.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/e7bc7cff57462c9bee57b903ed04024a/jetified-firebase-common-19.3.0/AndroidManifest.xml:29:13-37
+154            android:initOrder="100" />
+154-->[com.google.firebase:firebase-common:19.3.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/e7bc7cff57462c9bee57b903ed04024a/jetified-firebase-common-19.3.0/AndroidManifest.xml:30:13-36
+155
+156        <activity
+156-->[com.google.android.gms:play-services-base:17.1.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/8ac2c71cc9965485e4fc4eaca5d4253a/play-services-base-17.1.0/AndroidManifest.xml:23:9-26:75
+157            android:name="com.google.android.gms.common.api.GoogleApiActivity"
+157-->[com.google.android.gms:play-services-base:17.1.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/8ac2c71cc9965485e4fc4eaca5d4253a/play-services-base-17.1.0/AndroidManifest.xml:24:13-79
+158            android:exported="false"
+158-->[com.google.android.gms:play-services-base:17.1.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/8ac2c71cc9965485e4fc4eaca5d4253a/play-services-base-17.1.0/AndroidManifest.xml:25:13-37
+159            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+159-->[com.google.android.gms:play-services-base:17.1.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/8ac2c71cc9965485e4fc4eaca5d4253a/play-services-base-17.1.0/AndroidManifest.xml:26:13-72
+160
+161        <meta-data
+161-->[com.google.android.gms:play-services-basement:17.0.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/94f40f93da93059567b405b527d6891f/jetified-play-services-basement-17.0.0/AndroidManifest.xml:23:9-25:69
+162            android:name="com.google.android.gms.version"
+162-->[com.google.android.gms:play-services-basement:17.0.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/94f40f93da93059567b405b527d6891f/jetified-play-services-basement-17.0.0/AndroidManifest.xml:24:13-58
+163            android:value="@integer/google_play_services_version" />
+163-->[com.google.android.gms:play-services-basement:17.0.0] /Users/aubs/.gradle/caches/transforms-2/files-2.1/94f40f93da93059567b405b527d6891f/jetified-play-services-basement-17.0.0/AndroidManifest.xml:25:13-66
+164    </application>
+165
+166</manifest>

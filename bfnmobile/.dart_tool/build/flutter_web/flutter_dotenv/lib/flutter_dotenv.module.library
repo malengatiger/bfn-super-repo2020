@@ -1,0 +1,1 @@
+{"isEntrypoint":true,"deps":["flutter_dotenv|lib/src/dotenv.dart","flutter_dotenv|lib/src/parser.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":[],"hasMain":false}

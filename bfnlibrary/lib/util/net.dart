@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:bfnlibrary/data/account.dart';
+import 'package:bfnlibrary/data/anchor.dart';
 import 'package:bfnlibrary/data/dashboard_data.dart';
 import 'package:bfnlibrary/data/fb_user.dart';
 import 'package:bfnlibrary/data/invoice.dart';
@@ -28,6 +29,7 @@ class Net {
     return url;
   }
 
+  static const String BFN = 'bfn/admin/';
   static Future<List<NodeInfo>> listNodes() async {
     var list = List<NodeInfo>();
     var result = await auth.currentUser();
@@ -163,10 +165,20 @@ class Net {
     debugPrint('🍊🍊🍊🍊🍊 startAccountRegistrationFlow starting the call ...');
     var node = await Prefs.getNode();
     final response =
-        await post(node.webAPIUrl + 'admin/startAccountRegistrationFlow', bag);
+        await post(node.webAPIUrl + '${BFN}startAccountRegistrationFlow', bag);
     var m = json.decode(response);
     var acct = AccountInfo.fromJson(m);
     return acct;
+  }
+
+  static Future<Anchor> createAnchor(Anchor anchor) async {
+    debugPrint('🍊🍊🍊🍊🍊 Net:createAnchor: starting the call ...');
+    var node = await Prefs.getNode();
+    final response =
+        await post(node.webAPIUrl + '${BFN}createAnchor', anchor.toJson());
+    var m = json.decode(response);
+    var mx = Anchor.fromJson(m);
+    return mx;
   }
 
   static Future<Invoice> startRegisterInvoiceFlow(Invoice invoice) async {
@@ -199,7 +211,7 @@ class Net {
 
   static Future<List<AccountInfo>> getAccounts() async {
     var prefix = await getNodeUrl();
-    final response = await get(prefix + 'admin/getAccounts');
+    final response = await get(prefix + '${BFN}getAccounts');
 
     List<AccountInfo> list = List();
     List m = json.decode(response);
@@ -213,7 +225,7 @@ class Net {
   static Future<AccountInfo> getAccount(String accountId) async {
     var node = await Prefs.getNode();
     final response =
-        await get(node.webAPIUrl + 'admin/getAccount?accountId=$accountId');
+        await get(node.webAPIUrl + '${BFN}getAccount?accountId=$accountId');
 
     AccountInfo acctInfo = AccountInfo.fromJson(json.decode(response));
     debugPrint('🍎 🍊 Net: getAccount: found ${acctInfo.toJson()}');
@@ -223,7 +235,7 @@ class Net {
   static Future<SupplierProfile> getSupplierProfile(String accountId) async {
     var node = await Prefs.getNode();
     final response = await get(
-        node.webAPIUrl + 'admin/getSupplierProfile?accountId=$accountId');
+        node.webAPIUrl + '${BFN}getSupplierProfile?accountId=$accountId');
 
     if (response == null) {
       return null;
@@ -236,7 +248,7 @@ class Net {
   static Future<InvestorProfile> getInvestorProfile(String accountId) async {
     var node = await Prefs.getNode();
     final response = await get(
-        node.webAPIUrl + 'admin/getInvestorProfile?accountId=$accountId');
+        node.webAPIUrl + '${BFN}getInvestorProfile?accountId=$accountId');
     if (response == null) {
       return null;
     }
@@ -248,7 +260,7 @@ class Net {
   static Future<String> createInvestorProfile(InvestorProfile profile) async {
     var node = await Prefs.getNode();
     final response = await post(
-        node.webAPIUrl + 'admin/createInvestorProfile', profile.toJson());
+        node.webAPIUrl + '${BFN}createInvestorProfile', profile.toJson());
 
     debugPrint('🍎 🍊 Net: createInvestorProfile: $response');
     return response;
@@ -257,7 +269,7 @@ class Net {
   static Future<String> createSupplierProfile(SupplierProfile profile) async {
     var node = await Prefs.getNode();
     final response = await post(
-        node.webAPIUrl + 'admin/createSupplierProfile', profile.toJson());
+        node.webAPIUrl + '${BFN}createSupplierProfile', profile.toJson());
 
     debugPrint('🍎 🍊 Net: createSupplierProfile: $response');
     return response;
@@ -265,7 +277,7 @@ class Net {
 
   static Future<UserRecord> getUser(String email) async {
     var node = await Prefs.getNode();
-    String url = node.webAPIUrl + 'admin/getUser?email=$email';
+    String url = node.webAPIUrl + '${BFN}getUser?email=$email';
     ;
     final response = await http.get(url);
     if (response.statusCode == 200) {
@@ -284,7 +296,7 @@ class Net {
 
   static Future<List<UserDTO>> getUsers() async {
     var node = await Prefs.getNode();
-    String url = node.webAPIUrl + 'admin/getUsers';
+    String url = node.webAPIUrl + '${BFN}getUsers';
     List<UserDTO> users = List();
     final response = await http.get(url);
     if (response.statusCode == 200) {
@@ -311,10 +323,10 @@ class Net {
     var node = await Prefs.getNode();
     String url;
     if (accountId == null) {
-      url = node.webAPIUrl + 'admin/getInvoiceStates?consumed=$consumed';
+      url = node.webAPIUrl + '${BFN}getInvoiceStates?consumed=$consumed';
     } else {
       url = node.webAPIUrl +
-          'admin/findInvoicesForSupplier?accountId=$accountId&consumed=$consumed';
+          '${BFN}findInvoicesForSupplier?accountId=$accountId&consumed=$consumed';
     }
     debugPrint(url);
     final response = await get(url);
@@ -335,10 +347,10 @@ class Net {
     if (consumed == null) consumed = false;
     String url;
     if (accountId == null) {
-      url = node.webAPIUrl + 'admin/findOffersForSupplier?consumed=$consumed';
+      url = node.webAPIUrl + '${BFN}findOffersForSupplier?consumed=$consumed';
     } else {
       url = node.webAPIUrl +
-          'admin/findOffersForSupplier?accountId=$accountId&consumed=$consumed';
+          '${BFN}findOffersForSupplier?accountId=$accountId&consumed=$consumed';
     }
     debugPrint(url);
     final response = await get(url);
@@ -358,10 +370,10 @@ class Net {
     if (consumed == null) consumed = false;
     String url;
     if (accountId == null) {
-      url = node.webAPIUrl + 'admin/findOffersForInvestor?consumed=$consumed';
+      url = node.webAPIUrl + '${BFN}findOffersForInvestor?consumed=$consumed';
     } else {
       url = node.webAPIUrl +
-          'admin/findOffersForInvestor?accountId=$accountId&consumed=$consumed';
+          '${BFN}findOffersForInvestor?accountId=$accountId&consumed=$consumed';
     }
     debugPrint(url);
     final response = await get(url);
@@ -377,7 +389,7 @@ class Net {
 
   static Future<DashboardData> getDashboardData() async {
     var node = await Prefs.getNode();
-    String url = node.webAPIUrl + 'admin/getDashboardData';
+    String url = node.webAPIUrl + '${BFN}getDashboardData';
 
     debugPrint(url);
     final response = await get(url);
@@ -388,7 +400,7 @@ class Net {
 
   static Future<String> ping() async {
     var node = await Prefs.getNode();
-    final response = await http.get(node.webAPIUrl + 'admin/ping');
+    final response = await http.get(node.webAPIUrl + '${BFN}ping');
     if (response.statusCode == 200) {
       debugPrint(
           '🍎 🍊 Net: ping: Network Response Status Code: 🥬  🥬 ${response.statusCode} 🥬 ');
@@ -399,7 +411,7 @@ class Net {
   }
 //
 //  static Future<String> startDemoDataGeneration() async {
-//    final response = await http.get(URL + 'admin/demo');
+//    final response = await http.get(URL + '${BFN}demo');
 //
 //    if (response.statusCode == 200) {
 //      debugPrint(

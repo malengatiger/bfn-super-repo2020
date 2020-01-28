@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["firebase|lib/src/interop/js_interop.dart","firebase|lib/src/interop/remote_config_interop.dart","firebase|lib/src/js.dart","firebase|lib/src/utils.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["async"],"hasMain":false}

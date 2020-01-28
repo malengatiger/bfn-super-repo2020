@@ -1,0 +1,1 @@
+{"isEntrypoint":true,"deps":["shared_preferences|lib/shared_preferences.dart","flutter|lib/material.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["async"],"hasMain":false}

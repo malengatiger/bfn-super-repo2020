@@ -1,0 +1,1 @@
+{"isEntrypoint":true,"deps":["flutter_web_plugins|lib/flutter_web_plugins.dart","bfnmobile|lib/generated_plugin_registrant.dart","bfnmobile|lib/main.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["ui"],"hasMain":true}

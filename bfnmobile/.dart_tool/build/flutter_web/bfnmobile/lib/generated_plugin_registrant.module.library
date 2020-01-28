@@ -1,0 +1,1 @@
+{"isEntrypoint":true,"deps":["firebase_auth_web|lib/firebase_auth_web.dart","firebase_core_web|lib/firebase_core_web.dart","shared_preferences_web|lib/shared_preferences_web.dart","flutter_web_plugins|lib/flutter_web_plugins.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["ui"],"hasMain":false}

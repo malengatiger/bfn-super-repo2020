@@ -1,0 +1,1 @@
+{"isEntrypoint":true,"deps":["firebase_auth_platform_interface|lib/firebase_auth_platform_interface.dart","firebase|lib/firebase.dart","flutter|lib/services.dart","flutter_web_plugins|lib/flutter_web_plugins.dart","http_parser|lib/http_parser.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":["async"],"hasMain":false}

@@ -1,0 +1,11 @@
+# This is a generated file; do not edit or check into version control.
+cloud_firestore=/Users/aubs/WORK/flutter/.pub-cache/hosted/pub.dartlang.org/cloud_firestore-0.13.0+1/
+firebase_auth=/Users/aubs/WORK/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_auth-0.15.4/
+firebase_auth_web=/Users/aubs/WORK/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_auth_web-0.1.1+4/
+firebase_core=/Users/aubs/WORK/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_core-0.4.3+2/
+firebase_core_web=/Users/aubs/WORK/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_core_web-0.1.1+2/
+firebase_messaging=/Users/aubs/WORK/flutter/.pub-cache/hosted/pub.dartlang.org/firebase_messaging-6.0.9/
+path_provider=/Users/aubs/WORK/flutter/.pub-cache/hosted/pub.dartlang.org/path_provider-1.5.1/
+shared_preferences=/Users/aubs/WORK/flutter/.pub-cache/hosted/pub.dartlang.org/shared_preferences-0.5.6+1/
+shared_preferences_macos=/Users/aubs/WORK/flutter/.pub-cache/hosted/pub.dartlang.org/shared_preferences_macos-0.0.1+4/
+shared_preferences_web=/Users/aubs/WORK/flutter/.pub-cache/hosted/pub.dartlang.org/shared_preferences_web-0.1.2+3/

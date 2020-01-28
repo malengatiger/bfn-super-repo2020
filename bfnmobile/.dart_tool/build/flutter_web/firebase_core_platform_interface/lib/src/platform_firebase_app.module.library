@@ -1,0 +1,1 @@
+{"isEntrypoint":false,"deps":["quiver|lib/core.dart","firebase_core_platform_interface|lib/src/firebase_options.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":[],"hasMain":false}

@@ -1,0 +1,1 @@
+{"isEntrypoint":true,"deps":["bfnlibrary|lib/data/account.dart","bfnlibrary|lib/util/functions.dart","bfnlibrary|lib/util/net.dart","flutter|lib/cupertino.dart","flutter|lib/material.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":[],"hasMain":false}

@@ -1,0 +1,1 @@
+{"isEntrypoint":true,"deps":["firebase_core_platform_interface|lib/firebase_core_platform_interface.dart","firebase_core|lib/src/firebase_app.dart"],"parts":[],"conditionalDeps":[],"sdkDeps":[],"hasMain":false}
