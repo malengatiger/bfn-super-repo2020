@@ -5,9 +5,13 @@ FROM gcr.io/google-appengine/openjdk
 
 ARG BFN_JAR=clients-0.1.jar
 ARG BFN_SERVICE_ACCOUNT=bfn.json
+ARG BFN_NODES=prod-nodes.json
 
 COPY $BFN_SERVICE_ACCOUNT bfn.json
 COPY $BFN_JAR app.jar
+COPY $BFN_NODES prod-nodes.json
+
+RUN ls -all
 
 ENV GOOGLE_APPLICATION_CREDENTIALS=bfn.json
 

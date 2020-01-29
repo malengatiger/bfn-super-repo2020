@@ -8,3 +8,5 @@ workflows/logs
 clients/build
 clients/logs
 clients/src/main/resources/application-prod.properties
+clients/src/main/resources/prod-nodes.json
+/clients/out/

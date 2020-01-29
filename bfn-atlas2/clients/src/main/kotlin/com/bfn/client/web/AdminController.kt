@@ -15,6 +15,7 @@ import com.google.gson.GsonBuilder
 import net.corda.core.messaging.CordaRPCOps
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.env.Environment
 import org.springframework.web.bind.annotation.*
 import java.util.*
@@ -26,9 +27,17 @@ import java.util.*
 @RequestMapping("/admin") // The paths for HTTP requests are relative to this base path.
 class AdminController(rpc: NodeRPCConnection) {
     private val proxy: CordaRPCOps = rpc.proxy
+//
+//    @Autowired
+//    private val env: Environment? = null
+//
+//    @Value("\${config.rpc.host}")
+//    private var host: String = ""
+//    @Value("\${config.rpc.port}")
+//    private var port: String = ""
 
-    @Autowired
-    private val env: Environment? = null
+    @Value("\${spring.profiles.active}")
+    private var springBootProfile: String = ""
 
     @GetMapping(value = ["/demo"], produces = ["application/json"])
     @Throws(Exception::class)
@@ -121,12 +130,8 @@ class AdminController(rpc: NodeRPCConnection) {
         return WorkerBee.createInvestorProfile(proxy,profile)
     }
 
-    @get:GetMapping(value = ["getAccounts"])
-    val accounts: List<AccountInfoDTO>
-        get() = getNodeAccounts(proxy)
-
     @get:GetMapping(value = ["/getStates"], produces = ["application/json"])
-    private val states: List<String>
+    val states: List<String>
         get() {
             val msg = ("\uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A AdminController:BFN Web API pinged: " + Date().toString()
                     + " \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A")
@@ -246,13 +251,14 @@ class AdminController(rpc: NodeRPCConnection) {
         return getAccount(proxy, accountId)
     }
 
-    @GetMapping(value = ["writeNodesToFirestore"])
-    @Throws(Exception::class)
-    fun writeNodesToFirestore(appProperties: AppProperties): List<NodeInfoDTO> {
-
-        return FirebaseUtil.refreshNodes(proxy, appProperties)
-
-    }
+//    @GetMapping(value = ["writeNodesToFirestore"])
+//    @Throws(Exception::class)
+//    fun writeNodesToFirestore(): List<NodeInfoDTO> {
+//        logger.info("\uD83D\uDE21 \uD83D\uDE21 Refreshing " +
+//                "$springBootProfile nodes on Firestore ..............")
+//        return FirebaseUtil.refreshNodes(proxy = proxy, springBootProfile = springBootProfile)
+//
+//    }
 
     @GetMapping(value = ["/hello"], produces = ["text/plain"])
      fun hello(): String {

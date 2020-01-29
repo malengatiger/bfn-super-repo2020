@@ -143,7 +143,7 @@ object DemoUtil {
             if (node == null) {
                 throw Exception("Regulator not found")
             }
-            val nodeUrl = node.webAPIUrl + "admin/getDashboardData"
+            val nodeUrl = node.webServerAddress + "admin/getDashboardData"
             val con = callNode(nodeUrl)
             var summary: DashboardData
             BufferedReader(InputStreamReader(con.inputStream, "utf-8")).use { br ->
@@ -163,8 +163,8 @@ object DemoUtil {
     @Throws(Exception::class)
     private fun executeForeignNodeDemoData(node: NodeInfoDTO) {
         logger.info("\n\n\uD83E\uDD1F \uD83E\uDD1F \uD83E\uDD1F " +
-                "Node Demo Data to Generate: " + node.webAPIUrl)
-        val nodeUrl = node.webAPIUrl + "admin/demo?deleteFirestore=false"
+                "Node Demo Data to Generate: " + node.webServerAddress)
+        val nodeUrl = node.webServerAddress + "admin/demo?deleteFirestore=false"
         val con = callNode(nodeUrl)
         var summary: DemoSummary?
         BufferedReader(InputStreamReader(con.inputStream, "utf-8")).use { br ->

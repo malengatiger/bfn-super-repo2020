@@ -43,7 +43,7 @@ class CrossNodeService {
 
     private fun addNodeInvoices(it: NodeInfoDTO) {
         logger.info("\n\uD83C\uDF30 Getting invoices from Node: \uD83E\uDDE9 ${it.addresses?.first()}  " +
-                "\uD83C\uDF30 ${it.webAPIUrl}")
+                "\uD83C\uDF30 ${it.webServerAddress}")
         val response2 = get(
                 timeout = 990000000.0,
                 url = "${it.host!!}:${it.port!!.toInt()}/admin/findInvoicesForNode")

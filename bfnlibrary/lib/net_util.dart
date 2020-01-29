@@ -30,7 +30,7 @@ class Net {
   }
 
   static const String BFN = 'bfn/admin/';
-  static Future<List<NodeInfo>> listNodes() async {
+  static Future<List<NodeInfo>> getNodesFromFirestore() async {
     var list = List<NodeInfo>();
     var result = await auth.currentUser();
     if (result == null) {
@@ -38,8 +38,9 @@ class Net {
       var pass = DotEnv().env['password'];
       print(
           '🌸 🌸 🌸 🌸 🌸 ADMIN 🧡 auth for getting nodes from firestore: 🧡🧡 email from .env : 🥏  $email 🥏  pass: $pass 🥏 ');
-      var userResult =
-          await auth.signInWithEmailAndPassword(email: email, password: pass);
+      var userResult = await auth.signInWithEmailAndPassword(
+          email: 'aubrey@bfn.com',
+          password: '2a91f706-81c7-47bf-a172-3d36095d5a32');
       print(
           '🍊 🍊 🍊 Logged into Firebase with .env credentials,  🌸 uid: ${userResult.user.uid} ... getting nodes ...');
       list = await _getNodes(list);
@@ -63,7 +64,7 @@ class Net {
     if (acct == null) {
       throw Exception("Account not available yet");
     }
-    var list = await listNodes();
+    var list = await getNodesFromFirestore();
     String url;
     print('  🔆  🔆  🔆 local account:  💚 ${acct.toJson()}');
     list.forEach((node) {
@@ -82,11 +83,11 @@ class Net {
 
   static Future _getNodes(List<NodeInfo> list) async {
     var snapshot = await db.collection("nodes").getDocuments();
-//    print(
-//        '🥏 🥏 🥏 🥏 nodes found on network: 🥏 ${snapshot.documents.length} 🥏 ');
+    print(
+        '🥏 🥏 🥏 🥏 nodes found on network: 🥏 ${snapshot.documents.length} 🥏 ');
     snapshot.documents.forEach((doc) {
       var data = doc.data;
-//      print('🥏 data from Firestore: $data');
+      print('🥏 data from Firestore: $data');
       var node = NodeInfo.fromJson(data);
       list.add(node);
     });

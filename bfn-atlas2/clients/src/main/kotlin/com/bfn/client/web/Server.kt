@@ -3,13 +3,16 @@ package com.bfn.client.web
 //import org.springframework.cloud.config.server.EnableConfigServer
 
 
+import net.corda.nodeapi.internal.config.toConfigValue
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.Banner
 import org.springframework.boot.WebApplicationType
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.autoconfigure.web.embedded.EmbeddedWebServerFactoryCustomizerAutoConfiguration
 import org.springframework.boot.builder.SpringApplicationBuilder
 import org.springframework.boot.context.event.ApplicationReadyEvent
+import org.springframework.boot.web.context.WebServerInitializedEvent
 import org.springframework.boot.web.server.WebServerFactoryCustomizer
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory
 import org.springframework.context.ApplicationContext
@@ -63,8 +66,8 @@ private open class ApiApp: ApplicationListener<ApplicationReadyEvent> {
 
         logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 host: \uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C \uD83D\uDE21 " +
                 "${InetAddress.getLocalHost()} profile: $profile \uD83D\uDE21")
-        info()
-        setTimer()
+//        info()
+//        setTimer()
         logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 WE ARE DONE STARTING UP!!! \uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C \uD83D\uDE21 ")
 
     }
@@ -139,5 +142,6 @@ private open class ApiApp: ApplicationListener<ApplicationReadyEvent> {
                 "profile:  \uD83C\uDF4E $profile \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E ")
         return WebServerFactoryCustomizer { factory: ConfigurableServletWebServerFactory -> factory.setContextPath("/bfn") };
     }
+
 
 }

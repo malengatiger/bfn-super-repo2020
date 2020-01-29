@@ -16,7 +16,6 @@ import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 
-import com.bfn.client.web.FirebaseUtil.addNode
 import com.bfn.client.web.FirebaseUtil.createUser
 import com.bfn.client.web.FirebaseUtil.sendAccountMessage
 import com.bfn.client.web.FirebaseUtil.sendInvoiceMessage
@@ -44,7 +43,14 @@ object WorkerBee {
     fun writeNodes(proxy: CordaRPCOps) {
         val nodes = listNodes(proxy)
         for (n in nodes) {
-            addNode(n)
+            try {
+                db.collection("nodes").add(n)
+                logger.info("\uD83D\uDC9B  Added corda node to Firestore: ⚽ " +
+                        " ${n!!.addresses!!.first()}  \uD83C\uDF00 ${n.webServerAddress}")
+            } catch (e: Exception) {
+                logger.error("Failed to add node", e)
+                throw e
+            }
             logger.info("writeNodes:  🍎 🍎 🍎 node written to Firestore: 👽 " + n.addresses!![0])
         }
         logger.info("writeNodes:  🍎 🍎 🍎 nodes written to Firestore: 👽 👽 👽  " + nodes.size)
@@ -58,15 +64,16 @@ object WorkerBee {
             val dto = NodeInfoDTO()
             dto.serial = info.serial
             dto.platformVersion = info.platformVersion.toLong()
+            dto.host = info.addresses[0].host
+            dto.port = info.addresses[0].port.toLong()
             for (party in info.legalIdentities) {
                 dto.addresses = ArrayList()
-                (dto.addresses as ArrayList<String>).add(party.name.toString())
+                (dto.addresses as ArrayList<String>).add(party.toString())
             }
-            logger.info("\uD83C\uDF3A BFN Corda Node: \uD83C\uDF3A "
-                    + info.legalIdentities[0].name.toString())
+            logger.info("\uD83C\uDF3A BFN Corda Node: \uD83C\uDF3A ${info.legalIdentities[0]} addresses: ${info.addresses}")
             nodeList.add(dto)
         }
-        logger.info(" \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A Corda NetworkNodes found: \uD83D\uDC9A "
+        logger.info("\uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A Corda NetworkNodes found: \uD83D\uDC9A "
                 + nodeList.size + " \uD83D\uDC9A ")
         return nodeList
     }

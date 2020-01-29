@@ -1,12 +1,13 @@
-import 'package:bfnlibrary/util/net.dart';
+import 'package:bfnlibrary/net_util.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
-//  await DotEnv().load('.env');
-//  print('🌸 🌸 🌸 🌸 🌸 DotEnv has been created. Check content of variables');
-//  var email = DotEnv().env['email'];
-//  var pass = DotEnv().env['password'];
-//  print('🌸 🌸 🌸 🌸 🌸 email from .env : 🌸  $email 🌸  pass: $pass');
+  await DotEnv().load('.env');
+  print('🌸 🌸 🌸 🌸 🌸 DotEnv has been created. Check content of variables');
+  var email = DotEnv().env['email'];
+  var pass = DotEnv().env['password'];
+  print('🌸 🌸 🌸 🌸 🌸 email from .env : 🌸  $email 🌸  pass: $pass');
 
   runApp(MyApp());
 }
@@ -53,7 +54,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _getNodes() async {
-    var res = await Net.listNodes();
+    var res = await Net.getNodesFromFirestore();
     res.forEach((element) {
       print('🍎 🍎 🍎 🍎 ${element.toJson()} 🍎 🍎');
     });

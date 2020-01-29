@@ -1,54 +1,92 @@
 package com.bfn.client.web
 
+import com.bfn.client.dto.NodeInfoDTO
 import com.google.auth.oauth2.GoogleCredentials
+import com.google.cloud.firestore.Firestore
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
+import com.google.firebase.cloud.FirestoreClient
+import com.google.gson.GsonBuilder
+import com.google.gson.reflect.TypeToken
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.ApplicationContext
+import org.springframework.core.env.Environment
+import org.springframework.core.env.get
+import org.springframework.core.io.Resource
 import org.springframework.stereotype.Component
+import org.springframework.util.ResourceUtils
+import java.io.File
 import java.io.FileInputStream
+import java.nio.file.Files
 import javax.annotation.PostConstruct
 
 @Component
 class FirebaseScaffold {
     private val logger = LoggerFactory.getLogger(FirebaseScaffold::class.java)
+    private val gson = GsonBuilder().setPrettyPrinting().create()
     @Autowired
-    private lateinit var appProperties: AppProperties
+    private lateinit var environment: Environment
     @Autowired
     private lateinit var context: ApplicationContext
     @Value("\${spring.profiles.active}")
-    private var profile: String = ""
-    @Value("\${projectId}")
-    private var projectId: String? = null
-    @Value("\${databaseUrl}")
-    private var databaseUrl: String? = null
+    private var profile: String = "dev"
+    @Value("\${node.index}")
+    private var stringIndex: String = "0"
+    @Value("classpath:dev-nodes.json")
+    private val resDev: Resource? = null
+    @Value("classpath:prod-nodes.json")
+    private val resProd: Resource? = null
+
 
     @PostConstruct
     fun init() {
         logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D " +
-                "PostConstruct: \uD83C\uDF3F Alexa and AI are coming for you! \uD83C\uDF1E PROFILE $profile \uD83C\uDF1E")
+                "PostConstruct: \uD83C\uDF3F Alexa and AI are coming for you! \uD83C\uDF1E SPRINGBOOT_PROFILE : $profile \uD83C\uDF1E")
 
         logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06  BFNWebApi: setting up Firebase service account ...."
                 + " \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06")
         try {
+            val file: File = if (profile == "dev") {
+                resDev!!.file
+            } else {
+                resProd!!.file
+            }
+
+            logger.info("\uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C Nodes JSON File Found :  " +
+                    "\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21  " + file.exists())
+            val content = String(Files.readAllBytes(file.toPath()))
+            // List
+            val nodeType = object : TypeToken<List<NodeInfoDTO>>() {}.type
+            val nodes: List<NodeInfoDTO> = gson.fromJson(content, nodeType)
+
+            logger.info("\uD83D\uDD35 \uD83D\uDD35 Using index $stringIndex to pick node from json file")
+            val node = nodes[stringIndex!!.toInt()]
+            logger.info("\uD83D\uDD35 \uD83D\uDD35 Selected node:  \uD83D\uDD35 \uD83D\uDD35 ${gson.toJson(node)}  \uD83D\uDD35 \uD83D\uDD35 ")
             val options = FirebaseOptions.Builder()
                     .setCredentials(GoogleCredentials.getApplicationDefault())
-                    .setProjectId(projectId)
-                    .setDatabaseUrl(databaseUrl).build()
+                    .setProjectId(node.firebaseProjectId)
+                    .setDatabaseUrl(node.firebaseUrl).build()
             val app = FirebaseApp.initializeApp(options)
             logger.info("\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9  \uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9 "
                     + "Firebase Admin SDK Setup OK:  \uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9 app: "
                     + app.toString())
-            listAccountsFromFirebase()
-            logger.info("\uD83D\uDD06  \uD83D\uDD06  \uD83D\uDD06  Getting bean to start refreshing nodes on Firestore  \uD83D\uDD06 ")
-            try {
-                val adminController = context.getBean(AdminController::class.java)
-                adminController.writeNodesToFirestore(appProperties)
-            } catch (e: Exception) {
-                logger.error(e.message)
+            val db: Firestore = FirestoreClient.getFirestore()
+            db.collection("nodes").whereEqualTo("springBootProfile", profile).get().get().documents.forEach {
+                logger.info("\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9 Firestore Node: " +
+                        "${it.data["addresses"]}")
             }
+            FirebaseUtil.deleteNodes(profile)
+            nodes.forEach {
+                db.collection("nodes").add(it)
+                logger.info("⚽ ⚽ ⚽ ⚽ ⚽ ⚽ ⚽ Node added to Firestore: \uD83D\uDD35 \uD83D\uDD35 " +
+                        "${gson.toJson(it)} \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83C\uDF4E ")
+            }
+
+
+            listAccountsFromFirebase()
+            logger.info("\uD83C\uDF4E Firebase Scaffolding is complete.  ⚽️  ⚽️  ⚽️  ⚽️  ⚽️ \n")
 
         } catch (e: Exception) {
             logger.error("\uD83D\uDC7F  \uD83D\uDC7F  \uD83D\uDC7F  \uD83D\uDC7F Firebase Admin SDK setup failed")
@@ -56,7 +94,6 @@ class FirebaseScaffold {
         }
 
     }
-
 
 
     private fun listAccountsFromFirebase() {
