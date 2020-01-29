@@ -1,5 +1,4 @@
 apply plugin: 'org.springframework.boot'
-//apply plugin: 'kotlin' // or 'kotlin-multiplatform' for multiplatform projects
 
 
 sourceSets {
@@ -29,8 +28,9 @@ dependencies {
 
     compile "org.apache.logging.log4j:log4j-slf4j-impl:${log4j_version}"
     compile "org.apache.logging.log4j:log4j-web:${log4j_version}"
-//    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    compile "org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.14.0" // JVM dependency
+
+//    compile group: 'org.jetbrains.kotlin', name: 'kotlin-reflect', version: '1.2.61'
+//    compile "org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.14.0" // JVM dependency
 }
 
 

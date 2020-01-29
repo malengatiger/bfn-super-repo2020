@@ -23,7 +23,6 @@ import java.net.InetAddress
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.logging.Logger
-import kotlin.reflect.full.functions
 
 
 /**
@@ -71,48 +70,48 @@ private open class ApiApp: ApplicationListener<ApplicationReadyEvent> {
         logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 WE ARE DONE STARTING UP!!! \uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C \uD83D\uDE21 ")
 
     }
-
-    private fun info() {
-
-        var cnt = 0
-        val c = AdminController::class
-        val functions = c.functions
-        val sorted = functions.sortedBy { it.name }
-        logger.info("\n..... \uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C Functions available from AdminController")
-        sorted.forEach() {
-            cnt++
-            logger.info("\uD83E\uDD6C AdminController Function: #$cnt \t\uD83C\uDF38 ${it.name} \uD83C\uDF38 ")
-        }
-        cnt = 0
-        val d = SupplierController::class
-        val functions2 = d.functions
-        val sorted3 = functions2.sortedBy { it.name }
-        logger.info("\n..... \uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 Functions available from SupplierController")
-        sorted3.forEach() {
-            cnt++
-            logger.info(" \uD83D\uDE21 SupplierController Function: #$cnt \t\uD83D\uDE21 ${it.name}  \uD83D\uDE21 ")
-        }
-        cnt = 0
-        logger.info("\n..... \uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0  Functions available from WorkerBee ...")
-        val workerBee = WorkerBee::class
-        val collection = workerBee.functions
-        val sorted2 = collection.sortedBy { it.name }
-        sorted2.forEach() {
-            cnt++
-            logger.info("\uD83C\uDF4E WorkerBee Function: #$cnt \t\uD83E\uDDA0  ${it.name} \uD83E\uDDA0 ")
-        }
-        logger.info("Pinging self, \uD83C\uDF56 \uD83C\uDF56 ... just for the hell of it! \uD83C\uDF56 \uD83C\uDF56")
-        val bean = context.getBean(AdminController::class.java)
-        bean.ping()
-        val flows = bean.getFlows()
-        cnt = 0
-        flows.forEach() {
-            if (it.contains("com.bfn")) {
-                cnt++
-                logger.info("\uD83D\uDD37 Registered Corda Flow #$cnt : \uD83D\uDD37  $it  \uD83C\uDF4F")
-            }
-        }
-    }
+//
+//    private fun info() {
+//
+//        var cnt = 0
+//        val c = AdminController::class
+//        val functions = c.functions
+//        val sorted = functions.sortedBy { it.name }
+//        logger.info("\n..... \uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C Functions available from AdminController")
+//        sorted.forEach() {
+//            cnt++
+//            logger.info("\uD83E\uDD6C AdminController Function: #$cnt \t\uD83C\uDF38 ${it.name} \uD83C\uDF38 ")
+//        }
+//        cnt = 0
+//        val d = SupplierController::class
+//        val functions2 = d.functions
+//        val sorted3 = functions2.sortedBy { it.name }
+//        logger.info("\n..... \uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 Functions available from SupplierController")
+//        sorted3.forEach() {
+//            cnt++
+//            logger.info(" \uD83D\uDE21 SupplierController Function: #$cnt \t\uD83D\uDE21 ${it.name}  \uD83D\uDE21 ")
+//        }
+//        cnt = 0
+//        logger.info("\n..... \uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0  Functions available from WorkerBee ...")
+//        val workerBee = WorkerBee::class
+//        val collection = workerBee.functions
+//        val sorted2 = collection.sortedBy { it.name }
+//        sorted2.forEach() {
+//            cnt++
+//            logger.info("\uD83C\uDF4E WorkerBee Function: #$cnt \t\uD83E\uDDA0  ${it.name} \uD83E\uDDA0 ")
+//        }
+//        logger.info("Pinging self, \uD83C\uDF56 \uD83C\uDF56 ... just for the hell of it! \uD83C\uDF56 \uD83C\uDF56")
+//        val bean = context.getBean(AdminController::class.java)
+//        bean.ping()
+//        val flows = bean.getFlows()
+//        cnt = 0
+//        flows.forEach() {
+//            if (it.contains("com.bfn")) {
+//                cnt++
+//                logger.info("\uD83D\uDD37 Registered Corda Flow #$cnt : \uD83D\uDD37  $it  \uD83C\uDF4F")
+//            }
+//        }
+//    }
 
     private val dateFormat = SimpleDateFormat("HH:mm:ss")
     fun setTimer() {

@@ -26,6 +26,7 @@ class MyWebServerStartedListener : ApplicationListener<ApplicationStartedEvent> 
         logger.info("\n\uD83D\uDD06  \uD83D\uDD06  \uD83D\uDD06  " +
                 "Getting adminController bean to list all states on  node  \uD83D\uDD06 ")
         val bean = event.applicationContext.getBean(AdminController::class.java)
+        //todo - remove after test
         bean.states.forEach {
             logger.info("\uD83C\uDF50️ \uD83C\uDF50️ \uD83C\uDF50️ State: $it")
         }
