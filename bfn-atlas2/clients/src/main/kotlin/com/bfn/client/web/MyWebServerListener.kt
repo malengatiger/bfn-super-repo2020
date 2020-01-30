@@ -22,14 +22,9 @@ class MyWebServerStartedListener : ApplicationListener<ApplicationStartedEvent> 
     override fun onApplicationEvent(event: ApplicationStartedEvent) {
         logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21  ApplicationStartedEvent: " +
                 "⚽️  ⚽️  \uD83C\uDF4E beanDefinitionCount: ${event.applicationContext.beanDefinitionCount} \uD83C\uDF4E " +
-                "⚽️  ⚽️ start Firestore nodes refresh  \uD83D\uDD06 ")
-        logger.info("\n\uD83D\uDD06  \uD83D\uDD06  \uD83D\uDD06  " +
-                "Getting adminController bean to list all states on  node  \uD83D\uDD06 ")
+                "Do us a ping, huh? ..." )
         val bean = event.applicationContext.getBean(AdminController::class.java)
-        //todo - remove after test
-        bean.states.forEach {
-            logger.info("\uD83C\uDF50️ \uD83C\uDF50️ \uD83C\uDF50️ State: $it")
-        }
+        bean.ping()
     }
 
 }

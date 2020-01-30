@@ -37,16 +37,17 @@ import java.util.*
 object WorkerBee {
     private val logger = LoggerFactory.getLogger(WorkerBee::class.java)
     private val GSON = GsonBuilder().setPrettyPrinting().create()
-    val db = FirestoreClient.getFirestore()
+
 
     @Throws(Exception::class)
     fun writeNodes(proxy: CordaRPCOps) {
         val nodes = listNodes(proxy)
         for (n in nodes) {
             try {
+                val db = FirestoreClient.getFirestore()
                 db.collection("nodes").add(n)
                 logger.info("\uD83D\uDC9B  Added corda node to Firestore: ⚽ " +
-                        " ${n!!.addresses!!.first()}  \uD83C\uDF00 ${n.webServerAddress}")
+                        " ${n.addresses!!.first()}  \uD83C\uDF00 ${n.webServerAddress}")
             } catch (e: Exception) {
                 logger.error("Failed to add node", e)
                 throw e
@@ -655,6 +656,7 @@ object WorkerBee {
             //logger.info("Check amount discount total calculations: " + GSON.toJson(dto))
             try {
                 sendInvoiceMessage(dto)
+                val db = FirestoreClient.getFirestore()
                 val reference = db.collection("invoices").add(dto)
                 logger.info("\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9 " +
                         "Firestore path: " + reference.get().path)
@@ -711,6 +713,7 @@ object WorkerBee {
             dto.name = name
             try {
                 sendAccountMessage(dto)
+                val db = FirestoreClient.getFirestore()
                 val reference = db.collection("accounts").add(dto)
                 logger.info("\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9 " +
                         "Firestore path: " + reference.get().path)
@@ -797,6 +800,7 @@ object WorkerBee {
                 "\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C   ")
         val offerDTO = getDTO(invoiceOfferState)
         try {
+            val db = FirestoreClient.getFirestore()
             val reference = db.collection("invoiceOffers").add(offerDTO)
             logger.info("\uD83E\uDDE9 " +
                     "Firestore invoiceOffers path: " + reference.get().path)

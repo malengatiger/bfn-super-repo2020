@@ -1,6 +1,5 @@
 apply plugin: 'org.springframework.boot'
 
-
 sourceSets {
     main {
         resources {
@@ -12,7 +11,6 @@ sourceSets {
 dependencies {
     // Corda dependencies.
     compile "$corda_release_group:corda-rpc:$corda_release_version"
-
     // CorDapp dependencies.
     compile project(":contracts")
     compile project(":workflows")
@@ -28,9 +26,7 @@ dependencies {
 
     compile "org.apache.logging.log4j:log4j-slf4j-impl:${log4j_version}"
     compile "org.apache.logging.log4j:log4j-web:${log4j_version}"
-
-//    compile group: 'org.jetbrains.kotlin', name: 'kotlin-reflect', version: '1.2.61'
-//    compile "org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.14.0" // JVM dependency
+    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
 }
 
 

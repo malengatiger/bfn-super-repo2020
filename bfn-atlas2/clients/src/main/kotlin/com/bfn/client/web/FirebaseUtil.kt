@@ -16,44 +16,20 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.Message
 import com.google.firebase.messaging.Notification
 import com.google.gson.GsonBuilder
-import com.google.gson.reflect.TypeToken
-import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.utilities.getOrThrow
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.core.io.Resource
-import org.springframework.stereotype.Component
-import org.springframework.util.ResourceUtils
-import java.io.File
-import java.nio.file.Files
 import java.util.*
 import java.util.concurrent.ExecutionException
 import java.util.function.Consumer
-import javax.annotation.PostConstruct
 
-@Component
 object FirebaseUtil {
     private val logger = LoggerFactory.getLogger(FirebaseUtil::class.java)
     private val GSON = GsonBuilder().setPrettyPrinting().create()
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
     private val db: Firestore = FirestoreClient.getFirestore()
     private val messaging: FirebaseMessaging = FirebaseMessaging.getInstance()
-    private const val CORDA_USER_NAME = "config.rpc.username"
-    private const val CORDA_USER_PASSWORD = "config.rpc.password"
-    private const val CORDA_NODE_HOST = "config.rpc.host"
-    private const val CORDA_RPC_PORT = "config.rpc.port"
-    @Value("classpath:dev-nodes.json")
-    private val resDev: Resource? = null
-    @Value("classpath:prod-nodes.json")
-    private val resProd: Resource? = null
-    @Value("spring.profiles.active")
-    private val profile: String? = null
 
-    @PostConstruct
-    fun init() {
-        logger.info("\uD83D\uDD37 \uD83D\uDD37 FirebaseUtil init() .... nuthin doin! " +
-                "\uD83D\uDD37 \uD83D\uDD37 ")
-    }
+
     @JvmStatic
     @Throws(ExecutionException::class, InterruptedException::class)
     fun sendInvoiceOfferMessage(offer: InvoiceOfferDTO?) {
@@ -119,60 +95,6 @@ object FirebaseUtil {
         }
     }
 
-
-//
-//    @JvmStatic
-//    @Throws(Exception::class)
-//    fun refreshNodes(proxy: CordaRPCOps, springBootProfile: String): List<NodeInfoDTO> {
-//        logger.info(" \uD83C\uDF3A \uD83C\uDF3A \uD83E\uDD4F \uD83E\uDD4F \uD83E\uDD4F \uD83E\uDD4F  " +
-//                "Refreshing Nodes on Firebase ...  \uD83C\uDF3A \uD83C\uDF3A ")
-//        val nodes: Array<NodeInfoDTO> = getNodesFromFile(springBootProfile)
-//        val nodes2 = WorkerBee.listNodes(proxy)
-//        //todo - check that nodes in file are up and running
-//        var cnt = 0
-//        nodes.forEach { dto ->
-//            val nodeFromFile = dto
-//            nodes2.forEach {
-//                if (it.host == dto.host) {
-//                    cnt++
-//                }
-//            }
-//        }
-//        logger.info("\uD83E\uDDE1 \uD83E\uDDE1 Checked \uD83C\uDF50️ $cnt nodes from file = \uD83C\uDF50️ ${nodes.size}")
-//        nodes.forEach {
-//            logger.info("\uD83E\uDDE1 \uD83E\uDDE1 Node from json file: ${GSON.toJson(it)}")
-//            addNode(it)
-//        }
-//        logger.info("\uD83E\uDD6C \uD83E\uDD6C ${nodes.size} " +
-//                "Corda Nodes refreshed on Firestore \uD83C\uDF00 \uD83C\uDF00 ")
-//        return nodes.toList()
-//    }
-
-
-//    private fun getNodesFromFile(springBootProfile: String): Array<NodeInfoDTO> {
-//        logger.info("DEVELOPMENT JSON is a file: ${resDev?.isFile}")
-//        logger.info("PRODUCTION JSON is a file: ${resProd?.isFile}")
-//        val file: File = if (springBootProfile == "dev") {
-//            resDev!!.file
-//        } else {
-//            resProd!!.file
-//        }
-//
-//        logger.info("\uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C Nodes JSON File Found :  " +
-//                "\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21  " + file.exists())
-//        if (!file.exists()) {
-//            throw Exception("\uD83C\uDF1E \uD83C\uDF1E JSON Properties file not found")
-//        }
-//        val content = String(Files.readAllBytes(file.toPath()))
-//        val future = db.collection("nodes").whereEqualTo("springBootProfile", springBootProfile).get()
-//        future.get().documents.forEach {
-//            it.reference.delete()
-//            logger.info("Node deleted from Firestore:  \uD83E\uDD4F \uD83E\uDD4F ${it.data["host"]}  \uD83E\uDD4F \uD83E\uDD4F ")
-//        }
-//        val nodeArray = object : TypeToken<Array<NodeInfoDTO>>() {}.type
-//        return GSON.fromJson(content, nodeArray)
-//    }
-
     @JvmStatic
     @Throws(Exception::class)
     fun deleteNodes(springBootProfile: String) {
@@ -193,7 +115,7 @@ object FirebaseUtil {
     @JvmStatic
     @Throws(Exception::class)
     fun getCordaNodes(): List<NodeInfoDTO> {
-        var mList: MutableList<NodeInfoDTO> = mutableListOf()
+        val mList: MutableList<NodeInfoDTO> = mutableListOf()
         try {
             val future = db.collection("nodes").get()
             val qs: QuerySnapshot = future.get()

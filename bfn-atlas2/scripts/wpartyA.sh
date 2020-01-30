@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
-echo "starting webserver for 🔵 🔵 🔵 🔵 PartyA 🧡 💛 💚 💙 💜 ...."
+echo "starting web server for 🔵 🔵 🔵 🔵 PartyA 🧡 💛 💚 💙 💜 ...."
 ./gradlew runPartyA
 

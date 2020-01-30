@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-echo "🐸 🐸 🐸 BUILD BFN DOCKER IMAGE and ship to Google Cloud ... 🍋 "
+echo "🐸 🐸 🐸 BUILD BFN DOCKER images and ship to Google Cloud ... 🍋 "
 
 if ./gradlew clean build  -x test; then
-    echo command returned true
+    echo "⚽️⚽️⚽️⚽️ Gradle cleaned and built project ⚽️ ... start to copy files"
     echo "🐸 🐸 🐸 Copying BFN web server jar to dockerbuild ... 🍋 "
 
     cp clients/build/libs/clients-0.1.jar dockerbuild/

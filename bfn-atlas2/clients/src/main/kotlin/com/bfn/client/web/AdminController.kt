@@ -27,18 +27,8 @@ import java.util.*
 @RequestMapping("/admin") // The paths for HTTP requests are relative to this base path.
 class AdminController(rpc: NodeRPCConnection) {
     private val proxy: CordaRPCOps = rpc.proxy
-//
-//    @Autowired
-//    private val env: Environment? = null
-//
-//    @Value("\${config.rpc.host}")
-//    private var host: String = ""
-//    @Value("\${config.rpc.port}")
-//    private var port: String = ""
-
     @Value("\${spring.profiles.active}")
-    private var springBootProfile: String = ""
-
+    private lateinit var profile: String
     @GetMapping(value = ["/demo"], produces = ["application/json"])
     @Throws(Exception::class)
     private fun buildDemo(@RequestParam deleteFirestore: Boolean, @RequestParam numberOfAccounts: Int = 9): DemoSummary {
@@ -133,100 +123,94 @@ class AdminController(rpc: NodeRPCConnection) {
     @get:GetMapping(value = ["/getStates"], produces = ["application/json"])
     val states: List<String>
         get() {
-            val msg = ("\uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A AdminController:BFN Web API pinged: " + Date().toString()
-                    + " \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A")
-            logger.info(msg)
             return getStates(proxy)
         }
 
-    @GetMapping(value = ["findInvoicesForCustomer"])
+    @GetMapping(value = ["/findInvoicesForCustomer"])
     @Throws(Exception::class)
     fun findInvoicesForCustomer(
                          @RequestParam(value = "accountId", required = true) accountId: String): List<InvoiceDTO> {
         return WorkerBee.findInvoicesForCustomer(proxy, accountId)
     }
-    @GetMapping(value = ["findInvoicesForSupplier"])
+    @GetMapping(value = ["/findInvoicesForSupplier"])
     @Throws(Exception::class)
     fun findInvoicesForSupplier(
             @RequestParam(value = "accountId", required = true) accountId: String): List<InvoiceDTO> {
         return WorkerBee.findInvoicesForSupplier(proxy, accountId)
     }
-    @GetMapping(value = ["findInvoicesForNode"])
+    @GetMapping(value = ["/findInvoicesForNode"])
     @Throws(Exception::class)
     fun findInvoicesForNode(): List<InvoiceDTO> {
         return WorkerBee.findInvoicesForNode(proxy)
     }
-    @GetMapping(value = ["findInvoicesForInvestor"])
+    @GetMapping(value = ["/findInvoicesForInvestor"])
     @Throws(Exception::class)
     fun findInvoicesForInvestor(@RequestParam(value = "accountId", required = true) accountId: String): List<InvoiceDTO> {
         return WorkerBee.findInvoicesForInvestor(proxy, accountId)
     }
 
-    @GetMapping(value = ["findOffersForInvestor"])
+    @GetMapping(value = ["/findOffersForInvestor"])
     @Throws(Exception::class)
     fun findOffersForInvestor(@RequestParam(value = "accountId", required = true) accountId: String): List<InvoiceOfferDTO> {
         return WorkerBee.findOffersForInvestor(proxy, accountId)
     }
-    @GetMapping(value = ["findOffersForSupplier"])
+    @GetMapping(value = ["/findOffersForSupplier"])
     @Throws(Exception::class)
     fun findOffersForSupplier(@RequestParam(value = "accountId", required = true) accountId: String): List<InvoiceOfferDTO> {
         return WorkerBee.findOffersForSupplier(proxy, accountId)
     }
-    @GetMapping(value = ["findOffersForNode"])
+    @GetMapping(value = ["/findOffersForNode"])
     @Throws(Exception::class)
     fun findOffersForNode(): List<InvoiceOfferDTO> {
         return WorkerBee.findOffersForNode(proxy)
     }
-    @GetMapping(value = ["getFlows"])
-    @Throws(Exception::class)
-    fun getFlows(): List<String> {
-        return WorkerBee.listFlows(proxy)
-    }
-    @GetMapping(value = ["selectBestOffers"])
+
+    @GetMapping(value = ["/selectBestOffers"])
     @Throws(Exception::class)
     fun selectBestOffers(): List<OfferAndTokenDTO> {
         return WorkerBee.selectBestOffers(proxy)
     }
-    @GetMapping(value = ["getProxy"])
+    @GetMapping(value = ["/getProxy"])
     @Throws(Exception::class)
     fun getProxy(): CordaRPCOps {
         return proxy
     }
-    @GetMapping(value = ["makeInvoiceOffers"])
+    @GetMapping(value = ["/makeInvoiceOffers"])
     @Throws(Exception::class)
     fun makeInvoiceOffers(@RequestParam investorId: String): List<InvoiceOfferDTO> {
         return WorkerBee.makeInvoiceOffers(proxy,investorId)
     }
-    @PostMapping(value = ["createInvestorProfile"])
+    @PostMapping(value = ["/createInvestorProfile"])
     @Throws(Exception::class)
     fun createInvestorProfile(@RequestBody profile: InvestorProfileStateDTO): String {
         return WorkerBee.createInvestorProfile(proxy, profile)
     }
-    @GetMapping(value = ["getSupplierProfile"])
+    @GetMapping(value = ["/getSupplierProfile"])
     @Throws(Exception::class)
     fun getSupplierProfile(@RequestParam(value = "accountId") accountId: String?): SupplierProfileStateDTO? {
         return WorkerBee.getSupplierProfile(proxy,accountId)
     }
-    @GetMapping(value = ["getInvestorProfile"])
+    @GetMapping(value = ["/getInvestorProfile"])
     @Throws(Exception::class)
     fun getInvestorProfile(@RequestParam(value = "accountId") accountId: String?): InvestorProfileStateDTO? {
         return WorkerBee.getInvestorProfile(proxy,accountId)
     }
-    @PostMapping(value = ["createSupplierProfile"])
+    @PostMapping(value = ["/createSupplierProfile"])
     @Throws(Exception::class)
     fun createSupplierProfile(@RequestBody profile: SupplierProfileStateDTO): String {
         return WorkerBee.createSupplierProfile(proxy, profile)
     }
 
-    @GetMapping(value = ["getUser"])
+    @GetMapping(value = ["/getUser"])
     @Throws(Exception::class)
     fun getUser(@RequestParam(value = "email", required = false) email: String?): UserRecord? {
         return FirebaseUtil.getUser(email)
     }
 
 
-    @GetMapping(value = ["getUsers"])
+    @GetMapping(value = ["/getUsers"])
     fun getUsersFromFirestore() : List<UserDTO> {
+        val start = Date()
         val users: MutableList<UserDTO> = ArrayList()
         try {
             val userRecords = FirebaseUtil.getUsers()
@@ -238,6 +222,8 @@ class AdminController(rpc: NodeRPCConnection) {
                 user.uid = userRecord.uid
                 users.add(user)
             }
+            ResponseTimer.writeResponse(start = start, 
+                    callName = "getUsersFromFirestore", profile = profile)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -245,20 +231,12 @@ class AdminController(rpc: NodeRPCConnection) {
     }
 
 
-    @GetMapping(value = ["getAccount"])
+    @GetMapping(value = ["/getAccount"])
     @Throws(Exception::class)
     fun getAccount(@RequestParam(value = "accountId") accountId: String?): AccountInfoDTO {
         return getAccount(proxy, accountId)
     }
 
-//    @GetMapping(value = ["writeNodesToFirestore"])
-//    @Throws(Exception::class)
-//    fun writeNodesToFirestore(): List<NodeInfoDTO> {
-//        logger.info("\uD83D\uDE21 \uD83D\uDE21 Refreshing " +
-//                "$springBootProfile nodes on Firestore ..............")
-//        return FirebaseUtil.refreshNodes(proxy = proxy, springBootProfile = springBootProfile)
-//
-//    }
 
     @GetMapping(value = ["/hello"], produces = ["text/plain"])
      fun hello(): String {
@@ -270,15 +248,21 @@ class AdminController(rpc: NodeRPCConnection) {
      fun ping(): String {
         val msg = ("\uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A AdminController:BFN Web API pinged: " + Date().toString()
                 + " \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A")
+        val start = Date()
         logger.info(msg)
         val nodeInfo = proxy.nodeInfo()
         logger.info("\uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0 node pinged: "
                 + nodeInfo.legalIdentities[0].name.toString()
                 + proxy.networkParameters.toString() + " \uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0 ")
-        return "\uD83C\uDF3A \uD83C\uDF3A \uD83C\uDF3A \uD83C\uDF3A  AdminController: node pinged: " +
+
+        val mm = "\uD83C\uDF3A \uD83C\uDF3A \uD83C\uDF3A \uD83C\uDF3A  AdminController: node pinged: " +
                 nodeInfo.legalIdentities[0].name.toString() +
                 " \uD83C\uDF3A \uD83C\uDF3A \uD83C\uDF3A \uD83C\uDF3A " +
                 proxy.networkParameters.toString()
+
+        ResponseTimer.writeResponse(start = start, 
+                callName = "ping", profile = profile)
+        return  mm
     }
 
     @get:GetMapping(value = ["/getDashboardData"], produces = ["application/json"])
@@ -287,17 +271,29 @@ class AdminController(rpc: NodeRPCConnection) {
 
     @GetMapping(value = ["/nodes"], produces = ["application/json"])
     fun listNodes(): List<NodeInfoDTO> {
-        return listNodes(proxy)
+        val start = Date()
+        val nodes =listNodes(proxy)
+        ResponseTimer.writeResponse(start = start, 
+                callName = "listNodes", profile = profile)
+        return nodes
     }
 
     @GetMapping(value = ["/notaries"], produces = ["application/json"])
     private fun listNotaries(): List<String> {
-        return listNotaries(proxy)
+        val start = Date()
+        val mm = listNotaries(proxy)
+        ResponseTimer.writeResponse(start = start, 
+                callName = "listNotaries", profile = profile)
+        return mm
     }
 
     @GetMapping(value = ["/flows"], produces = ["application/json"])
     private fun listFlows(): List<String> {
-        return listFlows(proxy)
+        val start = Date()
+        val mm = listFlows(proxy)
+        ResponseTimer.writeResponse(start = start, 
+                callName = "listFlows", profile = profile)
+        return mm
     }
 
     private inner class PingResult internal constructor(var message: String, var nodeInfo: String)

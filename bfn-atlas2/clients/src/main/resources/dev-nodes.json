@@ -46,16 +46,6 @@
     "password" : "test",
     "firebaseProjectId": "bfn-mobile-backend",
     "firebaseUrl": "https://bfn-mobile-backend.firebaseio.com"
-  },
-  {
-    "addresses": [
-      "O\u003dNotary, L\u003dLondon, C\u003dGB"
-    ],
-    "platformVersion": 5,
-    "host": "localhost",
-    "port": 10019,
-    "springBootProfile": "dev",
-    "name": "Notary",
-
   }
+
 ]

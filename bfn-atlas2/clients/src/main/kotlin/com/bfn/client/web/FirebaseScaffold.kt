@@ -20,6 +20,7 @@ import org.springframework.util.ResourceUtils
 import java.io.File
 import java.io.FileInputStream
 import java.nio.file.Files
+import java.util.*
 import javax.annotation.PostConstruct
 
 @Component
@@ -56,22 +57,7 @@ class FirebaseScaffold {
 
             logger.info("\uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C Nodes JSON File Found :  " +
                     "\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21  " + file.exists())
-            val content = String(Files.readAllBytes(file.toPath()))
-            // List
-            val nodeType = object : TypeToken<List<NodeInfoDTO>>() {}.type
-            val nodes: List<NodeInfoDTO> = gson.fromJson(content, nodeType)
-
-            logger.info("\uD83D\uDD35 \uD83D\uDD35 Using index $stringIndex to pick node from json file")
-            val node = nodes[stringIndex!!.toInt()]
-            logger.info("\uD83D\uDD35 \uD83D\uDD35 Selected node:  \uD83D\uDD35 \uD83D\uDD35 ${gson.toJson(node)}  \uD83D\uDD35 \uD83D\uDD35 ")
-            val options = FirebaseOptions.Builder()
-                    .setCredentials(GoogleCredentials.getApplicationDefault())
-                    .setProjectId(node.firebaseProjectId)
-                    .setDatabaseUrl(node.firebaseUrl).build()
-            val app = FirebaseApp.initializeApp(options)
-            logger.info("\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9  \uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9 "
-                    + "Firebase Admin SDK Setup OK:  \uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9 app: "
-                    + app.toString())
+            val nodes: List<NodeInfoDTO> = buildFirebase(file, stringIndex.toInt())
             val db: Firestore = FirestoreClient.getFirestore()
             db.collection("nodes").whereEqualTo("springBootProfile", profile).get().get().documents.forEach {
                 logger.info("\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9 Firestore Node: " +
@@ -83,7 +69,13 @@ class FirebaseScaffold {
                 logger.info("⚽ ⚽ ⚽ ⚽ ⚽ ⚽ ⚽ Node added to Firestore: \uD83D\uDD35 \uD83D\uDD35 " +
                         "${gson.toJson(it)} \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83C\uDF4E ")
             }
-
+            try {
+                val start = WebServerStart(date = Date(), profile = profile, numberOfNodes = nodes.size)
+                db.collection("webServerStarts").add(start)
+                logger.info("\uD83C\uDF50 \uD83C\uDF50 \uD83C\uDF50 WebServerStart added to Firestore:  \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E ")
+            } catch (e: Exception) {
+                logger.error("\uD83D\uDE21 ResponseTime add to Firestore is fucked.", e)
+            }
 
             listAccountsFromFirebase()
             logger.info("\uD83C\uDF4E Firebase Scaffolding is complete.  ⚽️  ⚽️  ⚽️  ⚽️  ⚽️ \n")
@@ -94,6 +86,8 @@ class FirebaseScaffold {
         }
 
     }
+
+
 
 
     private fun listAccountsFromFirebase() {
@@ -110,3 +104,7 @@ class FirebaseScaffold {
         }
     }
 }
+data class WebServerStart(
+        val date: Date,
+        val numberOfNodes: Int,
+        val profile:String)

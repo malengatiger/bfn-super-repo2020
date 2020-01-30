@@ -4,31 +4,27 @@
 
 echo "🍀 🍀 🍀 🍀 🍀 🍀 🍀 done deploying Corda nodes"
 # ------------ NOTARY NODE
+echo "🔆 Woke up, opening terminal for Notary Corda Node"
 ttab ./scripts/nnotary.sh
 
 # ------------ REGULATOR NODE
-echo 🕗 Sleeping for 15 seconds
+echo "🕗 Sleeping for 15 seconds"
 sleep 15s
 echo "🔆 Woke up, opening terminal for Regulator Corda Node"
 ttab ./scripts/nregulator.sh
 
 # ------------ partyA NODE
-echo 🕗  Sleeping for 15 seconds
+echo "🕗  Sleeping for 15 seconds"
 sleep 15s
-echo "🔆 Woke up, 🔆 🔆 🔆  opening terminal for PartyA"
-ttab ./scripts/npartyA.sh
+echo "🔆 Woke up, 🔆 🔆 🔆  opening terminal for Anchor"
+ttab ./scripts/nanchor.sh
 
 # ------------ partyB NODE
-echo 🕗 Sleeping for 15 seconds
+echo "🕗 Sleeping for 15 seconds"
 sleep 15s
-echo "🔆 Woke up, 🔆 🔆 🔆  opening terminal for partyB"
-ttab ./scripts/npartyB.sh
+echo "🔆 Woke up, 🔆 🔆 🔆  opening terminal for Customer"
+ttab ./scripts/ncustomer.sh
 
-# ------------ partyC NODE
-#echo 🕗  Sleeping for 15 seconds ........
-#sleep 15s
-#echo "🔆 Woke up, 🔆 🔆 🔆 opening terminal for partyC"
-#ttab ./scripts/npartyC.sh
 
 echo "🔵 DONE! 🍎 🍎 corda nodes booted up! 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵"
 
