@@ -1,64 +1,107 @@
-import 'package:bfnlibrary/data/account.dart';
-
 class Anchor {
-  String invoiceId;
-  String invoiceNumber;
-  String description;
-  AccountInfo supplier, customer;
-  String dateRegistered;
-  double amount, valueAddedTax, totalAmount;
+  String accountId, issuedBy;
+  int tradeFrequencyInMinutes;
+  double defaultOfferDiscount;
+  String date, email, password;
+  String cellphone;
+  double minimumInvoiceAmount, maximumInvoiceAmount, maximumInvestment;
+  List<TradeMatrix> tradeMatrices;
 
   Anchor(
-      {this.invoiceId,
-      this.invoiceNumber,
-      this.description,
-      this.supplier,
-      this.customer,
-      this.dateRegistered,
-      this.amount,
-      this.valueAddedTax,
-      this.totalAmount});
+      {this.accountId,
+      this.tradeFrequencyInMinutes,
+      this.defaultOfferDiscount,
+      this.date,
+      this.email,
+      this.cellphone,
+      this.minimumInvoiceAmount,
+      this.maximumInvoiceAmount,
+      this.maximumInvestment,
+      this.password,
+      this.tradeMatrices,
+      this.issuedBy});
 
   Anchor.fromJson(Map data) {
-    this.invoiceId = data['invoiceId'];
-    this.invoiceNumber = data['invoiceNumber'];
-    this.description = data['description'];
-    if (data['supplier'] != null) {
-      this.supplier = AccountInfo.fromJson(data['supplier']);
+    this.accountId = data['accountId'];
+    this.issuedBy = data['issuedBy'];
+    this.tradeFrequencyInMinutes = data['tradeFrequencyInMinutes'];
+    this.date = data['date'];
+    this.email = data['email'];
+    this.cellphone = data['cellphone'];
+    if (data['minimumInvoiceAmount'] is int) {
+      this.minimumInvoiceAmount = data['minimumInvoiceAmount'] * 1.00;
     }
-    if (data['customer'] != null) {
-      this.customer = AccountInfo.fromJson(data['customer']);
+    if (data['minimumInvoiceAmount'] is double) {
+      this.minimumInvoiceAmount = data['minimumInvoiceAmount'];
     }
-    this.dateRegistered = data['dateRegistered'];
-    if (data['amount'] is int) {
-      this.amount = data['amount'] * 1.00;
+    if (data['maximumInvoiceAmount'] is int) {
+      this.maximumInvoiceAmount = data['maximumInvoiceAmount'] * 1.00;
     }
-    if (data['amount'] is double) {
-      this.amount = data['amount'];
+    if (data['maximumInvoiceAmount'] is double) {
+      this.maximumInvoiceAmount = data['maximumInvoiceAmount'];
     }
-    if (data['valueAddedTax'] is int) {
-      this.valueAddedTax = data['valueAddedTax'] * 1.00;
+    if (data['maximumInvestment'] is int) {
+      this.maximumInvestment = data['maximumInvestment'] * 1.00;
     }
-    if (data['valueAddedTax'] is double) {
-      this.valueAddedTax = data['valueAddedTax'];
+    if (data['maximumInvestment'] is double) {
+      this.maximumInvestment = data['maximumInvestment'];
     }
-    if (data['totalAmount'] is int) {
-      this.totalAmount = data['totalAmount'] * 1.00;
+    if (data['defaultOfferDiscount'] is int) {
+      this.defaultOfferDiscount = data['defaultOfferDiscount'] * 1.00;
     }
-    if (data['totalAmount'] is double) {
-      this.totalAmount = data['totalAmount'];
+    if (data['defaultOfferDiscount'] is double) {
+      this.defaultOfferDiscount = data['defaultOfferDiscount'];
+    }
+    this.tradeMatrices = List();
+    if (data['tradeMatrices'] != null) {
+      List mList = data['tradeMatrices'];
+      mList.forEach((m) {
+        var matrix = TradeMatrix.fromJson(m);
+        tradeMatrices.add(matrix);
+      });
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    List<Map<String, dynamic>> matrices = List();
+    tradeMatrices.forEach((element) {
+      matrices.add(element.toJson());
+    });
+
+    Map<String, dynamic> mmp = Map();
+    mmp['issuedBy'] = issuedBy;
+    mmp['accountId'] = accountId;
+    mmp['tradeFrequencyInMinutes'] = tradeFrequencyInMinutes;
+    mmp['defaultOfferDiscount'] = defaultOfferDiscount;
+    mmp['date'] = date;
+    mmp['minimumInvoiceAmount'] = minimumInvoiceAmount;
+    mmp['maximumInvoiceAmount'] = maximumInvoiceAmount;
+    mmp['maximumInvestment'] = maximumInvestment;
+    mmp['cellphone'] = cellphone;
+    mmp['email'] = email;
+    mmp['tradeMatrices'] = matrices;
+    return mmp;
+  }
+}
+
+class TradeMatrix {
+  double startInvoiceAmount, endInvoiceAmount, offerDiscount;
+  String date;
+  int maximumInvoiceAgeInDays;
+
+  TradeMatrix.fromJson(Map data) {
+    this.startInvoiceAmount = data['startInvoiceAmount'];
+    this.endInvoiceAmount = data['endInvoiceAmount'];
+    this.maximumInvoiceAgeInDays = data['maximumInvoiceAgeInDays'];
+    if (data['date'] != null) {
+      this.date = data['date'];
     }
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'invoiceId': invoiceId,
-        'invoiceNumber': invoiceNumber,
-        'description': description,
-        'supplier': supplier.toJson(),
-        'amount': amount,
-        'valueAddedTax': valueAddedTax,
-        'totalAmount': totalAmount,
-        'dateRegistered': dateRegistered,
-        'customer': customer.toJson(),
+        'startInvoiceAmount': startInvoiceAmount,
+        'endInvoiceAmount': endInvoiceAmount,
+        'maximumInvoiceAgeInDays': maximumInvoiceAgeInDays,
+        'date': date,
       };
 }

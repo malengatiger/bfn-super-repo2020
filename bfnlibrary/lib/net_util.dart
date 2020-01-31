@@ -32,8 +32,11 @@ class Net {
   static const String BFN = 'bfn/admin/';
   static Future<List<NodeInfo>> getNodesFromFirestore() async {
     var list = List<NodeInfo>();
+    print('🍎 🍎 🍎 🍎 🍎 🍎 about to call auth.currentUser ... ');
     var result = await auth.currentUser();
     if (result == null) {
+      print(
+          '🍎 🍎 🍎 🍎  there is no current auth user ... login with admin 🍎 🍎');
       var email = DotEnv().env['email'];
       var pass = DotEnv().env['password'];
       print(
@@ -47,6 +50,7 @@ class Net {
       await auth.signOut();
       print('🍊 🍊 🍊 Logged OUT of Firebase  ${userResult.user.uid} ... ');
     } else {
+      print('🍎 🍎 🍎 🍎 about to get nodes from firestore  🍎 🍎');
       list = await _getNodes(list);
     }
     if (list.isNotEmpty) {

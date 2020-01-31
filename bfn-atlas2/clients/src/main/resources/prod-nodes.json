@@ -22,7 +22,7 @@
     ],
     "platformVersion": 5,
     "webServerAddress": "https://bfnwebcustomer-hkn7vsuxdq-ew.a.run.app",
-    "host": "nd-505-342-881.rg-788-479.p2pify.com",
+    "host": "nd-601-154-124.rg-788-479.p2pify.com",
     "port": 10201,
     "springBootProfile": "prod",
     "webServerPort": 8080,

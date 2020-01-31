@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 echo "🐸 🐸 🐸 BUILD BFN DOCKER images and ship to Google Cloud ... 🍋 "
-echo "🌍 🌍 🌍 Make sure that the springBoot profile is set to prod in 🍎 application.properties"
 
 if ./gradlew clean build  -x test; then
     echo "⚽️⚽️⚽️⚽️ Gradle cleaned and built project ⚽️ ... start to copy files"
