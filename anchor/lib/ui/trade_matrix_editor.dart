@@ -38,26 +38,39 @@ class _TradeMatrixEditorState extends State<TradeMatrixEditor> {
         key: _key,
         appBar: AppBar(
           leading: Container(),
-          title: Text('Trade Matrix Editor'),
+          title: Text('BFN Trade Matrix Editor'),
+          centerTitle: true,
           backgroundColor: Colors.indigo[300],
-          bottom: PreferredSize(preferredSize: Size.fromHeight(120),
+          bottom: PreferredSize(preferredSize: Size.fromHeight(140),
           child: Column(
             children: <Widget>[
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: <Widget>[
+
+                  SizedBox(width: 60,),
+                  Text(' Matrices'),
+                  SizedBox(width: 16,),
+                  Text('${widget.anchor.tradeMatrices.length}', style: Styles.whiteBoldLarge,),
+                  SizedBox(width: 20,)
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: <Widget>[
+                  SizedBox(width: 20,),
                   RaisedButton(
-                    elevation: 4,
-                    color: Colors.indigo,
-                    child: Text('Done'),
+                    elevation: 8,
+                    color: Colors.indigo[700],
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text('Done', style: Styles.whiteSmall,),
+                    ),
                     onPressed: () {
                       Navigator.pop(context, widget.anchor);
                     },
                   ),
-                  Text('Number of Trade Matrices'),
-                  SizedBox(width: 16,),
-                  Text('${widget.anchor.tradeMatrices.length}', style: Styles.whiteBoldLarge,),
-                  SizedBox(width: 20,)
+
                 ],
               ),
               SizedBox(height: 20,),
@@ -79,6 +92,7 @@ class _TradeMatrixEditorState extends State<TradeMatrixEditor> {
                       controller: startAmountEditor,
                       keyboardType:
                       TextInputType.numberWithOptions(decimal: true),
+                      style: Styles.blackBoldMedium,
                       decoration: InputDecoration(
                         labelText: 'Start Invoice Amount',
                         hintText: 'Enter Starting Invoice Amount',
@@ -101,6 +115,7 @@ class _TradeMatrixEditorState extends State<TradeMatrixEditor> {
                       controller: endAmountEditor,
                       keyboardType:
                       TextInputType.numberWithOptions(decimal: true),
+                      style: Styles.blackBoldMedium,
                       decoration: InputDecoration(
                         labelText: 'End Invoice Amount',
                         hintText: 'Enter End Invoice Amount',
@@ -123,6 +138,7 @@ class _TradeMatrixEditorState extends State<TradeMatrixEditor> {
                       controller: discountEditor,
                       keyboardType:
                       TextInputType.numberWithOptions(decimal: true),
+                      style: Styles.pinkBoldMedium,
                       decoration: InputDecoration(
                         labelText: 'Discount',
                         hintText: 'Discount',
@@ -145,8 +161,9 @@ class _TradeMatrixEditorState extends State<TradeMatrixEditor> {
                       controller: ageEditor,
                       keyboardType:
                       TextInputType.numberWithOptions(decimal: true),
+                      style: Styles.blackBoldMedium,
                       decoration: InputDecoration(
-                        labelText: 'Maximum Invoice Age in Days',
+                        labelText: 'Max Invoice Age in Days',
                         hintText: 'Enter Maximum Invoice Age in Days',
                         border: OutlineInputBorder(),
                       ),

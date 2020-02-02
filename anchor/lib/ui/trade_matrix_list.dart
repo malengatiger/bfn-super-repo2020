@@ -231,7 +231,7 @@ class _TradeMatrixListState extends State<TradeMatrixList> {
           scaffoldKey: _key,
           message: "Save/Update Anchor failed : $e",
           textColor: Colors.white,
-          actionLabel: 'Close',
+          actionLabel: '',
           action: 0,
           backgroundColor: Colors.pink[900]);
     }

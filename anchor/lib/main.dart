@@ -1,3 +1,5 @@
+import 'package:anchor/bloc/anchor_bloc.dart';
+import 'package:anchor/bloc/trader_bloc.dart';
 import 'package:anchor/ui/anchor_editor.dart';
 import 'package:anchor/ui/dashboard.dart';
 import 'package:bfnlibrary/data/anchor.dart';
@@ -8,8 +10,9 @@ import 'package:bfnlibrary/util/slide_right.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-
+import 'package:provider/provider.dart';
 import 'ui/welcome.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() async {
   await DotEnv().load('.env');
@@ -17,10 +20,8 @@ void main() async {
   var email = DotEnv().env['email'];
   var pass = DotEnv().env['password'];
   print('🌸 🌸 🌸 🌸 🌸 email from .env : 🌸  $email 🌸  pass: $pass');
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown
-  ]);
+  await SystemChrome.setPreferredOrientations(
+      [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   runApp(AnchorApp());
 }
 
@@ -28,19 +29,29 @@ class AnchorApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Anchor',
-      theme: ThemeData(
-        primarySwatch: Colors.indigo,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AnchorBloc>.value(
+          value: AnchorBloc(),
+        ),
+        ChangeNotifierProvider<TraderBloc>.value(
+          value: TraderBloc(),
+        ),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Anchor',
+        theme: ThemeData(
+          primarySwatch: Colors.indigo,
+          textTheme: GoogleFonts.ralewayTextTheme()
+        ),
+        home: LandingPage(),
       ),
-      home: LandingPage(),
     );
   }
 }
 
 class LandingPage extends StatefulWidget {
-
   @override
   _LandingPageState createState() => _LandingPageState();
 }
@@ -53,61 +64,42 @@ class _LandingPageState extends State<LandingPage> {
   }
 
   var isBusy = false;
-  Future _getNodes() async {
-    print('🍎 🍎 🍎 🍎 🍎 🍎 get nodes .....');
-    setState(() {
-      isBusy = true;
-    });
-    var nodes = await Net.getNodesFromFirestore();
-    if (nodes.isNotEmpty) {
-      await Prefs.saveNodes(nodes);
-    }
-    print('🍎 🍎 🍎 🍎 🍎 🍎 we have 🌼 ${nodes.length} nodes 🌼 ');
-    nodes.forEach((node) async {
-      print('🍎 🍎 🍎 🍎 ${node.toJson()} 🍎 🍎');
-    });
-    setState(() {
-      isBusy = false;
-    });
-  }
-
   var isFirstTime = false;
+
   void _checkAnchor() async {
     var anchor = await Prefs.getAnchor();
     if (anchor == null) {
-      await _getNodes();
       debugPrint(
-          '🥦  🥦 There is no anchor on the node. 🍊 🍊 🍊 Create one, please! 🛎 ');
+          '🥦  🥦 There is no anchor in prefs. 🍊 🍊 🍊 Create one, please! 🛎 ');
+
       isFirstTime = true;
-      var res = await Navigator.push(context, SlideRightRoute(
-        widget: AnchorEditor()
-      ));
+      var res = await Navigator.push(
+          context, SlideRightRoute(widget: AnchorEditor()));
       if (res != null && res is Anchor) {
-        Navigator.push(context, SlideRightRoute(
-            widget: Welcome(res)
-        ));
+        Navigator.push(context, SlideRightRoute(widget: Welcome(res)));
       }
     } else {
       if (anchor.accountId == null) {
         isFirstTime = true;
-        var res = await Navigator.push(context, SlideRightRoute(
-            widget: AnchorEditor(anchor: anchor,)
-        ));
+        var res = await Navigator.push(
+            context,
+            SlideRightRoute(
+                widget: AnchorEditor(
+              anchor: anchor,
+            )));
         if (res != null && res is Anchor) {
-          Navigator.push(context, SlideRightRoute(
-              widget: Welcome(res)
-          ));
+          Navigator.push(context, SlideRightRoute(widget: Welcome(res)));
         }
       } else {
-        debugPrint('🥦 🥦 Anchor is already set up on 🍎 Node and 🥏 Firebase Auth and 🍊 Firestore');
-        Navigator.push(context, SlideRightRoute(
-            widget: Dashboard()
-        ));
+        debugPrint(
+            '🥦 🥦 Anchor is already set up on 🍎 Node and 🥏 Firebase Auth and 🍊 Firestore');
+        Navigator.push(context, SlideRightRoute(widget: Dashboard()));
       }
     }
-
   }
+
   var _key = GlobalKey<ScaffoldState>();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -115,16 +107,17 @@ class _LandingPageState extends State<LandingPage> {
       appBar: AppBar(
         title: Text('BFN Anchor App'),
       ),
-      body: isBusy? Center(
-        child: Container(
-          width: 200, height: 200,
-          child:  CircularProgressIndicator(
-            strokeWidth: 24,
-            backgroundColor: Colors.pink,
-          )
-        ),
-      ): isFirstTime? Welcome(null) : Dashboard(),
+      body: isBusy
+          ? Center(
+              child: Container(
+                  width: 200,
+                  height: 200,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 24,
+                    backgroundColor: Colors.pink,
+                  )),
+            )
+          : isFirstTime ? Welcome(null) : Dashboard(),
     );
   }
-
 }
