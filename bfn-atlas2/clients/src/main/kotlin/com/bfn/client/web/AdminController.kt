@@ -101,6 +101,16 @@ class AdminController(rpc: NodeRPCConnection) {
     private fun createAnchor(@RequestBody anchor: AnchorDTO): AnchorDTO? {
         return AnchorBee.createAnchor(anchor = anchor, proxy = proxy)
     }
+    @PostMapping(value = ["/updateAnchor"], produces = ["application/json"])
+    @Throws(Exception::class)
+    private fun updateAnchor(@RequestBody anchor: AnchorDTO): AnchorDTO {
+        return AnchorBee.updateAnchor(anchor = anchor, proxy = proxy)
+    }
+    @PostMapping(value = ["/registerAnchor"], produces = ["application/json"])
+    @Throws(Exception::class)
+    private fun registerAnchor(name: String, email: String): AnchorDTO {
+        return FirebaseUtil.registerAnchor(name,email)
+    }
 
     @PostMapping(value = ["/startAccountRegistrationFlow"], produces = ["application/json"])
     @Throws(Exception::class)

@@ -31,7 +31,6 @@ import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.node.services.vault.QueryCriteria.VaultQueryCriteria
 import net.corda.core.utilities.getOrThrow
 import org.slf4j.LoggerFactory
-import java.math.BigDecimal
 import java.util.*
 
 object WorkerBee {
@@ -39,23 +38,7 @@ object WorkerBee {
     private val GSON = GsonBuilder().setPrettyPrinting().create()
 
 
-    @Throws(Exception::class)
-    fun writeNodes(proxy: CordaRPCOps) {
-        val nodes = listNodes(proxy)
-        for (n in nodes) {
-            try {
-                val db = FirestoreClient.getFirestore()
-                db.collection("nodes").add(n)
-                logger.info("\uD83D\uDC9B  Added corda node to Firestore: ⚽ " +
-                        " ${n.addresses!!.first()}  \uD83C\uDF00 ${n.webServerAddress}")
-            } catch (e: Exception) {
-                logger.error("Failed to add node", e)
-                throw e
-            }
-            logger.info("writeNodes:  🍎 🍎 🍎 node written to Firestore: 👽 " + n.addresses!![0])
-        }
-        logger.info("writeNodes:  🍎 🍎 🍎 nodes written to Firestore: 👽 👽 👽  " + nodes.size)
-    }
+
 
     @JvmStatic
     fun listNodes(proxy: CordaRPCOps): List<NodeInfoDTO> {
@@ -624,7 +607,7 @@ object WorkerBee {
                 throw Exception("Customer is bloody missing")
             }
             val taxPercentage = (invoice.valueAddedTax?.div(100.0) ?: 0.0)
-            val totalTaxAmt = invoice.amount!! * BigDecimal.valueOf(taxPercentage)
+            val totalTaxAmt = invoice.amount!! * taxPercentage
             invoice.totalAmount = totalTaxAmt + invoice.amount!!;
             //
             val invoiceState = InvoiceState(UUID.randomUUID(),
@@ -700,7 +683,7 @@ object WorkerBee {
             //create user record in firebase
             try {
                 createUser(accountName, email, password,
-                        cellphone, identifier.id.toString())
+                        identifier.id.toString())
 
             } catch (e: Exception) {
                 logger.error(e.message)
@@ -765,7 +748,7 @@ object WorkerBee {
                 throw Exception("Discount not found")
             }
             val nPercentage = 100.0 - invoiceOffer.discount!!
-            invoiceOffer.offerAmount = invoiceOffer.originalAmount!! * BigDecimal.valueOf((nPercentage / 100))
+            invoiceOffer.offerAmount = invoiceOffer.originalAmount!! * (nPercentage / 100)
             processInvoiceOffer(proxy, invoiceOffer, invoiceState, investorInfo)
         } catch (e: Exception) {
             if (e.message != null) {
@@ -847,12 +830,12 @@ object WorkerBee {
 
     @JvmStatic
     fun getDTO(token: FungibleToken, accountId: String,
-               invoiceId: String, account: AccountInfo, invoiceAmount: BigDecimal): TokenDTO {
+               invoiceId: String, account: AccountInfo, invoiceAmount: Double): TokenDTO {
         return TokenDTO(
                 accountId = accountId,
                 invoiceId = invoiceId,
                 tokenIdentifier = token.issuedTokenType.tokenIdentifier,
-                amount = token.amount.toDecimal(),
+                amount = token.amount.toDecimal().toDouble(),
                 issuer = token.issuer.toString(),
                 holder = token.holder.toString(),
                 invoiceAmount = invoiceAmount,

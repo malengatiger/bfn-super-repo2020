@@ -4,7 +4,7 @@
       "O\u003dAnchorInvestor, L\u003dLondon, C\u003dGB"
     ],
     "platformVersion": 5,
-    "webServerAddress": "192.168.86.21",
+    "webServerAddress": "http://192.168.86.240",
     "host": "localhost",
     "port": 10006,
     "springBootProfile": "dev",
@@ -20,7 +20,7 @@
       "O\u003dCustomer001, L\u003dLondon, C\u003dGB"
     ],
     "platformVersion": 5,
-    "webServerAddress": "192.168.86.21",
+    "webServerAddress": "http://192.168.86.240",
     "host": "localhost",
     "port": 10009,
     "springBootProfile": "dev",
@@ -36,7 +36,7 @@
       "O\u003dRegulator, L\u003dLondon, C\u003dGB"
     ],
     "platformVersion": 5,
-    "webServerAddress": "192.168.86.21",
+    "webServerAddress": "http://192.168.86.240",
     "host": "localhost",
     "port": 10017,
     "springBootProfile": "dev",

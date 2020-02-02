@@ -1,8 +1,15 @@
+import 'package:anchor/ui/anchor_editor.dart';
+import 'package:anchor/ui/dashboard.dart';
+import 'package:bfnlibrary/data/anchor.dart';
 import 'package:bfnlibrary/net_util.dart';
-import 'package:bfnlibrary/util/auth.dart';
 import 'package:bfnlibrary/util/functions.dart';
+import 'package:bfnlibrary/util/prefs.dart';
+import 'package:bfnlibrary/util/slide_right.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+import 'ui/welcome.dart';
 
 void main() async {
   await DotEnv().load('.env');
@@ -10,108 +17,114 @@ void main() async {
   var email = DotEnv().env['email'];
   var pass = DotEnv().env['password'];
   print('🌸 🌸 🌸 🌸 🌸 email from .env : 🌸  $email 🌸  pass: $pass');
-
-  runApp(MyApp());
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown
+  ]);
+  runApp(AnchorApp());
 }
 
-class MyApp extends StatelessWidget {
+class AnchorApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
+      title: 'Anchor',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.indigo,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: LandingPage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
-
-  final String title;
+class LandingPage extends StatefulWidget {
 
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  _LandingPageState createState() => _LandingPageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 8;
-
+class _LandingPageState extends State<LandingPage> {
   @override
   void initState() {
     super.initState();
-    _getNodes();
+    _checkAnchor();
   }
 
-  void _getNodes() async {
+  var isBusy = false;
+  Future _getNodes() async {
     print('🍎 🍎 🍎 🍎 🍎 🍎 get nodes .....');
-    var res = await Net.getNodesFromFirestore();
-    res.forEach((element) {
-      print('🍎 🍎 🍎 🍎 ${element.toJson()} 🍎 🍎');
-    });
-  }
-
-  void _incrementCounter() {
     setState(() {
-      _counter++;
+      isBusy = true;
+    });
+    var nodes = await Net.getNodesFromFirestore();
+    if (nodes.isNotEmpty) {
+      await Prefs.saveNodes(nodes);
+    }
+    print('🍎 🍎 🍎 🍎 🍎 🍎 we have 🌼 ${nodes.length} nodes 🌼 ');
+    nodes.forEach((node) async {
+      print('🍎 🍎 🍎 🍎 ${node.toJson()} 🍎 🍎');
+    });
+    setState(() {
+      isBusy = false;
     });
   }
 
+  var isFirstTime = false;
+  void _checkAnchor() async {
+    var anchor = await Prefs.getAnchor();
+    if (anchor == null) {
+      await _getNodes();
+      debugPrint(
+          '🥦  🥦 There is no anchor on the node. 🍊 🍊 🍊 Create one, please! 🛎 ');
+      isFirstTime = true;
+      var res = await Navigator.push(context, SlideRightRoute(
+        widget: AnchorEditor()
+      ));
+      if (res != null && res is Anchor) {
+        Navigator.push(context, SlideRightRoute(
+            widget: Welcome(res)
+        ));
+      }
+    } else {
+      if (anchor.accountId == null) {
+        isFirstTime = true;
+        var res = await Navigator.push(context, SlideRightRoute(
+            widget: AnchorEditor(anchor: anchor,)
+        ));
+        if (res != null && res is Anchor) {
+          Navigator.push(context, SlideRightRoute(
+              widget: Welcome(res)
+          ));
+        }
+      } else {
+        debugPrint('🥦 🥦 Anchor is already set up on 🍎 Node and 🥏 Firebase Auth and 🍊 Firestore');
+        Navigator.push(context, SlideRightRoute(
+            widget: Dashboard()
+        ));
+      }
+    }
+
+  }
+  var _key = GlobalKey<ScaffoldState>();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _key,
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text('BFN Anchor App'),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-            SizedBox(
-              height: 20,
-            ),
-            RaisedButton(
-              onPressed: _handleGoogleSignIn,
-              color: Colors.pink,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  "Handle Google Sign In",
-                  style: Styles.whiteMedium,
-                ),
-              ),
-            )
-          ],
+      body: isBusy? Center(
+        child: Container(
+          width: 200, height: 200,
+          child:  CircularProgressIndicator(
+            strokeWidth: 24,
+            backgroundColor: Colors.pink,
+          )
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      ): isFirstTime? Welcome(null) : Dashboard(),
     );
   }
 
-  void _handleGoogleSignIn() async {
-    BFNAuth.handleSignIn();
-  }
 }

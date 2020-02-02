@@ -22,13 +22,12 @@ import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.ProgressTracker
-import java.math.BigDecimal
 import java.util.*
 
 @StartableByRPC
 @InitiatingFlow
 class IssueInvoiceTokenFlow(
-        private val amount: BigDecimal,
+        private val amount: Double,
         private val accountId: String
 ) : FlowLogic<SignedTransaction>() {
     override val progressTracker = ProgressTracker()
@@ -58,7 +57,7 @@ class IssueInvoiceTokenFlow(
 @StartableByRPC
 @InitiatingFlow
 class MoveInvoiceTokenFlow(
-        private val amount: BigDecimal,
+        private val amount: Double,
         private val accountId: String
 ) : FlowLogic<SignedTransaction>() {
     override val progressTracker = ProgressTracker()

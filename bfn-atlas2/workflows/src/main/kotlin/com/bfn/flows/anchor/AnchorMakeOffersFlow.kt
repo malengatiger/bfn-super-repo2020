@@ -14,7 +14,6 @@ import net.corda.core.node.services.vault.PageSpecification
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.transactions.TransactionBuilder
 import org.slf4j.LoggerFactory
-import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.*
@@ -85,7 +84,7 @@ class AnchorMakeOffersFlow() : FlowLogic<List<InvoiceOfferState>>() {
             return null
         }
         val mDisc = disc / 100
-        val offerDouble = invoice.totalAmount * BigDecimal.valueOf(1.0 - mDisc)
+        val offerDouble = invoice.totalAmount * (1.0 - mDisc)
         return InvoiceOfferState(
                 invoiceId = invoice.invoiceId,
                 invoiceNumber = invoice.invoiceNumber,

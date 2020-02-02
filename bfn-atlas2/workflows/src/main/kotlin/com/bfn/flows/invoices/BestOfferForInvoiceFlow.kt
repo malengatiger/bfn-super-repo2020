@@ -5,7 +5,6 @@ import com.bfn.ZAR
 import com.bfn.contractstates.contracts.OfferAndTokenStateContract
 import com.bfn.contractstates.states.InvoiceOfferState
 import com.bfn.contractstates.states.OfferAndTokenState
-
 import com.bfn.flows.regulator.ReportToRegulatorFlow
 import com.bfn.flows.services.ProfileFinderService
 import com.bfn.flows.services.RegulatorFinderService
@@ -19,7 +18,6 @@ import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType
 import com.r3.corda.lib.tokens.contracts.utilities.heldBy
 import com.r3.corda.lib.tokens.contracts.utilities.issuedBy
 import com.r3.corda.lib.tokens.contracts.utilities.of
-
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
@@ -30,7 +28,6 @@ import net.corda.core.node.services.vault.QueryCriteria.VaultQueryCriteria
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import org.slf4j.LoggerFactory
-import java.math.BigDecimal
 import java.security.PublicKey
 import java.util.*
 import kotlin.collections.ArrayList

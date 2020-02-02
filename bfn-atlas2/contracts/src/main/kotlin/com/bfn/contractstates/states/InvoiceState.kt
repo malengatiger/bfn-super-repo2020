@@ -6,8 +6,6 @@ import net.corda.core.contracts.BelongsToContract
 import net.corda.core.contracts.ContractState
 import net.corda.core.identity.AbstractParty
 import net.corda.core.serialization.CordaSerializable
-import org.slf4j.LoggerFactory
-import java.math.BigDecimal
 import java.util.*
 
 // *********
@@ -18,9 +16,9 @@ import java.util.*
 class InvoiceState(val invoiceId: UUID,
                    val invoiceNumber: String,
                    val description: String,
-                   val amount: BigDecimal,
+                   val amount: Double,
                    val valueAddedTax: Double,
-                   val totalAmount: BigDecimal,
+                   val totalAmount: Double,
                    val supplierInfo: AccountInfo,
                    val customerInfo: AccountInfo,
                    val externalId: String,

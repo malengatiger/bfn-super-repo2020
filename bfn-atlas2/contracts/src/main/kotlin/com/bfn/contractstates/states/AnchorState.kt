@@ -8,16 +8,15 @@ import net.corda.core.contracts.ContractState
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
 import net.corda.core.serialization.CordaSerializable
-import java.math.BigDecimal
 import java.util.*
 
 @CordaSerializable
 @BelongsToContract(InvestorProfileContract::class)
 class AnchorState(val issuedBy: Party,
                   val account: AccountInfo,
-                  val minimumInvoiceAmount: BigDecimal,
-                  val maximumInvoiceAmount: BigDecimal,
-                  val maximumInvestment: BigDecimal,
+                  val minimumInvoiceAmount: Double,
+                  val maximumInvoiceAmount: Double,
+                  val maximumInvestment: Double,
                   val tradeFrequencyInMinutes: Int,
                   val defaultOfferDiscount: Double,
                   val tradeMatrices: MutableList<TradeMatrix>,

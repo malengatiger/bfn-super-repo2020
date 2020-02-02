@@ -1,23 +1,22 @@
 package com.bfn.client.dto
 
 import com.bfn.contractstates.states.TradeMatrix
-import net.corda.core.identity.Party
-import java.math.BigDecimal
 import java.util.*
 
 data class AnchorDTO(
-        val issuedBy: String,
-        val accountId: String,
-        val minimumInvoiceAmount: BigDecimal,
-        val maximumInvoiceAmount: BigDecimal,
-        val maximumInvestment: BigDecimal,
-        val tradeFrequencyInMinutes: Int,
-        val defaultOfferDiscount: Double,
-        val tradeMatrices: MutableList<TradeMatrix>,
-        val date: Date,
-        val name: String,
-        val email: String,
-        val cellphone: String,
-        val password: String
+        var issuedBy: String? = null,
+        var accountId: String? = null,
+        var minimumInvoiceAmount: Double? = null,
+        var maximumInvoiceAmount: Double? = null,
+        var maximumInvestment: Double? = null,
+        var tradeFrequencyInMinutes: Int? = null,
+        var defaultOfferDiscount: Double? = null,
+        var tradeMatrices: MutableList<TradeMatrix>? = null,
+        var date: Date? = null,
+        var name: String? = null,
+        var email: String? = null,
+        var cellphone: String? = null,
+        var password: String? = null,
+        var uid: String? = null
 ) {
 }

@@ -46,12 +46,12 @@ class Net {
           password: '2a91f706-81c7-47bf-a172-3d36095d5a32');
       print(
           '🍊 🍊 🍊 Logged into Firebase with .env credentials,  🌸 uid: ${userResult.user.uid} ... getting nodes ...');
-      list = await _getNodes(list);
+      list = await _readCurrentNodes(list);
       await auth.signOut();
       print('🍊 🍊 🍊 Logged OUT of Firebase  ${userResult.user.uid} ... ');
     } else {
       print('🍎 🍎 🍎 🍎 about to get nodes from firestore  🍎 🍎');
-      list = await _getNodes(list);
+      list = await _readCurrentNodes(list);
     }
     if (list.isNotEmpty) {
       await Prefs.saveNodes(list);
@@ -85,15 +85,24 @@ class Net {
     return url;
   }
 
-  static Future _getNodes(List<NodeInfo> list) async {
+  static Future _readCurrentNodes(List<NodeInfo> list) async {
     var snapshot = await db.collection("nodes").getDocuments();
     print(
-        '🥏 🥏 🥏 🥏 nodes found on network: 🥏 ${snapshot.documents.length} 🥏 ');
+        '🥏 🥏 🥏 🥏 nodes found on Firestore: 🥏 ${snapshot.documents.length} 🥏 ');
     snapshot.documents.forEach((doc) {
       var data = doc.data;
-      print('🥏 data from Firestore: $data');
+
       var node = NodeInfo.fromJson(data);
-      list.add(node);
+      var springBootProfile = DotEnv().env['springBootProfile'];
+      if (springBootProfile == null) {
+        list.add(node);
+        print('🥏 data from Firestore: $data');
+      } else {
+        if (node.springBootProfile == springBootProfile) {
+          list.add(node);
+          print('🥏 data from Firestore: $data');
+        }
+      }
     });
     return list;
   }
@@ -159,6 +168,56 @@ class Net {
     }
   }
 
+  static Future<Anchor> updateAnchor(Anchor anchor) async {
+      String mx = await buildUrl();
+      debugPrint('🌸 CONCATENATED URL: 🌸 $mx' + 'bfn/admin/updateAnchor');
+      final response =
+      await post(mx + 'bfn/admin/updateAnchor', anchor.toJson());
+      var m = json.decode(response);
+      var acct = Anchor.fromJson(m);
+      return acct;
+
+  }
+  static Future<Anchor> createAnchor(Anchor anchor) async {
+    debugPrint('🍊🍊🍊🍊🍊 createAnchor starting the call ...');
+    var nodes = await Prefs.getNodes();
+    if (nodes == null || nodes.isEmpty) {
+      throw Exception("Nodes not found in Preferences");
+    }
+    NodeInfo node;
+    nodes.forEach((m) {
+      if (m.addresses[0].contains(anchor.name)) {
+        node = m;
+      }
+    });
+    if (node == null) {
+      throw Exception("Anchor has no node running");
+    }
+    await Prefs.saveNode(node);
+    String mx = await buildUrl();
+    debugPrint('🌸 CONCATENATED URL: 🌸 $mx' + 'bfn/admin/createAnchor');
+    final response =
+        await post(mx + 'bfn/admin/createAnchor', anchor.toJson());
+    var m = json.decode(response);
+    var acct = Anchor.fromJson(m);
+    return acct;
+  }
+
+  static Future<String> buildUrl() async {
+    var node = await Prefs.getNode();
+    if (node == null) {
+      throw Exception('Node not found in Prefs');
+    }
+    var mx = '${node.webServerAddress}';
+    debugPrint("🍊 🍊 🍊  🌸 🌸 🌸 ${node.toJson()}  🌸 🌸 🌸  🍊 🍊 🍊 ");
+    if (node.webServerPort != null || node.webServerPort > 0) {
+       mx += ':${node.webServerPort}/';
+    } else {
+      mx += '/';
+    }
+    return mx;
+  }
+
   static Future<AccountInfo> startAccountRegistrationFlow(
       String name, String email, String password, String cellphone) async {
     var bag = {
@@ -174,16 +233,6 @@ class Net {
     var m = json.decode(response);
     var acct = AccountInfo.fromJson(m);
     return acct;
-  }
-
-  static Future<Anchor> createAnchor(Anchor anchor) async {
-    debugPrint('🍊🍊🍊🍊🍊 Net:createAnchor: starting the call ...');
-    var node = await Prefs.getNode();
-    final response =
-        await post(node.webAPIUrl + '${BFN}createAnchor', anchor.toJson());
-    var m = json.decode(response);
-    var mx = Anchor.fromJson(m);
-    return mx;
   }
 
   static Future<Invoice> startRegisterInvoiceFlow(Invoice invoice) async {

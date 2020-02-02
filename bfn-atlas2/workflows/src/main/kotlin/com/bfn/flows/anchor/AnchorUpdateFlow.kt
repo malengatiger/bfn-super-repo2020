@@ -3,9 +3,6 @@ package com.bfn.flows.anchor
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.contracts.AnchorContract
 import com.bfn.contractstates.states.AnchorState
-import com.bfn.contractstates.states.TradeMatrix
-import com.r3.corda.lib.accounts.contracts.states.AccountInfo
-import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.accounts.workflows.ourIdentity
 import net.corda.core.flows.FinalityFlow
 import net.corda.core.flows.FlowLogic
@@ -13,21 +10,13 @@ import net.corda.core.flows.InitiatingFlow
 import net.corda.core.flows.StartableByRPC
 import net.corda.core.transactions.TransactionBuilder
 import org.slf4j.LoggerFactory
-import java.math.BigDecimal
 import java.util.*
 
 
 @InitiatingFlow
 @StartableByRPC
 class AnchorUpdateFlow(
-                       private val minimumInvoiceAmount: BigDecimal,
-                       private val maximumInvoiceAmount: BigDecimal,
-                       private val maximumInvestment: BigDecimal,
-                       private val tradeFrequencyInMinutes: Int,
-                       private val email: String,
-                       private val cellphone: String,
-                       private val tradeMatrices: MutableList<TradeMatrix>,
-                       private val defaultOfferDiscount: Double ) : FlowLogic<AnchorState>() {
+        private val anchor: AnchorState ) : FlowLogic<AnchorState>() {
 
     @Suspendable
     override fun call(): AnchorState {
@@ -37,24 +26,24 @@ class AnchorUpdateFlow(
                 ?: throw IllegalArgumentException("Anchor does not exist")
 
         val command = AnchorContract.Update()
-        val anchor =
+        val newAnchor =
             AnchorState(issuedBy = serviceHub.myInfo.legalIdentities.first(),
-                account = existingAnchor.state.data.account, minimumInvoiceAmount = minimumInvoiceAmount,
-                maximumInvoiceAmount = maximumInvoiceAmount, maximumInvestment = maximumInvestment,
-                defaultOfferDiscount = defaultOfferDiscount, tradeFrequencyInMinutes = tradeFrequencyInMinutes,
-                tradeMatrices = tradeMatrices, date = Date(), name = existingAnchor.state.data.name,
-                    email = email, cellphone = cellphone)
+                account = existingAnchor.state.data.account, minimumInvoiceAmount = anchor.minimumInvoiceAmount,
+                maximumInvoiceAmount = anchor.maximumInvoiceAmount, maximumInvestment = anchor.maximumInvestment,
+                defaultOfferDiscount = anchor.defaultOfferDiscount, tradeFrequencyInMinutes = anchor.tradeFrequencyInMinutes,
+                tradeMatrices = anchor.tradeMatrices, date = Date(), name = existingAnchor.state.data.name,
+                    email = anchor.email, cellphone = anchor.cellphone)
 
         val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
         txBuilder.addCommand(command, serviceHub.ourIdentity.owningKey)
         txBuilder.addInputState(existingAnchor)
-        txBuilder.addOutputState(anchor)
+        txBuilder.addOutputState(newAnchor)
         txBuilder.verify(serviceHub)
 
         val tx = serviceHub.signInitialTransaction(txBuilder)
         subFlow(FinalityFlow(tx, listOf()))
         Companion.logger.info(pp + "Yebo Gogo! - Anchor has been updated $pp")
-        return anchor
+        return newAnchor
     }
 
     private val pp = "\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95";

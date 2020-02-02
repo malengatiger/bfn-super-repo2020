@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:bfnlibrary/data/account.dart';
+import 'package:bfnlibrary/data/anchor.dart';
 import 'package:bfnlibrary/data/node_info.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -49,9 +50,29 @@ class Prefs {
     return association;
   }
 
+  static Future saveAnchor(Anchor anchor) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    Map map = anchor.toJson();
+    var jx = json.encode(map);
+    prefs.setString('anchor', jx);
+    print("🌽 🌽 🌽 ANCHOR: SAVED: 🌽🧩 🧩 🧩 🧩 : \n$map ");
+    return null;
+  }
+
+  static Future<Anchor> getAnchor() async {
+    var prefs = await SharedPreferences.getInstance();
+    var string = prefs.getString('anchor');
+    if (string == null) {
+      return null;
+    }
+    var jx = json.decode(string);
+    var anchor = new Anchor.fromJson(jx);
+    print("🌽 🌽 🌽 Anchor: retrieved : 🧩 🧩 🧩 🧩 🧩 ${anchor.toJson()} 🍎 🍎");
+    return anchor;
+  }
+
   static Future saveNodes(List<NodeInfo> nodes) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-
     var list = List<String>();
     nodes.forEach((node) {
       list.add(json.encode(node));

@@ -16,7 +16,6 @@ import net.corda.core.node.NodeInfo
 import org.slf4j.LoggerFactory
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import java.math.BigDecimal
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.*
@@ -320,9 +319,9 @@ object DemoUtil {
             invoice.customer = customer
             var num = random.nextInt(500)
             if (num == 0) num = 92
-            invoice.amount = BigDecimal.valueOf(num * 1000.0)
+            invoice.amount = num * 1000.0
             invoice.valueAddedTax = 15.0
-            invoice.totalAmount = BigDecimal.valueOf(num * 1.15)
+            invoice.totalAmount = num * 1.15
             invoice.description = "Demo Invoice at " + Date().toString()
             invoice.dateRegistered = Date()
         }
@@ -353,11 +352,11 @@ object DemoUtil {
         invoiceOffer.investor = investor
         invoiceOffer.offerDate = Date()
         invoiceOffer.discount = discount
-        if (invoiceOffer.discount == BigDecimal.ZERO.toDouble()) {
+        if (invoiceOffer.discount == 0.0) {
             invoiceOffer.discount = 3.5
         }
         val percentageOfAmount = 100.0 - invoiceOffer.discount!!
-        invoiceOffer.offerAmount = BigDecimal.valueOf(percentageOfAmount / 100) * invoice.totalAmount!!
+        invoiceOffer.offerAmount = (percentageOfAmount / 100) * invoice.totalAmount!!
         invoiceOffer.originalAmount = invoice.totalAmount
         try {
             val offer = startInvoiceOfferFlow(proxy!!, invoiceOffer)

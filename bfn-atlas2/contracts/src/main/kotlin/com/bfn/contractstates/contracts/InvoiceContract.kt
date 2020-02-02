@@ -5,7 +5,6 @@ import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.Contract
 import net.corda.core.transactions.LedgerTransaction
 import org.slf4j.LoggerFactory
-import java.math.BigDecimal
 
 class InvoiceContract : Contract {
     @Throws(IllegalArgumentException::class)
@@ -25,10 +24,10 @@ class InvoiceContract : Contract {
             if (invoiceState.supplierInfo.name == invoiceState.customerInfo.name) {
                 throw IllegalArgumentException("\uD83D\uDC7F Supplier cannot be the same as Customer")
             }
-            if (invoiceState.amount <= BigDecimal.ZERO) {
+            if (invoiceState.amount <= 0.0) {
                 throw IllegalArgumentException("\uD83D\uDC7F Amount should be > zero")
             }
-            if (invoiceState.totalAmount <= BigDecimal.ZERO) {
+            if (invoiceState.totalAmount <= 0.0) {
                 throw IllegalArgumentException("\uD83D\uDC7F TotalAmount should be > zero")
             }
         }

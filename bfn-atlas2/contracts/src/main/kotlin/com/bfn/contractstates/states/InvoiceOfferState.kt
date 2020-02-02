@@ -7,15 +7,14 @@ import net.corda.core.contracts.BelongsToContract
 import net.corda.core.contracts.ContractState
 import net.corda.core.identity.AbstractParty
 import net.corda.core.serialization.CordaSerializable
-import java.math.BigDecimal
 import java.util.*
 
 @CordaSerializable
 @BelongsToContract(InvoiceOfferContract::class)
 class InvoiceOfferState(val invoiceId: UUID,
-                        val offerAmount: BigDecimal,
+                        val offerAmount: Double,
                         val discount: Double,
-                        val originalAmount: BigDecimal,
+                        val originalAmount: Double,
                         val supplier: AccountInfo,
                         val investor: AccountInfo,
                         val offerDate: Date,

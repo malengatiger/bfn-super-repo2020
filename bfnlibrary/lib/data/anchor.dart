@@ -3,7 +3,7 @@ class Anchor {
   int tradeFrequencyInMinutes;
   double defaultOfferDiscount;
   String date, email, password;
-  String cellphone;
+  String cellphone, name;
   double minimumInvoiceAmount, maximumInvoiceAmount, maximumInvestment;
   List<TradeMatrix> tradeMatrices;
 
@@ -19,14 +19,17 @@ class Anchor {
       this.maximumInvestment,
       this.password,
       this.tradeMatrices,
+      this.name,
       this.issuedBy});
 
   Anchor.fromJson(Map data) {
     this.accountId = data['accountId'];
+    this.name = data['name'];
     this.issuedBy = data['issuedBy'];
     this.tradeFrequencyInMinutes = data['tradeFrequencyInMinutes'];
     this.date = data['date'];
     this.email = data['email'];
+    this.password = data['password'];
     this.cellphone = data['cellphone'];
     if (data['minimumInvoiceAmount'] is int) {
       this.minimumInvoiceAmount = data['minimumInvoiceAmount'] * 1.00;
@@ -64,11 +67,14 @@ class Anchor {
 
   Map<String, dynamic> toJson() {
     List<Map<String, dynamic>> matrices = List();
-    tradeMatrices.forEach((element) {
-      matrices.add(element.toJson());
-    });
+    if (tradeMatrices != null && tradeMatrices.isNotEmpty) {
+      tradeMatrices.forEach((element) {
+        matrices.add(element.toJson());
+      });
+    }
 
     Map<String, dynamic> mmp = Map();
+    mmp['name'] = name;
     mmp['issuedBy'] = issuedBy;
     mmp['accountId'] = accountId;
     mmp['tradeFrequencyInMinutes'] = tradeFrequencyInMinutes;
@@ -79,23 +85,35 @@ class Anchor {
     mmp['maximumInvestment'] = maximumInvestment;
     mmp['cellphone'] = cellphone;
     mmp['email'] = email;
+    mmp['password'] = password;
     mmp['tradeMatrices'] = matrices;
     return mmp;
   }
 }
 
 class TradeMatrix {
-  double startInvoiceAmount, endInvoiceAmount, offerDiscount;
+  double startInvoiceAmount;
+  double endInvoiceAmount;
+  double offerDiscount;
   String date;
+  String id;
   int maximumInvoiceAgeInDays;
+
+  TradeMatrix(
+      {this.startInvoiceAmount,
+      this.endInvoiceAmount,
+      this.offerDiscount,
+      this.date,
+      this.id,
+      this.maximumInvoiceAgeInDays});
 
   TradeMatrix.fromJson(Map data) {
     this.startInvoiceAmount = data['startInvoiceAmount'];
     this.endInvoiceAmount = data['endInvoiceAmount'];
     this.maximumInvoiceAgeInDays = data['maximumInvoiceAgeInDays'];
-    if (data['date'] != null) {
-      this.date = data['date'];
-    }
+    this.offerDiscount = data['offerDiscount'];
+    this.date = data['date'];
+    this.id = data['id'];
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -103,5 +121,7 @@ class TradeMatrix {
         'endInvoiceAmount': endInvoiceAmount,
         'maximumInvoiceAgeInDays': maximumInvoiceAgeInDays,
         'date': date,
+        'id': id,
+        'offerDiscount': offerDiscount,
       };
 }

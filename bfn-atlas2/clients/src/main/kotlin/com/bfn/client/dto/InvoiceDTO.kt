@@ -1,6 +1,5 @@
 package com.bfn.client.dto
 
-import java.math.BigDecimal
 import java.util.*
 
 class InvoiceDTO {
@@ -8,8 +7,8 @@ class InvoiceDTO {
     var invoiceNumber: String? = null
     var externalId: String? = null
     var description: String? = null
-    var amount: BigDecimal? = null
-    var totalAmount: BigDecimal? = null
+    var amount: Double? = null
+    var totalAmount: Double? = null
     var valueAddedTax: Double? = null
     var dateRegistered: Date? = null
     var supplier: AccountInfoDTO? = null
@@ -19,7 +18,7 @@ class InvoiceDTO {
 
     constructor() {}
     constructor(invoiceId: String?, invoiceNumber: String?,
-                description: String?, amount: BigDecimal, totalAmount: BigDecimal,
+                description: String?, amount: Double, totalAmount: Double,
                 valueAddedTax: Double, dateRegistered: Date?,
                 supplier: AccountInfoDTO?, customer: AccountInfoDTO?, supplierPublicKey: String?, customerPublicKey: String?) {
         this.invoiceId = invoiceId

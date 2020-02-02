@@ -7,16 +7,15 @@ import net.corda.core.contracts.ContractState
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
 import net.corda.core.serialization.CordaSerializable
-import java.math.BigDecimal
 import java.util.*
 
 @CordaSerializable
 @BelongsToContract(InvestorProfileContract::class)
 class InvestorProfileState(var issuedBy: Party,
                            val accountId: String,
-                           val minimumInvoiceAmount: BigDecimal,
-                           val maximumInvoiceAmount: BigDecimal,
-                           val totalInvestment: BigDecimal,
+                           val minimumInvoiceAmount: Double,
+                           val maximumInvoiceAmount: Double,
+                           val totalInvestment: Double,
                            val defaultDiscount: Double,
                            var date: Date
                    ) : ContractState {

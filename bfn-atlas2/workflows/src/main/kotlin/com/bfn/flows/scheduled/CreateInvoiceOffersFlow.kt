@@ -16,7 +16,6 @@ import net.corda.core.identity.Party
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import org.slf4j.LoggerFactory
-import java.math.BigDecimal
 import java.security.PublicKey
 import java.util.*
 
@@ -124,7 +123,7 @@ class CreateInvoiceOffersFlow(private val investorId: String) : FlowLogic<List<I
                         investor = account.state.data,
                         discount = investorProfile!!.defaultDiscount,
                         invoiceNumber = it.invoiceNumber,
-                        offerAmount = BigDecimal.valueOf(getOfferAmount(it.totalAmount.toDouble(), investorProfile.defaultDiscount)),
+                        offerAmount = getOfferAmount(it.totalAmount, investorProfile.defaultDiscount),
                         offerDate = Date(),
                         originalAmount = it.totalAmount,
                         accepted = false,

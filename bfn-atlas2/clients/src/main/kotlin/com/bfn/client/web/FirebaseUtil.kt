@@ -35,8 +35,11 @@ object FirebaseUtil {
     fun sendInvoiceOfferMessage(offer: InvoiceOfferDTO?) {
         val topic = "invoiceOffers"
         // See documentation on defining a message payload.
-        val m = Notification("New Invoice Offer", GSON.toJson(offer))
-        val message = Message.builder().putData("invoiceOffer", GSON.toJson(offer)).setNotification(m)
+        val m = Notification("New Invoice Offer", offer?.offerAmount.toString())
+
+        val message = Message.builder()
+                .putData("invoiceOffer", GSON.toJson(offer))
+                .setNotification(m)
                 .setTopic(topic).build()
         // Send a message to the devices subscribed to the provided topic.
         val response = messaging.sendAsync(message).get()
@@ -47,11 +50,13 @@ object FirebaseUtil {
 
     @JvmStatic
     @Throws(ExecutionException::class, InterruptedException::class)
-    fun sendInvoiceMessage(offer: InvoiceDTO?) {
+    fun sendInvoiceMessage(invoice: InvoiceDTO?) {
         val topic = "invoices"
         // See documentation on defining a message payload.
-        val m = Notification("New Invoice", GSON.toJson(offer))
-        val message = Message.builder().putData("invoice", GSON.toJson(offer)).setNotification(m).setTopic(topic)
+        val m = Notification("New Invoice", invoice?.totalAmount.toString())
+        val message = Message.builder()
+                .putData("invoice", GSON.toJson(invoice))
+                .setNotification(m).setTopic(topic)
                 .build()
         // Send a message to the devices subscribed to the provided topic.
         val response = messaging.sendAsync(message).get()
@@ -82,18 +87,32 @@ object FirebaseUtil {
         logger.info("\uD83D\uDE3C \uD83D\uDE3C Token added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
 
+
     @JvmStatic
     @Throws(Exception::class)
-    fun addNode(node: NodeInfoDTO?) {
+    fun registerAnchor( name: String, email: String): AnchorDTO {
+        val password = "please#CHANGE@me33"
+        val anchor: AnchorDTO?
         try {
-            db.collection("nodes").add(node)
-            logger.info("\uD83D\uDC9B  Added corda node to Firestore: ⚽ " +
-                    " ${node!!.addresses!!.first()}  \uD83C\uDF00 ${node.webServerAddress}")
+            val createRequest = CreateRequest().setEmail(email)
+                    .setDisplayName("BFN Anchor: $name")
+                    .setPassword(password)
+            val userRecord = auth.createUser(createRequest)
+            anchor = AnchorDTO(
+                    name = name, email = email, uid = userRecord.uid,
+                    date = Date(), password = password
+            )
+
+            db.collection("anchors").add(anchor)
+            logger.info("\uD83D\uDC9B  Added ANCHOR to Firestore: ⚽ " +
+                    " ${anchor.name}  \uD83C\uDF00 ${userRecord.email}")
         } catch (e: Exception) {
-            logger.error("Failed to add node", e)
+            logger.error("Failed to add anchor", e)
             throw e
         }
+        return anchor
     }
+
 
     @JvmStatic
     @Throws(Exception::class)
@@ -140,18 +159,16 @@ object FirebaseUtil {
     @JvmStatic
     @Throws(FirebaseAuthException::class)
     fun createUser(name: String?, email: String?, password: String?,
-                   cellphone: String?,
                    uid: String?): UserRecord {
+        logger.info("\uD83D\uDD37 \uD83D\uDD37 createUser: writing to Firestore ... \uD83D\uDD37 ")
         val request = CreateRequest()
         request.setEmail(email)
         request.setDisplayName(name)
         request.setPassword(password)
-        if (cellphone != null) {
-            request.setPhoneNumber("+$cellphone")
-        }
         request.setUid(uid)
         val userRecord = auth.createUser(request)
-        logger.info("\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C \uD83E\uDD66 \uD83E\uDD66 User record created in Firebase:  \uD83E\uDD66 " + userRecord.email)
+        logger.info("\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C \uD83E\uDD66 \uD83E\uDD66 " +
+                "User record created in Firebase:  \uD83E\uDD66 " + userRecord.email)
         return userRecord
     }
 

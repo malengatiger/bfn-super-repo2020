@@ -1,14 +1,13 @@
 package com.bfn.client.dto
 
-import java.math.BigDecimal
 import java.util.*
 
 class InvoiceOfferDTO {
     var invoiceId: String? = null
     var invoiceNumber: String? = null
-    var offerAmount: BigDecimal? = null
+    var offerAmount: Double? = null
     var discount: Double? = null
-    var originalAmount: BigDecimal? = null
+    var originalAmount: Double? = null
     var supplier: AccountInfoDTO? = null
     var investor: AccountInfoDTO? = null
     var owner: AccountInfoDTO? = null
@@ -21,8 +20,8 @@ class InvoiceOfferDTO {
     var externalId: String? = null
 
     constructor(invoiceId: String?, invoiceNumber: String?,
-                offerAmount: BigDecimal, discount: Double,
-                originalAmount: BigDecimal,
+                offerAmount: Double, discount: Double,
+                originalAmount: Double,
                 supplier: AccountInfoDTO?, investor: AccountInfoDTO?,
                 owner: AccountInfoDTO?, offerDate: Date?, investorDate: Date?,
                 supplierPublicKey: String?, investorPublicKey: String?, customer: AccountInfoDTO?) {

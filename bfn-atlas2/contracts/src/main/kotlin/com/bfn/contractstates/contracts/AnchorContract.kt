@@ -5,7 +5,6 @@ import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.Contract
 import net.corda.core.transactions.LedgerTransaction
 import org.slf4j.LoggerFactory
-import java.math.BigDecimal
 
 
 class AnchorContract : Contract {
@@ -19,13 +18,13 @@ class AnchorContract : Contract {
         }
         val anchor = tx.outputStates.first()
         if (anchor is AnchorState) {
-            if (anchor.maximumInvestment <= BigDecimal.ZERO) {
+            if (anchor.maximumInvestment <= 0.0) {
                 throw IllegalArgumentException("Maximum Investment must be greater than zero")
             }
-            if (anchor.maximumInvoiceAmount <= BigDecimal.ZERO) {
+            if (anchor.maximumInvoiceAmount <= 0.0) {
                 throw IllegalArgumentException("Maximum Invoice Amount must be greater than zero")
             }
-            if (anchor.minimumInvoiceAmount <= BigDecimal.ZERO) {
+            if (anchor.minimumInvoiceAmount <= 0.0) {
                 throw IllegalArgumentException("Minimum Invoice Amount must be greater than zero")
             }
             if (anchor.defaultOfferDiscount <= 0) {

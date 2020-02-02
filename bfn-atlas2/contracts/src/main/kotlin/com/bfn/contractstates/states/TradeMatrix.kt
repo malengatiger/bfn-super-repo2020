@@ -1,15 +1,15 @@
 package com.bfn.contractstates.states
 
-import com.r3.corda.lib.accounts.contracts.states.AccountInfo
-import java.math.BigDecimal
+import net.corda.core.serialization.CordaSerializable
 import java.util.*
 
+@CordaSerializable
 data class TradeMatrix (
-        val startInvoiceAmount: BigDecimal,
-        val endInvoiceAmount: BigDecimal,
+        val startInvoiceAmount: Double,
+        val endInvoiceAmount: Double,
         val offerDiscount: Double,
         val maximumInvoiceAgeInDays: Int,
-        val date: Date
+        val date: String? = Date().toString()
 
 ) {
 }
