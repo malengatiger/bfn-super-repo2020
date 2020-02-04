@@ -2,6 +2,7 @@ package com.bfn.client.local
 
 import com.bfn.client.dto.*
 import com.bfn.contractstates.states.*
+import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
@@ -16,6 +17,7 @@ import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.utilities.NetworkHostAndPort
 import net.corda.core.utilities.loggerFor
 import org.json.JSONArray
+import org.json.JSONObject
 import java.util.*
 import kotlin.collections.MutableList
 import kotlin.collections.MutableMap
@@ -43,69 +45,53 @@ private class Client {
 
     }
 
-    lateinit var proxyPartyA: CordaRPCOps
-    lateinit var proxyPartyB: CordaRPCOps
-    lateinit var proxyPartyC: CordaRPCOps
-    lateinit var proxyReg: CordaRPCOps
+    lateinit var proxyAnchorInvestor: CordaRPCOps
+    lateinit var proxyCustomer001: CordaRPCOps
+    lateinit var proxyNotary: CordaRPCOps
+    lateinit var proxyRegulator: CordaRPCOps
 
     fun main(args: Array<String>) {
 
         setupLocalNodes()
-//        startAccounts(generateAccounts = true, deleteFirestore = true, numberOfAccounts = 10);
-//        startAccounts(generateAccounts = true, deleteFirestore = false, numberOfAccounts = 20);
+//        createAnchor("http://localhost:10050")
+//        createCustomer("http://localhost:10050")
+//        startSupplierAccounts(
+//                generateAccounts = true,
+//                deleteFirestore = true,
+//                numberOfAccounts = 20,
+//                url = "http://localhost:10050");
 
-//        startAccounts(true, deleteFirestore = false);
-//        generateCrossNodeInvoices(0, 1)
-//        generateCrossNodeInvoices(1, 4)
-//        generateCrossNodeInvoices(2, 5)
-
-//        logger.info(" HOUR : ${1000 * 60 * 60}")
-//        generateInvoices(0, 36)
-//        generateInvoices(1, 40)
-//        generateInvoices(2, 50)
-//
+        generateInvoices("http://localhost:10053", 36)
 //        generateProfiles()
 //
 //        generateOffers(0)
-//        generateOffers(1)
-//        generateOffers(2)
-////
-//        generateOffers(0)
-//        generateOffers(1)
-//        generateOffers(2)
-//////.
 //        printTotals()
 //
 //        findBestOffers(proxyPartyA)
-//        findBestOffers(proxyPartyB)
-//        findBestOffers(proxyPartyC)
-//////
-//        printTotals()
 //        getRegulatorTotals(proxyReg)
 //
 //        printInvoices(proxyPartyA, consumed = false)
 //        printInvoices(proxyPartyB, consumed = false)
-//        printInvoices(proxyPartyC, consumed = false)
 //
 //        printProfiles(proxyPartyA)
 //        printProfiles(proxyPartyB)
-//        printProfiles(proxyPartyC)
 
     }
 
-    private fun printTotals() {
-        getNodeTotals(proxyPartyA)
-        getNodeTotals(proxyPartyB)
-        getNodeTotals(proxyPartyC)
-        getNodeTotals(proxyReg)
 
-        getOfferAndTokens(proxyPartyA)
+    private fun printTotals() {
+        getNodeTotals(proxyAnchorInvestor)
+        getNodeTotals(proxyCustomer001)
+        getNodeTotals(proxyNotary)
+        getNodeTotals(proxyRegulator)
+
+        getOfferAndTokens(proxyAnchorInvestor)
         logger.info("\n \uD83C\uDF38  \uD83C\uDF38  \uD83C\uDF38  \uD83C\uDF38  \uD83C\uDF38 ")
-        getOfferAndTokens(proxyPartyB)
+        getOfferAndTokens(proxyCustomer001)
         logger.info("\n \uD83C\uDF38  \uD83C\uDF38  \uD83C\uDF38  \uD83C\uDF38  \uD83C\uDF38 ")
-        getOfferAndTokens(proxyPartyC)
+        getOfferAndTokens(proxyNotary)
         logger.info("\n \uD83C\uDF38  \uD83C\uDF38  \uD83C\uDF38  \uD83C\uDF38  \uD83C\uDF38 ")
-        getOfferAndTokens(proxyReg)
+        getOfferAndTokens(proxyRegulator)
     }
 
     private fun setupRemoteNodes() {
@@ -117,48 +103,49 @@ private class Client {
         val rpcPassword = "test"
 
         val clientNotary = CordaRPCClient(nodeAddressNotary)
-        val proxyNotary = clientNotary.start(rpcUsername, rpcPassword).proxy
+        proxyNotary = clientNotary.start(rpcUsername, rpcPassword).proxy
         getThisNode(proxyNotary)
 
         val clientA = CordaRPCClient(nodeAddressPartyA)
-        proxyPartyA = clientA.start(rpcUsername, rpcPassword).proxy
-        getThisNode(proxyPartyA)
+        proxyAnchorInvestor = clientA.start(rpcUsername, rpcPassword).proxy
+        getThisNode(proxyAnchorInvestor)
 
         val clientB = CordaRPCClient(nodeAddressPartyB)
-        proxyPartyB = clientB.start(rpcUsername, rpcPassword).proxy
-        getThisNode(proxyPartyB)
+        proxyCustomer001 = clientB.start(rpcUsername, rpcPassword).proxy
+        getThisNode(proxyCustomer001)
 
         val clientReg = CordaRPCClient(nodeAddressRegulator)
-        proxyReg = clientReg.start(rpcUsername, rpcPassword).proxy
+        proxyRegulator = clientReg.start(rpcUsername, rpcPassword).proxy
 
-        getThisNode(proxyReg)
-        doNodesAndAggregates(proxyPartyA, proxyPartyB, proxyPartyC, proxyReg)
+        getThisNode(proxyRegulator)
+        doNodesAndAggregates(proxyAnchorInvestor, proxyCustomer001, proxyRegulator)
     }
+
     private fun setupLocalNodes() {
         val nodeAddressNotary = NetworkHostAndPort(host = "localhost", port = 10019)
-        val nodeAddressPartyA = NetworkHostAndPort(host = "localhost", port = 10006)
-        val nodeAddressPartyB = NetworkHostAndPort(host = "localhost", port = 10009)
+        val nodeAddressAnchor = NetworkHostAndPort(host = "localhost", port = 10006)
+        val nodeAddressCustomer = NetworkHostAndPort(host = "localhost", port = 10009)
         val nodeAddressRegulator = NetworkHostAndPort(host = "localhost", port = 10017)
         val rpcUsername = "user1"
         val rpcPassword = "test"
 
         val clientNotary = CordaRPCClient(nodeAddressNotary)
-        val proxyNotary = clientNotary.start(rpcUsername, rpcPassword).proxy
+        proxyNotary = clientNotary.start(rpcUsername, rpcPassword).proxy
         getThisNode(proxyNotary)
 
-        val clientA = CordaRPCClient(nodeAddressPartyA)
-        proxyPartyA = clientA.start(rpcUsername, rpcPassword).proxy
-        getThisNode(proxyPartyA)
+        val clientA = CordaRPCClient(nodeAddressAnchor)
+        proxyAnchorInvestor = clientA.start(rpcUsername, rpcPassword).proxy
+        getThisNode(proxyAnchorInvestor)
 
-        val clientB = CordaRPCClient(nodeAddressPartyB)
-        proxyPartyB = clientB.start(rpcUsername, rpcPassword).proxy
-        getThisNode(proxyPartyB)
+        val clientB = CordaRPCClient(nodeAddressCustomer)
+        proxyCustomer001 = clientB.start(rpcUsername, rpcPassword).proxy
+        getThisNode(proxyCustomer001)
 
         val clientReg = CordaRPCClient(nodeAddressRegulator)
-        proxyReg = clientReg.start(rpcUsername, rpcPassword).proxy
+        proxyRegulator = clientReg.start(rpcUsername, rpcPassword).proxy
 
-        getThisNode(proxyReg)
-        doNodesAndAggregates(proxyPartyA, proxyPartyB, proxyPartyC, proxyReg)
+        getThisNode(proxyRegulator)
+        doNodesAndAggregates(proxyAnchorInvestor, proxyCustomer001, proxyRegulator)
     }
 
     fun getRegulatorTotals(proxy: CordaRPCOps) {
@@ -215,33 +202,35 @@ private class Client {
     }
 
     fun getDTO(state: InvoiceState): InvoiceDTO {
-        val invoice = InvoiceDTO()
-        invoice.amount = state.amount
-        invoice.customer = getDTO(state.customerInfo)
-        invoice.supplier = getDTO(state.supplierInfo)
-        invoice.description = state.description
-        invoice.invoiceId = state.invoiceId.toString()
-        invoice.invoiceNumber = state.invoiceNumber
-        invoice.dateRegistered = state.dateRegistered
-        invoice.valueAddedTax = state.valueAddedTax
-        invoice.totalAmount = state.totalAmount
-        return invoice
+
+        return InvoiceDTO(
+                amount = state.amount,
+                customer = getDTO(state.customerInfo),
+                supplier = getDTO(state.supplierInfo),
+                description = state.description,
+                invoiceId = state.invoiceId.toString(),
+                invoiceNumber = state.invoiceNumber,
+                dateRegistered = state.dateRegistered.toString(),
+                valueAddedTax = state.valueAddedTax,
+                totalAmount = state.totalAmount,
+                externalId = state.externalId
+        )
     }
 
     fun getDTO(state: InvoiceOfferState): InvoiceOfferDTO {
-        val o = InvoiceOfferDTO()
-        o.invoiceId = state.invoiceId.toString()
-        o.invoiceNumber = state.invoiceNumber
-        o.offerAmount = state.offerAmount
-        o.originalAmount = state.originalAmount
-        o.discount = state.discount
-        o.supplier = getDTO(state.supplier)
-        o.investor = getDTO(state.investor)
-        o.customer = getDTO(state.customer)
+        return InvoiceOfferDTO(
+                invoiceId = state.invoiceId.toString(),
+                invoiceNumber = state.invoiceNumber,
+                offerAmount = state.offerAmount,
+                originalAmount = state.originalAmount,
+                discount = state.discount,
+                supplier = getDTO(state.supplier),
+                investor = getDTO(state.investor),
+                offerDate = state.offerDate.toString(),
+                investorDate = state.ownerDate.toString(),
+                accepted = state.accepted, externalId = state.externalId
 
-        o.offerDate = state.offerDate
-        o.investorDate = state.ownerDate
-        return o
+        )
     }
 
     fun getDTO(a: AccountInfo): AccountInfoDTO {
@@ -255,7 +244,7 @@ private class Client {
     fun getDTO(a: InvestorProfileState): InvestorProfileStateDTO {
         return InvestorProfileStateDTO(
                 issuedBy = a.issuedBy.toString(),
-                accountId = a.accountId, date = a.date,
+                accountId = a.accountId, date = a.date.toString(),
                 defaultDiscount = a.defaultDiscount,
                 maximumInvoiceAmount = a.maximumInvoiceAmount,
                 totalInvestment = a.totalInvestment,
@@ -266,7 +255,7 @@ private class Client {
     fun getDTO(a: SupplierProfileState): SupplierProfileStateDTO {
         return SupplierProfileStateDTO(
                 issuedBy = a.issuedBy.toString(),
-                accountId = a.accountId, date = a.date,
+                accountId = a.accountId, date = a.date.toString(),
                 maximumDiscount = a.maximumDiscount,
                 bankAccount = a.bankAccount,
                 bank = a.bank
@@ -307,6 +296,11 @@ private class Client {
                 criteria = QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.ALL),
                 paging = PageSpecification(1, 5000))
 
+        val states = proxy.vaultQueryByWithPagingSpec(contractStateType = AnchorState::class.java,
+                criteria = QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.ALL),
+                paging = PageSpecification(1, 5)).states
+
+        logger.info("\uD83D\uDC65 AnchorStates :\uD83C\uDF4E: ${states.size} ")
         logger.info("\uD83D\uDC65 Total Profiles on ${name.toUpperCase()}: ${profiles.states.size} \uD83D\uDC65\n")
         logger.info("\uD83C\uDF3A Total ConsumedInvoices on ${name.toUpperCase()}: ${consumedInvoices.states.size} \uD83C\uDF3A ")
         logger.info("\uD83C\uDF3A Total unConsumedInvoices on ${name.toUpperCase()}: ${unConsumedInvoices.states.size} \uD83C\uDF3A ")
@@ -352,39 +346,21 @@ private class Client {
         }
     }
 
-    private fun startAccounts(generateAccounts: Boolean = false, deleteFirestore: Boolean = false, numberOfAccounts: Int = 9) {
+    private fun startSupplierAccounts(generateAccounts: Boolean = false,
+                                      deleteFirestore: Boolean = false,
+                                      numberOfAccounts: Int = 9, url: String) {
         if (generateAccounts) {
-            logger.info(" \uD83D\uDE21 generating accounts for PARTY A")
-            var status = startAccountsForNode(
-                    proxy = proxyPartyA,
-                    url = "http://localhost:10050",
+            logger.info(" \uD83D\uDE21 generating accounts for AnchorInvestor")
+            val status = generateAccountsForNode(
+                    proxy = proxyAnchorInvestor,
+                    url = url,
                     deleteFirestore = deleteFirestore, numberOfAccounts = numberOfAccounts)
             if (status == 200) {
-                logger.info("\uD83E\uDD6C  Successfully generated Party A accounts")
+                logger.info("\uD83E\uDD6C  Successfully generated AnchorInvestor accounts")
             } else {
                 logger.info("Houston, we down, \uD83D\uDCA6 status :  $status ")
             }
 
-            logger.info("\uD83D\uDE21 generating accounts for PARTY B")
-            status = startAccountsForNode(
-                    proxy = proxyPartyB,
-                    url = "http://localhost:10053",
-                    deleteFirestore = false, numberOfAccounts = numberOfAccounts)
-            if (status == 200) {
-                logger.info("\uD83E\uDD6C Successfully generated Party B accounts")
-            } else {
-                logger.info("Houston, we down, \uD83D\uDCA6 status :  $status ")
-            }
-            logger.info("\uD83D\uDE21 generating accounts for PARTY C")
-            status = startAccountsForNode(
-                    proxy = proxyPartyC,
-                    url = "http://localhost:10056",
-                    deleteFirestore = false, numberOfAccounts = numberOfAccounts)
-            if (status == 200) {
-                logger.info("\uD83E\uDD6C Successfully generated Party C accounts")
-            } else {
-                logger.info("Houston, we down, \uD83D\uDCA6 status :  $status ")
-            }
         } else {
             logger.info("Generating data .. \uD83D\uDCA6 but we are not generating accounts")
         }
@@ -394,82 +370,149 @@ private class Client {
 
     private fun generateProfiles() {
 
-        logger.info(" \uD83D\uDE21 generating profiles for PARTY A")
-        makeProfilesForNode(proxyPartyA, "http://localhost:10050")
-        logger.info(" \uD83D\uDE21 generating profiles for PARTY B")
-        makeProfilesForNode(proxyPartyB, "http://localhost:10053")
-        logger.info(" \uD83D\uDE21 generating profiles for PARTY C")
-        makeProfilesForNode(proxyPartyC, "http://localhost:10056")
+        logger.info(" \uD83D\uDE21 generating profiles for Anchor")
+        makeProfilesForNode(proxyAnchorInvestor, "http://localhost:10050")
+        logger.info(" \uD83D\uDE21 generating profiles forCustomer001")
+        makeProfilesForNode(proxyCustomer001, "http://localhost:10053")
+
 
     }
 
-    private fun generateInvoices(index: Int, max: Int = 1) {
-        var params: MutableMap<String, String> = mutableMapOf()
-        params["max"] = max.toString()
-        when (index) {
-            0 -> {
-                logger.info("\uD83D\uDE21  generateInvoices for PARTY A  \uD83D\uDE21  \uD83D\uDE21 ")
-                val response = httpGet(
-                        timeout = 990000000.0, params = params,
-                        url = "http://localhost:10050/admin/generateInvoices")
-                logger.info("\uD83C\uDF4E  RESPONSE: statusCode: ${response.statusCode}  " +
-                        response.text)
-            }
-            1 -> {
+    private fun generateInvoices(url: String, max: Int = 1) {
 
-                logger.info("\uD83D\uDE21  generateInvoices for PARTY B  \uD83D\uDE21  \uD83D\uDE21 ")
-                val response2 = httpGet(
-                        timeout = 990000000.0, params = params,
-                        url = "http://localhost:10053/admin/generateInvoices")
-                logger.info("\uD83C\uDF4E RESPONSE: statusCode: ${response2.statusCode}  " +
-                        response2.text)
+        logger.info("\uD83D\uDE21 generateInvoices for CUSTOMER \uD83D\uDE21 \uD83D\uDE21 ")
+        if (customer == null) {
+            logger.info("Finding customer on Anchor Node ...")
+            val page = proxyAnchorInvestor.vaultQueryByWithPagingSpec(
+                    contractStateType = AccountInfo::class.java,
+                    criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED),
+                    paging = PageSpecification(1,2000)).states
+            page.forEach() {
+                    if (it.state.data.name == "Customer001") {
+                        customer = getDTO(it.state.data )
+                    }
             }
-            2 -> {
-                logger.info("\uD83D\uDE21  generateInvoices for PARTY C  \uD83D\uDE21  \uD83D\uDE21 ")
-                val response3 = httpGet(
-                        timeout = 990000000.0, params = params,
-                        url = "http://localhost:10056/admin/generateInvoices")
-                logger.info("\uD83C\uDF4E  RESPONSE: statusCode: ${response3.statusCode}  " +
-                        response3.text)
-            }
+
         }
+        logger.info("CUSTOMER \uD83D\uDE0E \uD83D\uDE0E \uD83D\uDE0E " +
+                "to be used for invoice generation: \uD83D\uDE0E " +
+                "${GSON.toJson(customer!!)} \uD83D\uDE0E")
+        val mGson = Gson()
+        val json = mGson.toJson(customer!!)
+        val obj = JSONObject(json);
+
+        val response = httpGet(
+                timeout = 990000000.0, json = obj,
+                url = "$url/bfn/admin/generateInvoices")
+        logger.info("\uD83C\uDF4E  RESPONSE: statusCode: ${response.statusCode}  " +
+                response.text)
 
 
     }
 
-    private fun generateCrossNodeInvoices(index: Int, max: Int = 1) {
-        var params: MutableMap<String, String> = mutableMapOf()
-        params["max"] = max.toString()
-        when (index) {
-            0 -> {
-                logger.info("\uD83D\uDE21  generateCrossNodeInvoices for PARTY A  \uD83D\uDE21  \uD83D\uDE21 ")
-                val response = httpGet(
-                        timeout = 990000000.0, params = params,
-                        url = "http://localhost:10050/admin/generateCrossNodeInvoices")
-                logger.info("\uD83C\uDF4E  RESPONSE: statusCode: ${response.statusCode}  " +
-                        response.text)
-            }
-            1 -> {
+    private fun createAnchor(url: String, max: Int = 1) {
 
-                logger.info("\uD83D\uDE21  generateCrossNodeInvoices for PARTY B  \uD83D\uDE21  \uD83D\uDE21 ")
-                val response2 = httpGet(
-                        timeout = 990000000.0, params = params,
-                        url = "http://localhost:10053/admin/generateCrossNodeInvoices")
-                logger.info("\uD83C\uDF4E RESPONSE: statusCode: ${response2.statusCode}  " +
-                        response2.text)
-            }
-            2 -> {
-                logger.info("\uD83D\uDE21  generateCrossNodeInvoices for PARTY C  \uD83D\uDE21  \uD83D\uDE21 ")
-                val response3 = httpGet(
-                        timeout = 990000000.0, params = params,
-                        url = "http://localhost:10056/admin/generateCrossNodeInvoices")
-                logger.info("\uD83C\uDF4E  RESPONSE: statusCode: ${response3.statusCode}  " +
-                        response3.text)
-            }
-        }
+        val mx: MutableList<TradeMatrix> = mutableListOf()
+        logger.info("\uD83D\uDE21 createAnchor for Node \uD83D\uDE21 \uD83D\uDE21 ")
+
+        val a = AnchorDTO(
+                minimumInvoiceAmount = 25000.00,
+                maximumInvoiceAmount = 20000000.00,
+                maximumInvestment = 1000000000.00,
+                defaultOfferDiscount = 8.8,
+                name = "AnchorInvestor",
+                email = "anchor1@bfn.com",
+                cellphone = "+27710441887",
+                tradeFrequencyInMinutes = 240,
+                tradeMatrices = mx,
+                date = Date().toString(),
+                password = "bfnanchor33",
+                uid = UUID.randomUUID().toString()
+
+        )
+
+        val m1 = TradeMatrix(
+                startInvoiceAmount = 25000.00,
+                endInvoiceAmount = 100000.00,
+                offerDiscount = 8.8,
+                maximumInvoiceAgeInDays = 90,
+                date = Date().toString()
+        )
+        val m2 = TradeMatrix(
+                startInvoiceAmount = 100001.00,
+                endInvoiceAmount = 200000.00,
+                offerDiscount = 8.3,
+                maximumInvoiceAgeInDays = 90,
+                date = Date().toString()
+        )
+        val m3 = TradeMatrix(
+                startInvoiceAmount = 200001.00,
+                endInvoiceAmount = 300000.00,
+                offerDiscount = 7.9,
+                maximumInvoiceAgeInDays = 90,
+                date = Date().toString()
+        )
+        val m4 = TradeMatrix(
+                startInvoiceAmount = 300001.00,
+                endInvoiceAmount = 400000.00,
+                offerDiscount = 7.4,
+                maximumInvoiceAgeInDays = 90,
+                date = Date().toString()
+        )
+        val m5 = TradeMatrix(
+                startInvoiceAmount = 400001.00,
+                endInvoiceAmount = 1000000.00,
+                offerDiscount = 5.5,
+                maximumInvoiceAgeInDays = 90,
+                date = Date().toString())
+        val m6 = TradeMatrix(
+                startInvoiceAmount = 1000001.00,
+                endInvoiceAmount = 10000000.00,
+                offerDiscount = 4.2,
+                maximumInvoiceAgeInDays = 90,
+                date = Date().toString())
+        val m7 = TradeMatrix(
+                startInvoiceAmount = 10000001.00,
+                endInvoiceAmount = 100000000.00,
+                offerDiscount = 3.0,
+                maximumInvoiceAgeInDays = 90,
+                date = Date().toString())
+
+        a.tradeMatrices = mutableListOf(m1, m2, m3, m4, m5, m6, m7)
+        val mGson = Gson()
+        val json = mGson.toJson(a)
+        val jsonObject = JSONObject(json)
+        logger.info("\uD83C\uDF4E GSON.toJson produces: ${GSON.toJson(a)} \uD83C\uDF4E")
+        val response = httpPost(
+                json = jsonObject,
+                timeout = 990000000.0,
+                url = "$url/bfn/admin/createAnchor")
+        logger.info("\uD83C\uDF4E  create Anchor; RESPONSE: statusCode: " +
+                "${response.statusCode} - ${response.text}")
 
 
     }
+
+    var customer:AccountInfoDTO? = null
+    private fun createCustomer(url: String) {
+        val user = UserDTO(name = "Customer001",
+                password = "customer#001$",
+                cellphone = "+27710441887",
+                email = "customer001@bfn.com")
+
+        val mGson = Gson()
+        val jsonObject = JSONObject(mGson.toJson(user))
+        val response = httpPost(
+                json = jsonObject,
+                timeout = 990000000.0,
+                url = "$url/bfn/admin/startAccountRegistrationFlow")
+
+        customer = GSON.fromJson(response.text, AccountInfoDTO::class.java)
+        logger.info("\uD83C\uDF4E  create Customer; RESPONSE: " +
+                "statusCode: ${response.statusCode}  " +
+                response.text)
+    }
+
 
     val random = Random(Date().time)
 
@@ -505,19 +548,19 @@ private class Client {
         when (index) {
             0 -> {
                 logger.info("\uD83D\uDE21 generateOffers for PARTY A  \uD83D\uDE21  \uD83D\uDE21 ")
-                val accts = getAccounts(proxyPartyA)
+                val accts = getAccounts(proxyAnchorInvestor)
                 makeOffers(accts, "10050")
 
             }
             1 -> {
                 logger.info("\uD83D\uDE21 generateOffers for PARTY B  \uD83D\uDE21  \uD83D\uDE21 ")
-                val accts = getAccounts(proxyPartyB)
+                val accts = getAccounts(proxyCustomer001)
                 makeOffers(accts, "10053")
 
             }
             2 -> {
                 logger.info("\uD83D\uDE21 generateOffers for PARTY C  \uD83D\uDE21  \uD83D\uDE21 ")
-                val accts = getAccounts(proxyPartyC)
+                val accts = getAccounts(proxyNotary)
                 makeOffers(accts, "10056")
             }
         }
@@ -525,8 +568,8 @@ private class Client {
 
     }
 
-    private fun startAccountsForNode(proxy: CordaRPCOps, url: String,
-                                     deleteFirestore: Boolean, numberOfAccounts: Int): Int {
+    private fun generateAccountsForNode(proxy: CordaRPCOps, url: String,
+                                        deleteFirestore: Boolean, numberOfAccounts: Int): Int {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
                 "\uD83D\uDD35 \uD83D\uDD35 generateAccounts: $url deleteFirestore: $deleteFirestore")
         val params: MutableMap<String, String> = mutableMapOf()
@@ -534,7 +577,7 @@ private class Client {
         params["numberOfAccounts"] = numberOfAccounts.toString()
         val response = httpGet(
                 timeout = 990000000.0,
-                url = "$url/admin/demo",
+                url = "$url/bfn/admin/demo",
                 params = params)
 
         logger.info("\uD83C\uDF4E RESPONSE: statusCode: ${response.statusCode}  " +
@@ -547,12 +590,16 @@ private class Client {
 
     private fun makeProfilesForNode(proxy: CordaRPCOps, url: String) {
         val page = proxy.vaultQuery(AccountInfo::class.java)
+        var cnt = 0
         page.states.forEach() {
             if (it.state.data.host.toString() == proxy.nodeInfo().legalIdentities.first().toString()) {
-                addInvestorProfile(it, url)
+                cnt++
                 addSupplierProfile(it, url)
+                addInvestorProfile(it, url)
             }
         }
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35" +
+                " \uD83D\uDD35 \uD83D\uDD35 Profiles generated: $cnt")
     }
 
     private fun addInvestorProfile(it: StateAndRef<AccountInfo>, url: String) {
@@ -561,28 +608,24 @@ private class Client {
             disc = 3.5
         }
         val investorProfile = InvestorProfileStateDTO(
-                issuedBy = "thisNode", accountId = it.state.data.identifier.id.toString(),
-                date = Date(),
+                issuedBy = "thisNode",
+                accountId = it.state.data.identifier.id.toString(),
+                date = Date().toString(),
                 defaultDiscount = disc,
                 minimumInvoiceAmount = random.nextInt(100) * 1000.0,
                 totalInvestment = 900000000.0,
                 maximumInvoiceAmount = 750000.0
         )
-        val params: MutableMap<String, String> = mutableMapOf()
-        params["issuedBy"] = "me"
-        params["accountId"] = investorProfile.accountId
-        params["date"] = "2020-01-01"
-        params["defaultDiscount"] = investorProfile.defaultDiscount.toString()
-        params["minimumInvoiceAmount"] = investorProfile.minimumInvoiceAmount.toString()
-        params["totalInvestment"] = investorProfile.totalInvestment.toString()
-        params["maximumInvoiceAmount"] = investorProfile.maximumInvoiceAmount.toString()
 
+        val mGson = Gson()
+        val json = mGson.toJson(investorProfile)
+        val jsonObject = JSONObject(json)
         val resp = httpPost(
-                url = "$url/admin/createInvestorProfile",
-                json = params,
+                url = "$url/bfn/admin/createInvestorProfile",
+                json = jsonObject,
                 timeout = 8000000000.0
         )
-        logger.info("\uD83D\uDE0E Created INVESTOR profile for \uD83C\uDF3A ${it.state.data.name} - RESPONSE: statusCode: ${resp.statusCode}  " +
+        logger.info("\uD83D\uDE0E Create INVESTOR profile  \uD83C\uDF3A ${it.state.data.name} - RESPONSE: statusCode: ${resp.statusCode}  " +
                 "\uD83D\uDE0E  ${resp.text}")
     }
 
@@ -591,45 +634,50 @@ private class Client {
         if (disc < 2.0) {
             disc = 5.5
         }
-        val supplierProfile = SupplierProfileStateDTO(
-                issuedBy = "thisNode",
-                accountId = account.state.data.identifier.id.toString(),
-                date = Date(),
-                maximumDiscount = disc, bank = "Standard Bank", bankAccount = "12346787"
-        )
+
         val params: MutableMap<String, String> = mutableMapOf()
         params["issuedBy"] = "me"
-        params["accountId"] = supplierProfile.accountId
+        params["accountId"] = account.state.data.identifier.id.toString()
         params["date"] = "2020-01-01"
-        params["maximumDiscount"] = supplierProfile.maximumDiscount.toString()
-
+        params["bank"] = "BlackOx Bank"
+        params["bankAccount"] = "786980765"
+        params["maximumDiscount"] = disc.toString()
+        val prof = SupplierProfileStateDTO(
+                accountId = account.state.data.identifier.id.toString(),
+                date = "2020-01-01",
+                bankAccount = "988007654",
+                bank = "BlackOx Investment Bank",
+                maximumDiscount = disc,
+                issuedBy = "moi"
+        )
+        val mGson = Gson()
+        val json = mGson.toJson(prof)
+        val jsonObject = JSONObject(json)
         val resp = httpPost(
-                url = "$url/admin/createSupplierProfile",
-                json = params,
+                url = "$url/bfn/admin/createSupplierProfile",
+                json = jsonObject,
                 timeout = 8000000000.0
         )
-        logger.info("\uD83E\uDD8A Created SUPPLIER profile for \uD83C\uDF3A ${account.state.data.name} - RESPONSE: statusCode: ${resp.statusCode}  " +
-                "\uD83E\uDD8A ${resp.text}")
+        logger.info("\uD83E\uDD8A Create SUPPLIER profile for \uD83C\uDF3A ${account.state.data.name} - RESPONSE: statusCode: ${resp.statusCode}  " +
+                "\uD83E\uDD8A ${resp.text} \n")
     }
 
-    private fun doNodesAndAggregates(proxyPartyA: CordaRPCOps, proxyPartyB: CordaRPCOps, proxyPartyC: CordaRPCOps, proxyReg: CordaRPCOps) {
+    private fun doNodesAndAggregates(proxyAnchor: CordaRPCOps, proxyCustomer: CordaRPCOps, proxyReg: CordaRPCOps) {
         logger.info("\n++++++++++++++   NODES \uD83C\uDFC0 \uD83C\uDFC0 \uD83C\uDFC0 ++++++++++++++++++++++++\n")
-        getNodes(proxyPartyA)
+        getNodes(proxyAnchor)
         //
-        logger.info("\n++++++++++++++   PARTYA \uD83C\uDF4A ${proxyPartyA.nodeInfo().addresses.first()} " +
-                " \uD83E\uDD6C ${proxyPartyA.nodeInfo().legalIdentities.first().name} \uD83C\uDFC0 \uD83C\uDFC0 \uD83C\uDFC0 ++++++++++++++++++++++++\n")
-        getAggregates(proxyPartyA)
-        logger.info("\n++++++++++++++   PARTYB \uD83C\uDF4A ${proxyPartyB.nodeInfo().addresses.first()}  " +
-                " \uD83E\uDD6C ${proxyPartyB.nodeInfo().legalIdentities.first().name} \uD83C\uDFC0 \uD83C\uDFC0 \uD83C\uDFC0 ++++++++++++++++++++++++\n")
-        getAggregates(proxyPartyB)
-        logger.info("\n++++++++++++++   PARTYC \uD83C\uDF4A ${proxyPartyC.nodeInfo().addresses.first()} " +
-                " \uD83E\uDD6C ${proxyPartyC.nodeInfo().legalIdentities.first().name} \uD83C\uDFC0 \uD83C\uDFC0 \uD83C\uDFC0 ++++++++++++++++++++++++\n")
-        getAggregates(proxyPartyC)
+        logger.info("\n++++++++++++++   Anchor \uD83C\uDF4A ${proxyAnchor.nodeInfo().addresses.first()} " +
+                " \uD83E\uDD6C ${proxyAnchor.nodeInfo().legalIdentities.first().name} \uD83C\uDFC0 \uD83C\uDFC0 \uD83C\uDFC0 ++++++++++++++++++++++++\n")
+        getAggregates(proxyAnchor)
+        logger.info("\n++++++++++++++   Customer \uD83C\uDF4A ${proxyCustomer.nodeInfo().addresses.first()}  " +
+                " \uD83E\uDD6C ${proxyCustomer.nodeInfo().legalIdentities.first().name} \uD83C\uDFC0 \uD83C\uDFC0 \uD83C\uDFC0 ++++++++++++++++++++++++\n")
+        getAggregates(proxyCustomer)
+
         logger.info("\n++++++++++++++   REGULATOR \uD83C\uDF4A ${proxyReg.nodeInfo().addresses.first()} " +
                 " \uD83E\uDD6C ${proxyReg.nodeInfo().legalIdentities.first().name} \uD83C\uDFC0 \uD83C\uDFC0 \uD83C\uDFC0 ++++++++++++++++++++++++\n")
         getAggregates(proxyReg)
 
-        //        getFlows(proxyPartyA)
+        getFlows(proxyAnchor)
         //        getFlows(proxyPartyB)
         //        getFlows(proxyPartyC)
         //        getFlows(proxyReg)
@@ -639,8 +687,12 @@ private class Client {
     private fun getFlows(proxy: CordaRPCOps) {
         logger.info("\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35  \uD83C\uDF81 " +
                 "Registered flows for:  \uD83D\uDD06 ${proxy.nodeInfo().legalIdentities.first()}")
+        var cnt = 0
         proxy.registeredFlows().forEach() {
-            logger.info(" \uD83C\uDF81 Registered flow:  \uD83D\uDD06 $it")
+            if (it.contains("bfn")) {
+                cnt++
+                logger.info(" \uD83C\uDF81 Registered flow: \uD83D\uDD06 #$cnt \uD83D\uDD06 $it")
+            }
         }
     }
 

@@ -1,4 +1,5 @@
 import 'package:bfnlibrary/data/anchor.dart';
+import 'package:bfnlibrary/data/invoice_offer.dart';
 import 'package:bfnlibrary/data/node_info.dart';
 import 'package:bfnlibrary/net_util.dart';
 import 'package:bfnlibrary/util/prefs.dart';
@@ -8,7 +9,14 @@ class AnchorBloc extends ChangeNotifier {
   Anchor _anchor;
   NodeInfo _node;
   List<NodeInfo> _nodes = List();
+  List<InvoiceOffer> _openOffers = List();
+  List<InvoiceOffer> _acceptedOffers = List();
+  List<InvoiceOffer> _closedOffers = List();
   String _url;
+
+  List<InvoiceOffer> get openOffers => _openOffers;
+  List<InvoiceOffer> get acceptedOffers => _acceptedOffers;
+  List<InvoiceOffer> get closedOffers => _closedOffers;
 
   Anchor get anchor => _anchor;
   NodeInfo get node => _node;
@@ -43,5 +51,21 @@ class AnchorBloc extends ChangeNotifier {
       mx += '/';
     }
     return mx;
+  }
+  Future getOpenOffers() async {
+
+    notifyListeners();
+  }
+  Future getAcceptedOffers() async {
+
+    notifyListeners();
+  }
+  Future getClosedOffers() async {
+
+    notifyListeners();
+  }
+  Future refreshDashboardData() async {
+
+    notifyListeners();
   }
 }

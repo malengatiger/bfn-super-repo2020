@@ -43,23 +43,18 @@ task runClient(type: JavaExec, dependsOn: assemble) {
     main = 'com.bfn.client.ClientKt'
 }
 
-task runPartyA(type: JavaExec, dependsOn: assemble) {
+task runAnchor(type: JavaExec, dependsOn: assemble) {
     classpath = sourceSets.main.runtimeClasspath
     main = 'com.bfn.client.web.ServerKt'
     args '--server.port=10050', '--config.rpc.host=localhost', '--config.rpc.port=10006', '--config.rpc.username=user1', '--config.rpc.password=test'
 }
 
-task runPartyB(type: JavaExec, dependsOn: assemble) {
+task runCustomer(type: JavaExec, dependsOn: assemble) {
     classpath = sourceSets.main.runtimeClasspath
     main = 'com.bfn.client.web.ServerKt'
     args '--server.port=10053', '--config.rpc.host=localhost', '--config.rpc.port=10009', '--config.rpc.username=user1', '--config.rpc.password=test'
 }
 
-task runPartyC(type: JavaExec, dependsOn: assemble) {
-    classpath = sourceSets.main.runtimeClasspath
-    main = 'com.bfn.client.web.ServerKt'
-    args '--server.port=10056', '--config.rpc.host=localhost', '--config.rpc.port=10012', '--config.rpc.username=user1', '--config.rpc.password=test'
-}
 
 task runRegulator(type: JavaExec, dependsOn: assemble) {
     classpath = sourceSets.main.runtimeClasspath

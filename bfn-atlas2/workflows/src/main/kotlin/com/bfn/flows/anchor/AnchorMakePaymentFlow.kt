@@ -105,7 +105,7 @@ class AnchorMakePaymentFlow(private val acceptedOffer: InvoiceOfferState) : Flow
         var discount = 0.0
         anchor.tradeMatrices.forEach() {
             val now = LocalDate.now()
-            val invoiceDate = convertToLocalDateViaInstant(invoice.dateRegistered!!)
+            val invoiceDate = LocalDate.parse(invoice.dateRegistered)
             val someDate = now.minusDays(it.maximumInvoiceAgeInDays.toLong())
             var isWithinAge = false
             if (invoiceDate!!.toEpochDay() > someDate.toEpochDay()) {

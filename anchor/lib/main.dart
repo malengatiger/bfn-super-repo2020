@@ -7,6 +7,7 @@ import 'package:bfnlibrary/net_util.dart';
 import 'package:bfnlibrary/util/functions.dart';
 import 'package:bfnlibrary/util/prefs.dart';
 import 'package:bfnlibrary/util/slide_right.dart';
+import 'package:bfnlibrary/util/theme_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -25,8 +26,23 @@ void main() async {
   runApp(AnchorApp());
 }
 
-class AnchorApp extends StatelessWidget {
+class AnchorApp extends StatefulWidget {
   // This widget is the root of your application.
+  @override
+  _AnchorAppState createState() => _AnchorAppState();
+}
+
+class _AnchorAppState extends State<AnchorApp> {
+  int themeIndex;
+  void _getTheme() async {
+    themeIndex = await Prefs.getThemeIndex();
+    setState(() {});
+  }
+  @override
+  void initState() {
+    super.initState();
+    _getTheme();
+  }
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -38,14 +54,19 @@ class AnchorApp extends StatelessWidget {
           value: TraderBloc(),
         ),
       ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Anchor',
-        theme: ThemeData(
-          primarySwatch: Colors.indigo,
-          textTheme: GoogleFonts.ralewayTextTheme()
-        ),
-        home: LandingPage(),
+      child: StreamBuilder<int>(
+          initialData: themeIndex == null ? 0 : themeIndex,
+          stream: themeBloc.newThemeStream,
+        builder: (context, snapShot) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'Anchor',
+            theme: snapShot.data == null
+                ? ThemeUtil.getTheme(themeIndex: themeIndex)
+                : ThemeUtil.getTheme(themeIndex: snapShot.data),
+            home: LandingPage(),
+          );
+        }
       ),
     );
   }
@@ -98,26 +119,8 @@ class _LandingPageState extends State<LandingPage> {
     }
   }
 
-  var _key = GlobalKey<ScaffoldState>();
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _key,
-      appBar: AppBar(
-        title: Text('BFN Anchor App'),
-      ),
-      body: isBusy
-          ? Center(
-              child: Container(
-                  width: 200,
-                  height: 200,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 24,
-                    backgroundColor: Colors.pink,
-                  )),
-            )
-          : isFirstTime ? Welcome(null) : Dashboard(),
-    );
+    return isFirstTime ? Welcome(null) : Dashboard();
   }
 }

@@ -52,6 +52,7 @@ class AdminController(rpc: NodeRPCConnection) {
         }
         return list
     }
+
     @GetMapping(value = ["/generateOffers"], produces = ["application/json"])
     @Throws(Exception::class)
     private fun generateOffers(@RequestParam max: Int?): String {
@@ -62,24 +63,16 @@ class AdminController(rpc: NodeRPCConnection) {
         logger.info(result)
         return result
     }
-    @GetMapping(value = ["/generateInvoices"], produces = ["application/json"])
+
+    @PostMapping(value = ["/generateInvoices"], produces = ["application/json"])
     @Throws(Exception::class)
-    private fun generateInvoices(@RequestParam max: String = "1"): String {
-        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 AdminController: generateInvoices ... \uD83C\uDF4F max: $max")
-        var maximumRecords: Int = max.toInt()
-        val result = DemoUtil.generateInvoices(proxy, count = maximumRecords)
+    private fun generateInvoices(@RequestBody customer:AccountInfoDTO): String {
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 AdminController: generateInvoices ... \uD83C\uDF4F ")
+        val result = DemoUtil.generateInvoices(proxy, count = 20, customer = customer)
         logger.info(result)
         return result
     }
-    @GetMapping(value = ["/generateCrossNodeInvoices"], produces = ["application/json"])
-    @Throws(Exception::class)
-    private fun generateCrossNodeInvoices(@RequestParam max: String = "1"): String {
-        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 generateCrossNodeInvoices ... \uD83C\uDF4F ")
-        val maximumRecords: Int = max.toInt();
-        val result = DemoUtil.generateCrossNodeInvoices(proxy, maximumRecords)
-        logger.info(result)
-        return result
-    }
+
     @GetMapping(value = ["/selectBestOffer"], produces = ["application/json"])
     @Throws(Exception::class)
     private fun selectBestOffer(@RequestParam accountId: String,
@@ -221,15 +214,16 @@ class AdminController(rpc: NodeRPCConnection) {
     @GetMapping(value = ["/getUsers"])
     fun getUsersFromFirestore() : List<UserDTO> {
         val start = Date()
-        val users: MutableList<UserDTO> = ArrayList()
+        val users: MutableList<UserDTO> = mutableListOf()
         try {
             val userRecords = FirebaseUtil.getUsers()
             for (userRecord in userRecords) {
                 logger.info("🔵 🔵 userRecord 😡 " + userRecord.displayName + " 😡 " + userRecord.email)
-                val user = UserDTO()
-                user.name = userRecord.displayName
-                user.email = userRecord.email
-                user.uid = userRecord.uid
+                val user = UserDTO(
+                        name = userRecord.displayName,
+                        email = userRecord.email,
+                        uid = userRecord.uid
+                )
                 users.add(user)
             }
             ResponseTimer.writeResponse(start = start, 

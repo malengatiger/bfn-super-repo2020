@@ -7,4 +7,4 @@ data class SupplierProfileStateDTO (val issuedBy: String?,
                                     val bank: String,
                                     val bankAccount: String,
                                     val maximumDiscount: Double,
-                                    val date: Date = Date())
+                                    val date: String = Date().toString())

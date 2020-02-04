@@ -12,7 +12,7 @@ data class AnchorDTO(
         var tradeFrequencyInMinutes: Int? = null,
         var defaultOfferDiscount: Double? = null,
         var tradeMatrices: MutableList<TradeMatrix>? = null,
-        var date: Date? = null,
+        var date: String? = null,
         var name: String? = null,
         var email: String? = null,
         var cellphone: String? = null,

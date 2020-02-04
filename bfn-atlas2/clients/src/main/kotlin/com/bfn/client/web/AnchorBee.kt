@@ -10,7 +10,12 @@ import com.bfn.flows.AnchorCreationFlow
 import com.bfn.flows.CreateAccountFlow
 import com.bfn.flows.anchor.AnchorUpdateFlow
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import net.corda.core.contracts.StateAndRef
 import net.corda.core.messaging.CordaRPCOps
+import net.corda.core.node.services.Vault
+import net.corda.core.node.services.vault.PageSpecification
+import net.corda.core.node.services.vault.QueryCriteria
+import net.corda.core.node.services.vault.Sort
 import org.slf4j.LoggerFactory
 import java.util.*
 
@@ -27,8 +32,23 @@ object AnchorBee {
         if (anchor.accountId == null) {
             throw Exception("Illegal call. anchor cannot be updated before it is created")
         }
+        var oldState: AnchorState? = null
+        val states = proxy.vaultQueryByWithPagingSpec(
+                criteria = QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.UNCONSUMED),
+                paging = PageSpecification(1, 20),
+                contractStateType = AnchorState::class.java
+        ).states
+        logger.info("\uD83C\uDF15 \uD83C\uDF15 Anchor states found: ${states.size}")
+        states.forEach() {
+            if (it.state.data.name == anchor.name) {
+                oldState = it.state.data
+            }
+        }
+        if (oldState == null) {
+            throw Exception("\uD83D\uDC7F Anchor does not exist on the Corda node")
+        }
         val cordaFuture = proxy.startFlowDynamic(
-                AnchorUpdateFlow::class.java,anchor).returnValue
+                AnchorUpdateFlow::class.java,oldState!!).returnValue
         val result = cordaFuture.get()
         val dto = getDTO(result)
         logger.info("\uD83C\uDF53 createAnchor: Anchor updated: \uD83C\uDF53 ${dto.name}")
@@ -113,7 +133,7 @@ object AnchorBee {
                 defaultOfferDiscount = a.defaultOfferDiscount,
                 tradeFrequencyInMinutes = a.tradeFrequencyInMinutes,
                 tradeMatrices = a.tradeMatrices,
-                date = a.date,
+                date = a.date.toString(),
                 name = a.name,
                 email = a.email,
                 cellphone = a.cellphone, password = ""

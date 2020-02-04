@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.states.AnchorState
 import com.bfn.contractstates.states.InvoiceOfferState
 import com.bfn.contractstates.states.InvoiceState
+import com.bfn.flows.toDate
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.template.InvoiceOfferContract
 import net.corda.core.contracts.StateAndRef
@@ -16,6 +17,7 @@ import net.corda.core.transactions.TransactionBuilder
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 
@@ -103,7 +105,7 @@ class AnchorMakeOffersFlow() : FlowLogic<List<InvoiceOfferState>>() {
         var discount = 0.0
         anchor.tradeMatrices.forEach() {
             val now = LocalDate.now()
-            val invoiceDate = convertToLocalDateViaInstant(invoice.dateRegistered!!)
+            val invoiceDate = LocalDate.parse(it.date)
             val someDate = now.minusDays(it.maximumInvoiceAgeInDays.toLong())
             var isWithinAge = false
             if (invoiceDate!!.toEpochDay() > someDate.toEpochDay()) {
@@ -119,12 +121,7 @@ class AnchorMakeOffersFlow() : FlowLogic<List<InvoiceOfferState>>() {
 
         return discount;
     }
-    @Suspendable
-    private fun convertToLocalDateViaInstant(dateToConvert: Date): LocalDate? {
-        return dateToConvert.toInstant()
-                .atZone(ZoneId.systemDefault())
-                .toLocalDate()
-    }
+
     private val pp = "\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95";
 
     companion object {

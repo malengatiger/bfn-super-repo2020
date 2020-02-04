@@ -13,21 +13,27 @@ sleep 15s
 echo "🔆 Woke up, opening terminal for Regulator Corda Node"
 ttab ./scripts/nregulator.sh
 
-# ------------ partyA NODE
+# ------------ ANCHOR NODE
 echo "🕗  Sleeping for 15 seconds"
 sleep 15s
 echo "🔆 Woke up, 🔆 🔆 🔆  opening terminal for Anchor"
 ttab ./scripts/nanchor.sh
 
-# ------------ partyB NODE
+# ------------ CUSTOMER NODE
 echo "🕗 Sleeping for 15 seconds"
 sleep 15s
 echo "🔆 Woke up, 🔆 🔆 🔆  opening terminal for Customer"
 ttab ./scripts/ncustomer.sh
 
+echo "🔵 almost done ... 🍎 🍎 corda nodes booted up! 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵"
 
-echo "🔵 DONE! 🍎 🍎 corda nodes booted up! 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵"
 
+# ------------ API Web Servers
+echo "🕗 Sleeping for 15 seconds to let the Corda nodes finish booting up ..."
+sleep 15s
+echo "🔆 Woke up, 🔆 🔆 🔆  starting web servers ..... 🔵 🔵"
+ttab ./scripts/apiservers.sh
+echo "🔵 🍎 🍎 READY TO RUMBLE IN THE JUNGLE!! 🍎 🍎 will start data generation ... 🔵 🔵 🔵 🔵 🔵 "
 
 
 

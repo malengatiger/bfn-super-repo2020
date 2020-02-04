@@ -100,7 +100,7 @@ object FirebaseUtil {
             val userRecord = auth.createUser(createRequest)
             anchor = AnchorDTO(
                     name = name, email = email, uid = userRecord.uid,
-                    date = Date(), password = password
+                    date = Date().toString(), password = password
             )
 
             db.collection("anchors").add(anchor)

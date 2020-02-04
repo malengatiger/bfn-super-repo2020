@@ -22,7 +22,7 @@ class InvoiceState(val invoiceId: UUID,
                    val supplierInfo: AccountInfo,
                    val customerInfo: AccountInfo,
                    val externalId: String,
-                   val dateRegistered: Date?) : ContractState {
+                   val dateRegistered: String) : ContractState {
 
     override val participants: List<AbstractParty>
         get() = listOf(supplierInfo.host,

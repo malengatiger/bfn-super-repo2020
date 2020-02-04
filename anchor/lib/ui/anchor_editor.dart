@@ -108,6 +108,7 @@ class _AnchorEditorState extends State<AnchorEditor> {
                     TextFormField(
                       controller: nameEditor,
                       keyboardType: TextInputType.text,
+                      style: Styles.blackBoldMedium,
                       decoration: InputDecoration(
                         labelText: 'Anchor Name',
                         hintText: 'Enter Anchor Name',
@@ -337,20 +338,24 @@ class _AnchorEditorState extends State<AnchorEditor> {
     await Navigator.push(context, SlideRightRoute(
       widget: TradeMatrixList(anchor)
     ));
+    Navigator.pop(context);
 
   }
   _submit(Anchor anchor) async {
     try {
       if (anchor.accountId == null) {
         var res = await Net.createAnchor(anchor);
+        await Prefs.saveAnchor(res);
         debugPrint('☘️ ☘️ ☘️ Looks like we good with 🌼 Anchor 🌼 creation');
         debugPrint('Anchor Result : 🌼 🌼 🌼 ${res.toJson()} 🌼 🌼 🌼');
         Navigator.pop(context, res);
       } else {
         var res = await Net.updateAnchor(anchor);
+        await Prefs.saveAnchor(res);
         debugPrint('☘️ ☘️ ☘️ Looks like we good with 🎈Anchor 🎈 update 🎈');
         debugPrint('Anchor Result : 🎈🎈🎈 ${res.toJson()} 🎈🎈🎈');
       }
+
     } catch (e) {
       debugPrint('👿 👿 👿 👿 Hey Jose, we gotta a problem: $e');
     }
@@ -372,6 +377,7 @@ class _AnchorEditorState extends State<AnchorEditor> {
             actions: <Widget>[
               FlatButton(
                 onPressed: () {
+                  Navigator.pop(context);
                   _submit(anchor);
                 },
                 child: Text(
@@ -381,6 +387,7 @@ class _AnchorEditorState extends State<AnchorEditor> {
               ),
               FlatButton(
                 onPressed: () {
+                  Navigator.pop(context);
                  _startList(anchor);
                 },
                 child: Text(

@@ -224,6 +224,7 @@ class _TradeMatrixListState extends State<TradeMatrixList> {
         debugPrint('☘️ ☘️ ☘️ Looks like we good with 🎈 Anchor 🎈 update 🎈');
         debugPrint('Anchor Result : 🎈🎈🎈 ${res.toJson()} 🎈🎈🎈');
         Navigator.pop(context, res);
+        Navigator.pop(context, res);
       }
     } catch (e) {
       debugPrint('👿 👿 👿 👿 Hey Jose, we gotta a problem: 👿 👿 $e');

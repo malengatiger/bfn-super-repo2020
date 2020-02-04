@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
 
-echo "🔆 Woke up, 🧩 🧩 🧩 🧩  opening PartyA webserver"
-ttab ./scripts/wpartyA.sh
+echo "🔆 🍎 🍎 Woke up, 🧩 🧩 🧩 🧩  opening Anchor webserver"
+ttab ./scripts/wanchor.sh
+echo "🕗 Sleeping for 15 seconds ... "
 sleep 15s
 
-echo "🔆 Woke up, 🧩 🧩 🧩 🧩  opening PartyB webserver"
-ttab ./scripts/wpartyB.sh
+echo "🔆 🍎 🍎 Woke up, 🧩 🧩 🧩 🧩  opening Customer webserver"
+ttab ./scripts/wcustomer.sh
+echo "🕗 Sleeping for 15 seconds ... "
 sleep 15s
-#echo "🔆 Woke up, 🧩 🧩 🧩 🧩  opening PartyC webserver"
-#ttab ./scripts/wpartyC.sh
-#sleep 15s
 
-echo "🔆 Woke up, 🧩 🧩 🧩 🧩 opening Regulator webserver"
+echo "🔆 🍎 🍎 Woke up, 🧩 🧩 🧩 🧩 opening Regulator webserver"
 ttab ./scripts/wregulator.sh
+echo "🕗 Sleeping for 15 seconds to let everything settle down"
 sleep 15s
 
-echo "🍀 🍀 🍀 🍀 🍀 🍀 🍀 done deploying Corda api webservers 🍀 🍀 🍀 🍀 🍀 🍀 🍀 "
+echo "🍎 🍎 🍎 🍎 done deploying BFN API web servers 🍀 🍀 🍀 🔵 🔵 🍀 🍀 🍀 "
 
 
 

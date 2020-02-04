@@ -1,5 +1,7 @@
 import 'package:anchor/onboard/pages.dart';
+import 'package:anchor/ui/dashboard.dart';
 import 'package:bfnlibrary/data/anchor.dart';
+import 'package:bfnlibrary/util/slide_right.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 
@@ -22,13 +24,18 @@ class _WelcomeState extends State<Welcome> {
       },
       child: Scaffold(
         appBar: AppBar(
+          leading: Container(),
           elevation: 0,
-          title: Text('Business Finance Network',
+          centerTitle: true,
+          title: Text('Business Finance',
             style: TextStyle(fontFamily: GoogleFonts.raleway().toString(), fontSize: 20),),
           backgroundColor: Colors.orange,
           actions: <Widget>[
             IconButton(icon: Icon(Icons.close), onPressed: () {
               Navigator.pop(context);
+              Navigator.push(context, SlideRightRoute(
+                widget: Dashboard()
+              ));
             },),
           ],
         ),

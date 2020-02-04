@@ -31,6 +31,9 @@ import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.node.services.vault.QueryCriteria.VaultQueryCriteria
 import net.corda.core.utilities.getOrThrow
 import org.slf4j.LoggerFactory
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 object WorkerBee {
@@ -606,36 +609,35 @@ object WorkerBee {
             if (customerInfo == null) {
                 throw Exception("Customer is bloody missing")
             }
-            val taxPercentage = (invoice.valueAddedTax?.div(100.0) ?: 0.0)
-            val totalTaxAmt = invoice.amount!! * taxPercentage
-            invoice.totalAmount = totalTaxAmt + invoice.amount!!;
+            val taxPercentage = (invoice.valueAddedTax.div(100.0) ?: 0.0)
+            val totalTaxAmt = invoice.amount * taxPercentage
+            invoice.totalAmount = totalTaxAmt + invoice.amount;
             //
-            val invoiceState = InvoiceState(UUID.randomUUID(),
-                    invoice.invoiceNumber!!,
-                    invoice.description!!,
-                    invoice.amount!!,
-                    invoice.valueAddedTax!!,
-                    invoice.totalAmount!!,
-                    supplierInfo,
-                    customerInfo,
-                    invoice.externalId!!,
-                    Date())
+            val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SS'Z'")
+                    .withZone(ZoneId.systemDefault())
+                    .format(Instant.now());
+            val invoiceState = InvoiceState(
+                    invoiceId = UUID.randomUUID(),
+                    invoiceNumber = invoice.invoiceNumber,
+                    description = invoice.description,
+                    amount = invoice.amount,
+                    valueAddedTax = invoice.valueAddedTax,
+                    totalAmount = invoice.totalAmount,
+                    supplierInfo = supplierInfo,
+                    customerInfo = customerInfo,
+                    externalId = invoice.externalId,
+                    dateRegistered = fmt
+            )
+
             val issueTx = proxy.startTrackedFlowDynamic(
                     InvoiceRegistrationFlow::class.java, invoiceState).returnValue.getOrThrow()
+
             logger.info("\uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F flow completed... " +
                     "\uD83C\uDF4F \uD83C\uDF4F \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06  " +
                     "\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C  signedTransaction returned: \uD83E\uDD4F "
                     + issueTx.toString() + " \uD83E\uDD4F \uD83E\uDD4F ")
-//            if (shareWithOtherNodes) {
-//                try {
-//                    logger.info("........  \uD83D\uDCE3 \uD83D\uDCE3 \uD83D\uDCE3 Share the new invoice with other nodes")
-//                    proxy.startTrackedFlowDynamic(
-//                            BroadcastTransactionFlow::class.java, issueTx).returnValue
-//                } catch (e: Exception) {
-//                    logger.warn("Invoice sharing failed", e)
-//                }
-//            }
-            val dto = getDTO(invoiceState)
+
+            val dto = invoiceState?.let { getDTO(it) }
             //logger.info("Check amount discount total calculations: " + GSON.toJson(dto))
             try {
                 sendInvoiceMessage(dto)
@@ -646,12 +648,13 @@ object WorkerBee {
             } catch (e: Exception) {
                 logger.error(e.message)
             }
-            dto
+            dto!!
         } catch (e: Exception) {
             if (e.message != null) {
                 throw Exception("Failed to register invoice. " + e.message)
             } else {
-                throw Exception("Failed to register invoice. Unknown cause")
+                e.printStackTrace()
+                throw Exception("Failed to register invoice. Unknown bloody cause!!")
             }
         }
     }
@@ -847,35 +850,36 @@ object WorkerBee {
     @JvmStatic
     @Throws(Exception::class)
     fun getDTO(state: InvoiceState): InvoiceDTO {
-        val invoice = InvoiceDTO()
-        invoice.amount = state.amount
-        invoice.customer = getDTO(state.customerInfo)
-        invoice.supplier = getDTO(state.supplierInfo)
-        invoice.description = state.description
-        invoice.invoiceId = state.invoiceId.toString()
-        invoice.invoiceNumber = state.invoiceNumber
-        invoice.dateRegistered = state.dateRegistered
-        invoice.valueAddedTax = state.valueAddedTax
-        invoice.totalAmount = state.totalAmount
-        return invoice
+        return InvoiceDTO(
+                amount = state.amount,
+                customer = getDTO(state.customerInfo),
+                supplier = getDTO(state.supplierInfo),
+                description = state.description,
+                invoiceId = state.invoiceId.toString(),
+                invoiceNumber = state.invoiceNumber,
+                dateRegistered = state.dateRegistered.toString(),
+                valueAddedTax = state.valueAddedTax,
+                totalAmount = state.totalAmount,
+                externalId = state.externalId
+        )
     }
 
     @JvmStatic
     @Throws(Exception::class)
     fun getDTO(state: InvoiceOfferState): InvoiceOfferDTO {
-        val o = InvoiceOfferDTO()
-        o.invoiceId = state.invoiceId.toString()
-        o.invoiceNumber = state.invoiceNumber
-        o.offerAmount = state.offerAmount
-        o.originalAmount = state.originalAmount
-        o.discount = state.discount
-        o.supplier = getDTO(state.supplier)
-        o.investor = getDTO(state.investor)
-        o.customer = getDTO(state.customer)
+        return InvoiceOfferDTO(
+                invoiceId = state.invoiceId.toString(),
+                invoiceNumber = state.invoiceNumber,
+                offerAmount = state.offerAmount,
+                originalAmount = state.originalAmount,
+                discount = state.discount,
+                supplier = getDTO(state.supplier),
+                investor = getDTO(state.investor),
+                offerDate = state.offerDate.toString(),
+                investorDate = state.ownerDate.toString(),
+                accepted = state.accepted, externalId = state.externalId
 
-        o.offerDate = state.offerDate
-        o.investorDate = state.ownerDate
-        return o
+        )
     }
 
     @JvmStatic
@@ -891,7 +895,7 @@ object WorkerBee {
     fun getDTO(a: InvestorProfileState): InvestorProfileStateDTO {
         return InvestorProfileStateDTO(
                 issuedBy = a.issuedBy.toString(),
-                accountId = a.accountId, date = a.date,
+                accountId = a.accountId, date = a.date.toString(),
                 defaultDiscount = a.defaultDiscount,
                 maximumInvoiceAmount = a.maximumInvoiceAmount,
                 totalInvestment = a.totalInvestment,
@@ -903,7 +907,7 @@ object WorkerBee {
     fun getDTO(a: SupplierProfileState): SupplierProfileStateDTO {
         return SupplierProfileStateDTO(
                 issuedBy = a.issuedBy.toString(),
-                accountId = a.accountId, date = a.date,
+                accountId = a.accountId, date = a.date.toString(),
                 maximumDiscount = a.maximumDiscount,
                 bank = a.bank,
                 bankAccount = a.bankAccount
