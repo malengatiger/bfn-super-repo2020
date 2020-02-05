@@ -774,7 +774,7 @@ object WorkerBee {
                 offerAmount = invoiceOffer.offerAmount!!,
                 offerDate = Date(),
                 originalAmount = invoiceState.totalAmount,
-                ownerDate = Date(),
+                acceptanceDate = Date(),
                 accepted = false,
                 externalId = invoiceState.externalId
         )
@@ -876,7 +876,7 @@ object WorkerBee {
                 supplier = getDTO(state.supplier),
                 investor = getDTO(state.investor),
                 offerDate = state.offerDate.toString(),
-                investorDate = state.ownerDate.toString(),
+                investorDate = state.acceptanceDate.toString(),
                 accepted = state.accepted, externalId = state.externalId
 
         )

@@ -1,6 +1,7 @@
 package com.bfn.flows.services
 
 import co.paralleluniverse.fibers.Suspendable
+import com.bfn.contractstates.states.AnchorState
 import com.bfn.contractstates.states.InvoiceOfferState
 import com.bfn.contractstates.states.InvestorProfileState
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
@@ -19,11 +20,11 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
             serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
 
     @Suspendable
-    fun getOffersOnNode(): List<InvoiceOfferState> {
-        val list:  MutableList<InvoiceOfferState> = mutableListOf()
+    fun getOffersOnNode(): List<StateAndRef<InvoiceOfferState>> {
+        val list:  MutableList<StateAndRef<InvoiceOfferState>> = mutableListOf()
         val allOffers = getAllOffers()
         allOffers.forEach() {
-            list.add(it.state.data)
+            list.add(it)
         }
         return list
     }
@@ -32,8 +33,8 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
         val list:  MutableList<InvoiceOfferState> = mutableListOf()
         val allOffers = getOffersOnNode()
         allOffers.forEach() {
-            if (it.supplier.identifier.id.toString() == supplierId) {
-                list.add(it)
+            if (it.state.data.supplier.identifier.id.toString() == supplierId) {
+                list.add(it.state.data)
             }
         }
         return list
@@ -43,11 +44,30 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
         val list:  MutableList<InvoiceOfferState> = mutableListOf()
         val allOffers = getOffersOnNode()
         allOffers.forEach() {
-            if (it.investor.identifier.id.toString() == investorId) {
-                list.add(it)
+            if (it.state.data.investor.identifier.id.toString() == investorId) {
+                list.add(it.state.data)
             }
         }
         return list
+    }
+    @Suspendable
+    @Throws(Exception::class)
+    fun findAnchorOffer(invoiceId: String): StateAndRef<InvoiceOfferState>? {
+        logger.info(" \uD83D\uDC2C \uD83D\uDC2C BestOfferFinderService:findOffer ... " +
+                "\uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C")
+        val existingAnchor = serviceHub.vaultService.queryBy(AnchorState::class.java).states.singleOrNull()
+                ?: throw IllegalArgumentException("Anchor does not exist")
+
+        val allOffers = getOffersOnNode()
+        allOffers.forEach() {
+            if (it.state.data.invoiceId.toString() == invoiceId
+                    && it.state.data.investor.identifier.id.toString() ==
+                    existingAnchor.state.data.account.identifier.id.toString()) {
+                return it
+            }
+        }
+
+        return null
     }
     @Suspendable
     @Throws(Exception::class)
@@ -59,9 +79,9 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
         val allOffers = getOffersOnNode()
         val list: MutableList<InvoiceOfferState> = mutableListOf()
         allOffers.forEach() {
-            if (it.supplier.identifier.id.toString() == supplierId
-                    && it.invoiceId.toString() == invoiceId) {
-                list.add(it)
+            if (it.state.data.supplier.identifier.id.toString() == supplierId
+                    && it.state.data.invoiceId.toString() == invoiceId) {
+                list.add(it.state.data)
             }
         }
         var bestOffer: InvoiceOfferState?

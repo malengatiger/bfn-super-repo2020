@@ -165,10 +165,10 @@ class InvoiceOfferFlow(invoiceOfferState: InvoiceOfferState) : FlowLogic<SignedT
 
         list.forEach() {
             if (invoiceOfferState.invoiceId.toString()
-                    == it.invoiceId.toString()
+                    == it.state.data.invoiceId.toString()
                     && invoiceOfferState.investor.identifier.id.toString()
-                    == it.investor.identifier.id.toString()
-                    && invoiceOfferState.offerAmount == it.offerAmount) {
+                    == it.state.data.investor.identifier.id.toString()
+                    && invoiceOfferState.offerAmount == it.state.data.offerAmount) {
                 isFound = true
             }
         }

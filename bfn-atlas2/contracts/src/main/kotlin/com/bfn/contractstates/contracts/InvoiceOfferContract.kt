@@ -18,7 +18,7 @@ class InvoiceOfferContract : Contract {
 
     class MakeOffer : CommandData
     class CloseOffer : CommandData
-    class InvestorSelected: CommandData
+    class AcceptOffer: CommandData
     companion object {
         // This is used to identify our contract when building a transaction.
         val ID: String = InvoiceOfferContract::class.java.name

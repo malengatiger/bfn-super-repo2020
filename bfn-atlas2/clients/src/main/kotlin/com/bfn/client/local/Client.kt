@@ -227,7 +227,7 @@ private class Client {
                 supplier = getDTO(state.supplier),
                 investor = getDTO(state.investor),
                 offerDate = state.offerDate.toString(),
-                investorDate = state.ownerDate.toString(),
+                investorDate = state.acceptanceDate.toString(),
                 accepted = state.accepted, externalId = state.externalId
 
         )

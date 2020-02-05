@@ -17,8 +17,8 @@ class InvoiceOfferState(val invoiceId: UUID,
                         val originalAmount: Double,
                         val supplier: AccountInfo,
                         val investor: AccountInfo,
-                        val offerDate: Date,
-                        val ownerDate: Date,
+                        val offerDate: String,
+                        val acceptanceDate: String,
                         val externalId: String,
                         val invoiceNumber: String,
                         val accepted: Boolean,
@@ -26,6 +26,6 @@ class InvoiceOfferState(val invoiceId: UUID,
 
     override val participants: List<AbstractParty>
         get() = ImmutableList.of<AbstractParty>(supplier.host,
-                investor.host)
+                investor.host, customer.host)
 
 }

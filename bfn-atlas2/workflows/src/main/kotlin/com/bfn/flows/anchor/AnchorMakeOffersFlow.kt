@@ -4,7 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.states.AnchorState
 import com.bfn.contractstates.states.InvoiceOfferState
 import com.bfn.contractstates.states.InvoiceState
-import com.bfn.flows.toDate
+import com.bfn.flows.todaysDate
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.template.InvoiceOfferContract
 import net.corda.core.contracts.StateAndRef
@@ -38,33 +38,38 @@ class AnchorMakeOffersFlow() : FlowLogic<List<InvoiceOfferState>>() {
                 paging = PageSpecification(
                         pageNumber = 1, pageSize = 1000)
         ).states
-        val list: MutableList<InvoiceOfferState> = mutableListOf()
 
+        val anchorParty = RequestKeyForAccount(existingAnchor.state.data.account).ourIdentity
+        var cnt = 0
+        var cnt2 = 0
+        var list:MutableList<InvoiceOfferState> = mutableListOf()
         states.forEach() {
             val offer = processInvoice(it, existingAnchor.state.data)
             if (offer != null) {
+                val command = InvoiceOfferContract.MakeOffer()
+                val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
+                val supplierParty = RequestKeyForAccount(offer.supplier).ourIdentity
+                txBuilder.addCommand(command, anchorParty.owningKey, supplierParty.owningKey)
+                txBuilder.addInputState(it)
+                txBuilder.addOutputState(offer)
+                val tx = serviceHub.signInitialTransaction(txBuilder)
+                if (supplierParty.name.organisation != anchorParty.name.organisation) {
+                    val session = initiateFlow(supplierParty)
+                    val signedTransaction = subFlow(CollectSignaturesFlow(
+                            partiallySignedTx = tx, sessionsToCollectFrom = listOf(session)))
+                    subFlow(FinalityFlow(signedTransaction, listOf(session)))
+                    logger.info("\uD83D\uDC7D Transaction finalized with Supplier on another node")
+                    cnt2++
+                } else {
+                    logger.info("\uD83D\uDC7D Transaction finalized with Supplier on same node as anchor")
+                }
                 list.add(offer)
+                cnt++
             }
         }
-        val anchorParty = RequestKeyForAccount(existingAnchor.state.data.account).ourIdentity
-        list.forEach() {
-            val command = InvoiceOfferContract.MakeOffer()
-            val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
-            val supplierParty = RequestKeyForAccount(it.supplier).ourIdentity
-            txBuilder.addCommand(command, anchorParty.owningKey, supplierParty.owningKey)
-            txBuilder.addOutputState(it)
-            val tx = serviceHub.signInitialTransaction(txBuilder)
-            if (supplierParty.name.organisation != anchorParty.name.organisation) {
-                val session = initiateFlow(supplierParty)
-                val signedTransaction = subFlow(CollectSignaturesFlow(
-                        partiallySignedTx = tx, sessionsToCollectFrom = listOf(session)))
-                subFlow(FinalityFlow(signedTransaction, listOf(session)))
-                logger.info("\uD83D\uDC7D Transaction finalized with Supplier on another node")
-            } else {
-                logger.info("\uD83D\uDC7D Transaction finalized with Supplier on same node as anchor")
-            }
-        }
-        logger.info("Anchor has made ${list.size} invoice offers")
+
+        logger.info("\uD83D\uDC7D \uD83D\uDC7D Anchor has made  \uD83C\uDF4E ${list.size} invoice offers; " +
+                "  \uD83C\uDF4E $cnt suppliers from this node;  \uD83C\uDF4E $cnt2 suppliers from other nodes")
         return list
     }
 
@@ -87,6 +92,9 @@ class AnchorMakeOffersFlow() : FlowLogic<List<InvoiceOfferState>>() {
         }
         val mDisc = disc / 100
         val offerDouble = invoice.totalAmount * (1.0 - mDisc)
+        val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SS'Z'")
+                .withZone(ZoneId.systemDefault())
+                .format(Date().toInstant());
         return InvoiceOfferState(
                 invoiceId = invoice.invoiceId,
                 invoiceNumber = invoice.invoiceNumber,
@@ -95,9 +103,9 @@ class AnchorMakeOffersFlow() : FlowLogic<List<InvoiceOfferState>>() {
                 supplier = invoice.supplierInfo,
                 offerAmount = offerDouble,
                 investor = anchor.account,
-                offerDate = Date(),
+                offerDate = todaysDate(),
                 originalAmount = invoice.totalAmount,
-                ownerDate = Date(), accepted = false, externalId = invoice.externalId
+                acceptanceDate = todaysDate(), accepted = false, externalId = invoice.externalId
         )
     }
     @Suspendable

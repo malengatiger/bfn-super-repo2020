@@ -18,14 +18,21 @@ class InvoiceOfferQueryFlow(
 
 
         when (action) {
-            FIND_FOR_NODE -> return service.getOffersOnNode()
+            FIND_FOR_NODE -> return getOffers()
             FIND_FOR_INVESTOR -> return service.getOffersForInvestor(id!!)
             FIND_FOR_SUPPLIER -> return service.getOffersForSupplier(id!!)
         }
 
-        return service.getOffersOnNode()
+        return getOffers()
     }
-
+    private fun getOffers(): List<InvoiceOfferState> {
+        val service = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
+        val mList:  MutableList<InvoiceOfferState> = mutableListOf()
+        service.getOffersOnNode().forEach() {
+            mList.add(it.state.data)
+        }
+        return mList
+    }
     companion object {
         private val logger = LoggerFactory.getLogger(InvoiceQueryFlow::class.java)
         const val FIND_FOR_NODE = 1

@@ -7,6 +7,7 @@ import com.bfn.contractstates.states.InvoiceOfferState
 import com.bfn.contractstates.states.InvoiceState
 import com.bfn.contractstates.states.SupplierPaymentState
 import com.bfn.flows.services.ProfileFinderService
+import com.bfn.flows.todaysDate
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
@@ -19,7 +20,7 @@ import java.util.*
 
 @InitiatingFlow
 @StartableByRPC
-class AnchorMakePaymentFlow(private val acceptedOffer: InvoiceOfferState) : FlowLogic<SupplierPaymentState>() {
+class AnchorMakePaymentFlow(private val acceptedOffer: StateAndRef<InvoiceOfferState>) : FlowLogic<SupplierPaymentState>() {
 
     @Suspendable
     override fun call(): SupplierPaymentState {
@@ -30,20 +31,21 @@ class AnchorMakePaymentFlow(private val acceptedOffer: InvoiceOfferState) : Flow
         val anchorParty = RequestKeyForAccount(existingAnchor.state.data.account).ourIdentity
         val command = SupplierPaymentContract.Pay()
         val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
-        val supplierParty = RequestKeyForAccount(acceptedOffer.supplier).ourIdentity
-        val customerParty = RequestKeyForAccount(acceptedOffer.customer).ourIdentity
+        val supplierParty = RequestKeyForAccount(acceptedOffer.state.data.supplier).ourIdentity
+        val customerParty = RequestKeyForAccount(acceptedOffer.state.data.customer).ourIdentity
         val supplierProfile = serviceHub.cordaService(ProfileFinderService::class.java)
-                .findSupplierProfile(acceptedOffer.supplier.identifier.id.toString())
+                .findSupplierProfile(acceptedOffer.state.data.supplier.identifier.id.toString())
+                ?: throw java.lang.IllegalArgumentException("Supplier profile not found")
 
         val payment = SupplierPaymentState(
-                acceptedOffer = acceptedOffer,
-                supplierProfile = supplierProfile!!.state.data,
-                date = Date(),
-                datePaid = null
+                acceptedOffer = acceptedOffer.state.data,
+                supplierProfile = supplierProfile.state.data,
+                date = todaysDate()
 
         )
         //todo - make EFT payment to supplier ... OR do this externally; kicked off in api?
         txBuilder.addCommand(command, anchorParty.owningKey, supplierParty.owningKey, customerParty.owningKey)
+        txBuilder.addInputState(acceptedOffer)
         txBuilder.addOutputState(payment)
 
         val tx = serviceHub.signInitialTransaction(txBuilder)
@@ -62,71 +64,11 @@ class AnchorMakePaymentFlow(private val acceptedOffer: InvoiceOfferState) : Flow
             subFlow(FinalityFlow(signedTransaction, sessions))
             logger.info("\uD83D\uDC7D Transaction finalized with Supplier/customer on ${sessions.size} remote nodes")
         }
-
+        logger.info("\uD83D\uDC7D \uD83D\uDE0E \uD83D\uDE0E Payment created OK")
         return payment
     }
 
-    @Suspendable
-    private fun processInvoice(state: StateAndRef<InvoiceState>, anchor: AnchorState): InvoiceOfferState? {
-        val invoice = state.state.data
-        if (invoice.totalAmount < anchor.minimumInvoiceAmount) {
-            return null
-        }
-        if (invoice.totalAmount > anchor.maximumInvoiceAmount) {
-            return null
-        }
-        val disc = if (anchor.tradeMatrices.isEmpty()) {
-            anchor.defaultOfferDiscount
-        } else {
-            getValidDiscount(invoice, anchor)
-        }
-        if (disc == 0.0) {
-            return null
-        }
-        val mDisc = disc / 100
-        val offerDouble = invoice.totalAmount * (1.0 - mDisc)
-        return InvoiceOfferState(
-                invoiceId = invoice.invoiceId,
-                invoiceNumber = invoice.invoiceNumber,
-                discount = disc,
-                customer = invoice.customerInfo,
-                supplier = invoice.supplierInfo,
-                offerAmount = offerDouble,
-                investor = anchor.account,
-                offerDate = Date(),
-                originalAmount = invoice.totalAmount,
-                ownerDate = Date(),
-                externalId = invoice.externalId,
-                accepted = false
-        )
-    }
-    @Suspendable
-    private fun getValidDiscount(invoice:InvoiceState, anchor: AnchorState): Double {
-        var discount = 0.0
-        anchor.tradeMatrices.forEach() {
-            val now = LocalDate.now()
-            val invoiceDate = LocalDate.parse(invoice.dateRegistered)
-            val someDate = now.minusDays(it.maximumInvoiceAgeInDays.toLong())
-            var isWithinAge = false
-            if (invoiceDate!!.toEpochDay() > someDate.toEpochDay()) {
-                isWithinAge = true
-            }
-            if (it.startInvoiceAmount >= invoice.totalAmount
-                    && it.endInvoiceAmount <= invoice.totalAmount
-                    && isWithinAge) {
-                discount = it.offerDiscount
-                return discount
-            }
-        }
 
-        return discount;
-    }
-    @Suspendable
-    private fun convertToLocalDateViaInstant(dateToConvert: Date): LocalDate? {
-        return dateToConvert.toInstant()
-                .atZone(ZoneId.systemDefault())
-                .toLocalDate()
-    }
     private val pp = "\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95";
 
     companion object {

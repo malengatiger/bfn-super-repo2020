@@ -6,6 +6,7 @@ import com.bfn.contractstates.states.InvoiceState
 import com.bfn.contractstates.states.InvestorProfileState
 import com.bfn.flows.services.InvoiceFinderService
 import com.bfn.flows.services.ProfileFinderService
+import com.bfn.flows.todaysDate
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.accounts.workflows.ourIdentity
@@ -124,11 +125,11 @@ class CreateInvoiceOffersFlow(private val investorId: String) : FlowLogic<List<I
                         discount = investorProfile!!.defaultDiscount,
                         invoiceNumber = it.invoiceNumber,
                         offerAmount = getOfferAmount(it.totalAmount, investorProfile.defaultDiscount),
-                        offerDate = Date(),
+                        offerDate = todaysDate(),
                         originalAmount = it.totalAmount,
                         accepted = false,
                         externalId = it.externalId,
-                        supplier = it.supplierInfo, ownerDate = Date()
+                        supplier = it.supplierInfo, acceptanceDate = todaysDate()
                 ))
             }
         }
