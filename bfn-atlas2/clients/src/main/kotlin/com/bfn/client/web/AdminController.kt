@@ -56,6 +56,19 @@ class AdminController(rpc: NodeRPCConnection) {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting acceptOffer: ... \uD83C\uDF4F ")
         return AnchorBee.acceptOffer(proxy,invoiceId = invoiceId)
     }
+    @GetMapping(value = ["/makeSinglePayment"], produces = ["application/json"])
+    @Throws(Exception::class)
+    private fun makeSinglePayment(@RequestParam invoiceId: String): SupplierPaymentDTO {
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting makeSinglePayment: ... \uD83C\uDF4F ")
+        return AnchorBee.makeSinglePayment(proxy,invoiceId = invoiceId)
+    }
+    @GetMapping(value = ["/makeMultiplePayments"], produces = ["application/json"])
+    @Throws(Exception::class)
+    private fun makeMultiplePayments(): List<SupplierPaymentDTO> {
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting makeMultiplePayments: ... \uD83C\uDF4F ")
+        return AnchorBee.makeMultiplePayments(proxy)
+    }
+
     @GetMapping(value = ["/getInvoicesAcrossNodes"], produces = ["application/json"])
     @Throws(Exception::class)
     private fun getInvoicesAcrossNodes(): List<InvoiceDTO> {

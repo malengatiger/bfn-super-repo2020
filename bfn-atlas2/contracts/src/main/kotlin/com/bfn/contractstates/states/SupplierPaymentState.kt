@@ -9,9 +9,11 @@ import java.util.*
 
 @BelongsToContract(SupplierPaymentContract::class)
 @CordaSerializable
-class SupplierPaymentState(private val acceptedOffer: InvoiceOfferState,
-                           private val supplierProfile: SupplierProfileState,
-                           private val date: String) : ContractState {
+class SupplierPaymentState(
+         val acceptedOffer: InvoiceOfferState,
+         val supplierProfile: SupplierProfileState,
+         val date: String,
+         val paid: Boolean) : ContractState {
 
     override val participants: List<AbstractParty>
         get() = listOf(acceptedOffer.supplier.host,

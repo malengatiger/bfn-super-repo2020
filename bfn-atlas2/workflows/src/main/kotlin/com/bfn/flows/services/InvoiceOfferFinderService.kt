@@ -71,6 +71,27 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
     }
     @Suspendable
     @Throws(Exception::class)
+    fun getAnchorOffersAccepted(): List<StateAndRef<InvoiceOfferState>> {
+        logger.info(" \uD83D\uDC2C \uD83D\uDC2C findAnchorOffer: ... " +
+                "\uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C")
+        val existingAnchor = serviceHub.vaultService.queryBy(AnchorState::class.java).states.singleOrNull()
+                ?: throw IllegalArgumentException("Anchor does not exist")
+
+        val offers:MutableList<StateAndRef<InvoiceOfferState>> = mutableListOf()
+        val allOffers = getOffersOnNode()
+        logger.info("\uD83D\uDC2C \uD83D\uDC2C ${allOffers.size} offers found on node ...")
+        allOffers.forEach() {
+            if (it.state.data.investor.name == existingAnchor.state.data.name) {
+                if (it.state.data.accepted) {
+                   offers.add(it)
+                }
+            }
+        }
+
+        return offers
+    }
+    @Suspendable
+    @Throws(Exception::class)
     fun findRegularOffer(invoiceId: String): StateAndRef<InvoiceOfferState>? {
         logger.info(" \uD83D\uDC2C \uD83D\uDC2C findRegularOffer: ... " +
                 "\uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C")
@@ -119,7 +140,7 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
 
         return bestOffer!!
     }
-    private val pageSize:Int = 1000
+    private val pageSize:Int = 2000
 
     @Suspendable
     fun findProfile(investorId: String): InvestorProfileState? {

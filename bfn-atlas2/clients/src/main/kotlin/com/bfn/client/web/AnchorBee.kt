@@ -8,7 +8,9 @@ import com.bfn.client.web.FirebaseUtil.createUser
 import com.bfn.contractstates.states.*
 import com.bfn.flows.AnchorCreationFlow
 import com.bfn.flows.CreateAccountFlow
+import com.bfn.flows.anchor.AnchorMakeMultiplePaymentsFlow
 import com.bfn.flows.anchor.AnchorMakeOffersFlow
+import com.bfn.flows.anchor.AnchorMakeSinglePaymentFlow
 import com.bfn.flows.anchor.AnchorUpdateFlow
 import com.bfn.flows.supplier.SupplierOfferAcceptanceFlow
 import com.google.cloud.firestore.Firestore
@@ -27,6 +29,33 @@ object AnchorBee {
     private val GSON = GsonBuilder().setPrettyPrinting().create()
     private val db: Firestore = FirestoreClient.getFirestore()
 
+    @JvmStatic
+    @Throws(Exception::class)
+    fun makeSinglePayment(proxy: CordaRPCOps, invoiceId: String) : SupplierPaymentDTO {
+        logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to makeSinglePayment ... ")
+
+        val cordaFuture = proxy.startFlowDynamic(
+                AnchorMakeSinglePaymentFlow::class.java, invoiceId).returnValue
+        val result = cordaFuture.get()
+        logger.info("\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C " +
+                "Bank: ${result.supplierProfile.bank} \uD83D\uDC4C amount: ${result.acceptedOffer.offerAmount} payment state made")
+        return WorkerBee.getDTO(result)
+    }
+    @JvmStatic
+    @Throws(Exception::class)
+    fun makeMultiplePayments(proxy: CordaRPCOps) : List<SupplierPaymentDTO> {
+        logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to makeMultiplePayments ... ")
+
+        val cordaFuture = proxy.startFlowDynamic(
+                AnchorMakeMultiplePaymentsFlow::class.java).returnValue
+        val result = cordaFuture.get()
+        val mList:MutableList<SupplierPaymentDTO> = mutableListOf()
+        result.forEach() {
+            mList.add(WorkerBee.getDTO(it))
+        }
+        logger.info("\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C ${mList.size} payment states made")
+        return mList
+    }
     @JvmStatic
     @Throws(Exception::class)
     fun acceptOffer(proxy: CordaRPCOps, invoiceId: String) : String {

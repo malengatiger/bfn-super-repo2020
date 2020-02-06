@@ -900,6 +900,15 @@ object WorkerBee {
     }
 
     @JvmStatic
+    fun getDTO(a: SupplierPaymentState): SupplierPaymentDTO {
+        return SupplierPaymentDTO(
+                acceptedOffer = getDTO(a.acceptedOffer),
+                supplierProfile = getDTO(a.supplierProfile),
+                date = a.date,
+                paid = a.paid
+        )
+    }
+    @JvmStatic
     fun getDTO(a: SupplierProfileState): SupplierProfileStateDTO {
         return SupplierProfileStateDTO(
                 issuedBy = a.issuedBy.toString(),

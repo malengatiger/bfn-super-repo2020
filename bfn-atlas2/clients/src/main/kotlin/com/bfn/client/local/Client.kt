@@ -64,6 +64,7 @@ private class Client {
         generateInvoices(localAnchorURL, 100)
         generateAnchorOffers(localAnchorURL)
         acceptOffers(localAnchorURL)
+        makeMultiplePayments(localAnchorURL)
 //        getOffers()
 //        generateProfiles()
 //
@@ -79,6 +80,21 @@ private class Client {
 //        printProfiles(proxyPartyA)
 //        printProfiles(proxyPartyB)
 
+    }
+    private fun makeMultiplePayments(url: String) {
+        logger.info("\uD83C\uDF4E makeMultiplePayments\uD83C\uDF4E")
+        val response = httpGet(
+                timeout = 990000000.0,
+                url = "$url/bfn/admin/makeMultiplePayments")
+        logger.info("\uD83C\uDF4E  makeMultiplePayments; RESPONSE: statusCode: " +
+                "${response.statusCode} - ${response.text}")
+
+        val mList = proxyAnchorInvestor.vaultQueryByWithPagingSpec(
+                criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED),
+                contractStateType = SupplierPaymentState::class.java,
+                paging = PageSpecification(1,6000)
+        ).states
+        logger.info("Supplier Payments on node: \uD83C\uDF4E ${mList.size} \uD83C\uDF4E")
     }
 
     private fun acceptOffers(url: String) {

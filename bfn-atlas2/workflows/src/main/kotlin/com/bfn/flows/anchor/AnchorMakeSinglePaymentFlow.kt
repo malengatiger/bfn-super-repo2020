@@ -3,24 +3,23 @@ package com.bfn.flows.anchor
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.contracts.SupplierPaymentContract
 import com.bfn.contractstates.states.AnchorState
-import com.bfn.contractstates.states.InvoiceOfferState
-import com.bfn.contractstates.states.InvoiceState
 import com.bfn.contractstates.states.SupplierPaymentState
+import com.bfn.flows.services.InvoiceOfferFinderService
 import com.bfn.flows.services.ProfileFinderService
 import com.bfn.flows.todaysDate
-import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
-import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
+import net.corda.core.identity.Party
+import net.corda.core.node.services.Vault
+import net.corda.core.node.services.vault.PageSpecification
+import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.transactions.TransactionBuilder
 import org.slf4j.LoggerFactory
-import java.time.LocalDate
-import java.time.ZoneId
-import java.util.*
+import java.security.PublicKey
 
 
 @InitiatingFlow
 @StartableByRPC
-class AnchorMakePaymentFlow(private val acceptedOffer: StateAndRef<InvoiceOfferState>) : FlowLogic<SupplierPaymentState>() {
+class AnchorMakeSinglePaymentFlow(private val invoiceId: String) : FlowLogic<SupplierPaymentState>() {
 
     @Suspendable
     override fun call(): SupplierPaymentState {
@@ -28,11 +27,28 @@ class AnchorMakePaymentFlow(private val acceptedOffer: StateAndRef<InvoiceOfferS
 
         val existingAnchor = serviceHub.vaultService.queryBy(AnchorState::class.java).states.singleOrNull()
                 ?: throw IllegalArgumentException("Anchor does not exist")
-        val anchorParty = RequestKeyForAccount(existingAnchor.state.data.account).ourIdentity
+        val service = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
+        val acceptedOffer = service.findAnchorOffer(invoiceId) ?: throw IllegalArgumentException("Accepted offer not found")
+        if (!acceptedOffer.state.data.accepted) {
+            throw IllegalArgumentException("Offer not accepted by Supplier")
+        }
+        //todo - fix this query - find a way!!
+        val payments = serviceHub.vaultService.queryBy(
+                criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.ALL),
+                contractStateType = SupplierPaymentState::class.java,
+                paging = PageSpecification(1,6000)
+        ).states
+        payments.forEach() {
+            if (it.state.data.acceptedOffer.invoiceId.toString() == invoiceId) {
+                throw IllegalArgumentException("Payment already exists for this invoice: $invoiceId")
+            }
+        }
+        val anchorParty = existingAnchor.state.data.account.host
         val command = SupplierPaymentContract.Pay()
         val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
-        val supplierParty = RequestKeyForAccount(acceptedOffer.state.data.supplier).ourIdentity
-        val customerParty = RequestKeyForAccount(acceptedOffer.state.data.customer).ourIdentity
+        val supplierParty = acceptedOffer.state.data.supplier.host
+        val customerParty = acceptedOffer.state.data.customer.host
+
         val supplierProfile = serviceHub.cordaService(ProfileFinderService::class.java)
                 .findSupplierProfile(acceptedOffer.state.data.supplier.identifier.id.toString())
                 ?: throw java.lang.IllegalArgumentException("Supplier profile not found")
@@ -40,11 +56,20 @@ class AnchorMakePaymentFlow(private val acceptedOffer: StateAndRef<InvoiceOfferS
         val payment = SupplierPaymentState(
                 acceptedOffer = acceptedOffer.state.data,
                 supplierProfile = supplierProfile.state.data,
-                date = todaysDate()
+                date = todaysDate(), paid = false
 
         )
         //todo - make EFT payment to supplier ... OR do this externally; kicked off in api?
-        txBuilder.addCommand(command, anchorParty.owningKey, supplierParty.owningKey, customerParty.owningKey)
+        val keys: MutableList<PublicKey> = mutableListOf()
+        val map: MutableMap<String, Party> = mutableMapOf()
+        map[anchorParty.toString()] = anchorParty
+        map[supplierParty.toString()] = supplierParty
+        map[customerParty.toString()] = customerParty
+        map.values.toList().forEach() {
+            keys.add(it.owningKey)
+        }
+
+        txBuilder.addCommand(command, keys)
         txBuilder.addInputState(acceptedOffer)
         txBuilder.addOutputState(payment)
 
@@ -62,9 +87,12 @@ class AnchorMakePaymentFlow(private val acceptedOffer: StateAndRef<InvoiceOfferS
             val signedTransaction = subFlow(CollectSignaturesFlow(
                     partiallySignedTx = tx, sessionsToCollectFrom = sessions))
             subFlow(FinalityFlow(signedTransaction, sessions))
-            logger.info("\uD83D\uDC7D Transaction finalized with Supplier/customer on ${sessions.size} remote nodes")
+            logger.info("$pp Transaction finalized with Supplier/customer on ${sessions.size} remote nodes")
+        } else {
+            subFlow(FinalityFlow(tx, listOf()))
+            logger.info("$pp Transaction finalized with Supplier/customer on same node")
         }
-        logger.info("\uD83D\uDC7D \uD83D\uDE0E \uD83D\uDE0E Payment created OK")
+        logger.info("$pp Payment state created OK $pp")
         return payment
     }
 
@@ -72,7 +100,7 @@ class AnchorMakePaymentFlow(private val acceptedOffer: StateAndRef<InvoiceOfferS
     private val pp = "\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95";
 
     companion object {
-        private val logger = LoggerFactory.getLogger(AnchorMakePaymentFlow::class.java)
+        private val logger = LoggerFactory.getLogger(AnchorMakeSinglePaymentFlow::class.java)
     }
 
 }
