@@ -22,6 +22,7 @@ import com.bfn.client.web.FirebaseUtil.sendInvoiceMessage
 import com.bfn.client.web.FirebaseUtil.sendInvoiceOfferMessage
 import com.bfn.contractstates.states.*
 import com.bfn.flows.SupplierProfileFlow
+import com.bfn.flows.todaysDate
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.messaging.CordaRPCOps
@@ -31,16 +32,11 @@ import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.node.services.vault.QueryCriteria.VaultQueryCriteria
 import net.corda.core.utilities.getOrThrow
 import org.slf4j.LoggerFactory
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.util.*
 
 object WorkerBee {
     private val logger = LoggerFactory.getLogger(WorkerBee::class.java)
     private val GSON = GsonBuilder().setPrettyPrinting().create()
-
-
 
 
     @JvmStatic
@@ -84,7 +80,7 @@ object WorkerBee {
             logger.info("\uD83C\uDF50️ \uD83C\uDF50 ️Processing account  \uD83C\uDF50️ " +
                     "#$cnt \uD83C\uDF3A ${state.data.name} \uD83C\uDF50️ ")
             val dto = AccountInfoDTO(acct.identifier.id.toString(),
-                    acct.host.toString(), acct.name, null)
+                    acct.host.toString(), acct.name, "")
             if (dto.host.toString() == node) {
                 list.add(dto)
             }
@@ -108,7 +104,7 @@ object WorkerBee {
             cnt++
             val (name, host, identifier) = state.data
             val dto = AccountInfoDTO(identifier.id.toString(),
-                    host.toString(), name, null)
+                    host.toString(), name, "")
             list.add(dto)
         }
         val msg = "\uD83C\uDF3A \uD83C\uDF3A done listing  \uD83E\uDDA0 ${list.size}  " +
@@ -613,9 +609,7 @@ object WorkerBee {
             val totalTaxAmt = invoice.amount * taxPercentage
             invoice.totalAmount = totalTaxAmt + invoice.amount;
             //
-            val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SS'Z'")
-                    .withZone(ZoneId.systemDefault())
-                    .format(Instant.now());
+
             val invoiceState = InvoiceState(
                     invoiceId = UUID.randomUUID(),
                     invoiceNumber = invoice.invoiceNumber,
@@ -626,7 +620,7 @@ object WorkerBee {
                     supplierInfo = supplierInfo,
                     customerInfo = customerInfo,
                     externalId = invoice.externalId,
-                    dateRegistered = fmt
+                    dateRegistered = todaysDate()
             )
 
             val issueTx = proxy.startTrackedFlowDynamic(
@@ -662,8 +656,8 @@ object WorkerBee {
     @JvmStatic
     @Throws(Exception::class)
     fun startAccountRegistrationFlow(proxy: CordaRPCOps,
-                                     accountName: String, email: String?, password: String?,
-                                     cellphone: String?): AccountInfoDTO {
+                                     accountName: String, email: String,
+                                     password: String): AccountInfoDTO {
         return try {
             val criteria: QueryCriteria = VaultQueryCriteria(StateStatus.UNCONSUMED)
             val (states) = proxy.vaultQueryByWithPagingSpec(
@@ -690,13 +684,15 @@ object WorkerBee {
 
             } catch (e: Exception) {
                 logger.error(e.message)
-                logger.error("Firebase fucked up ......")
+                logger.error("Firebase fucked up! Auth user FAIL ......")
                 throw e
             }
-            val dto = AccountInfoDTO()
-            dto.host = host.toString()
-            dto.identifier = identifier.id.toString()
-            dto.name = name
+            val dto = AccountInfoDTO(
+                    host = host.toString(),
+                    identifier = identifier.id.toString(),
+                    name = name,
+                    status = "")
+
             try {
                 sendAccountMessage(dto)
                 val db = FirestoreClient.getFirestore()
@@ -772,9 +768,9 @@ object WorkerBee {
                 discount = invoiceOffer.discount!!,
                 invoiceNumber = invoiceState.invoiceNumber,
                 offerAmount = invoiceOffer.offerAmount!!,
-                offerDate = Date(),
+                offerDate = invoiceOffer.offerDate,
                 originalAmount = invoiceState.totalAmount,
-                acceptanceDate = Date(),
+                acceptanceDate = invoiceOffer.acceptanceDate,
                 accepted = false,
                 externalId = invoiceState.externalId
         )
@@ -875,20 +871,20 @@ object WorkerBee {
                 discount = state.discount,
                 supplier = getDTO(state.supplier),
                 investor = getDTO(state.investor),
-                offerDate = state.offerDate.toString(),
-                investorDate = state.acceptanceDate.toString(),
-                accepted = state.accepted, externalId = state.externalId
+                offerDate = state.offerDate,
+                investorDate = state.acceptanceDate,
+                accepted = state.accepted, externalId = state.externalId,
+                acceptanceDate = state.acceptanceDate
 
         )
     }
 
     @JvmStatic
     fun getDTO(a: AccountInfo): AccountInfoDTO {
-        val info = AccountInfoDTO()
-        info.host = a.host.toString()
-        info.identifier = a.identifier.id.toString()
-        info.name = a.name
-        return info
+        return AccountInfoDTO(
+        host = a.host.toString(),
+        identifier = a.identifier.id.toString(),
+        name = a.name, status = "")
     }
 
     @JvmStatic

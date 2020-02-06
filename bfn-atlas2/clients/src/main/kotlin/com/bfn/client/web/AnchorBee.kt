@@ -8,7 +8,9 @@ import com.bfn.client.web.FirebaseUtil.createUser
 import com.bfn.contractstates.states.*
 import com.bfn.flows.AnchorCreationFlow
 import com.bfn.flows.CreateAccountFlow
+import com.bfn.flows.anchor.AnchorMakeOffersFlow
 import com.bfn.flows.anchor.AnchorUpdateFlow
+import com.google.cloud.firestore.Firestore
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.messaging.CordaRPCOps
@@ -22,16 +24,13 @@ import java.util.*
 object AnchorBee {
     private val logger = LoggerFactory.getLogger(AnchorBee::class.java)
     private val GSON = GsonBuilder().setPrettyPrinting().create()
-    val db = FirestoreClient.getFirestore()
+    private val db: Firestore = FirestoreClient.getFirestore()
 
     @JvmStatic
     @Throws(Exception::class)
     fun updateAnchor(proxy: CordaRPCOps,
                      anchor: AnchorDTO) : AnchorDTO {
         logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to update Anchor ... " )
-        if (anchor.accountId == null) {
-            throw Exception("Illegal call. anchor cannot be updated before it is created")
-        }
         var oldState: AnchorState? = null
         val states = proxy.vaultQueryByWithPagingSpec(
                 criteria = QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.UNCONSUMED),
@@ -53,6 +52,27 @@ object AnchorBee {
         val dto = getDTO(result)
         logger.info("\uD83C\uDF53 createAnchor: Anchor updated: \uD83C\uDF53 ${dto.name}")
         return dto
+    }
+    @JvmStatic
+    @Throws(Exception::class)
+    fun makeOffers(proxy: CordaRPCOps) : List<InvoiceOfferDTO> {
+        logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to make Offers for Anchor ... " )
+
+        val cordaFuture = proxy.startFlowDynamic(
+                AnchorMakeOffersFlow::class.java).returnValue
+        val result = cordaFuture.get()
+        val mList:MutableList<InvoiceOfferDTO> = mutableListOf()
+        result.forEach() {
+            val dto = WorkerBee.getDTO(it)
+            mList.add(dto)
+        }
+        logger.info("\uD83C\uDF53 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 makeOffers: Anchor offers made OK: " +
+                "\uD83C\uDF53 ${mList.size} \uD83C\uDF53 ")
+        mList.forEach() {
+            logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 OFFER: ${GSON.toJson(it)}  " +
+                    "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35")
+        }
+        return mList
     }
 
     @JvmStatic
@@ -80,36 +100,43 @@ object AnchorBee {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 Creating node anchor account ")
         try {
             if (account == null) {
-                val cordaFuture = proxy.startFlowDynamic(
-                        CreateAccountFlow::class.java,anchor.name).returnValue
-                account = cordaFuture.get()
+                WorkerBee.startAccountRegistrationFlow(proxy, anchor.name,anchor.email, anchor.password)
+                val criteria: QueryCriteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED)
+                val (states) = proxy.vaultQueryByWithPagingSpec(
+                        AccountInfo::class.java, criteria,
+                        PageSpecification(1, 200))
+               logger.info(" \uD83E\uDDA0 \uD83E\uDDA0 Accounts found on network:  \uD83E\uDD6C " + states.size)
+                for ((state) in states) {
+                    val info = state.data
+                    if (info.name.equals(anchor.name, ignoreCase = true)) {
+                       account = info
+                    }
+                }
+            }
+            if (account == null) {
+                throw Exception("Corda account not found")
             }
             val anc = AnchorState(
                     issuedBy = proxy.nodeInfo().legalIdentities.first(),
                     account = account!!,
-                    minimumInvoiceAmount = anchor.minimumInvoiceAmount!!,
-                    maximumInvoiceAmount = anchor.maximumInvoiceAmount!!,
-                    maximumInvestment = anchor.maximumInvestment!!,
-                    defaultOfferDiscount = anchor.defaultOfferDiscount!!,
-                    tradeFrequencyInMinutes = anchor.tradeFrequencyInMinutes!!,
-                    tradeMatrices = anchor.tradeMatrices!!,
-                    name = anchor.name!!, email = anchor.email!!,
-                    cellphone = anchor.cellphone!!, date = Date())
+                    minimumInvoiceAmount = anchor.minimumInvoiceAmount,
+                    maximumInvoiceAmount = anchor.maximumInvoiceAmount,
+                    maximumInvestment = anchor.maximumInvestment,
+                    defaultOfferDiscount = anchor.defaultOfferDiscount,
+                    tradeFrequencyInMinutes = anchor.tradeFrequencyInMinutes,
+                    tradeMatrices = anchor.tradeMatrices,
+                    name = anchor.name, email = anchor.email,
+                    cellphone = anchor.cellphone, date = Date())
 
             val fut = proxy.startTrackedFlowDynamic(
                     AnchorCreationFlow::class.java, anc).returnValue
             val tx = fut.get()
             anchor.accountId = account!!.identifier.id.toString()
             anchor.issuedBy = proxy.nodeInfo().legalIdentities.first().toString()
-            logger.info("\uD83C\uDF53 createAnchor: Anchor response \uD83C\uDF53 ${tx.id.toString()}")
-            //add user to Firebase auth
-            createUser(
-                    name = anchor.name,
-                    email = anchor.email,
-                    password = anchor.password,
-                    uid = account!!.identifier.id.toString()
-            )
+            logger.info("\uD83C\uDF53 createAnchor: Anchor response txId: \uD83C\uDF53 ${tx.id}")
+
             //add anchor to Firestore
+            logger.info("\uD83C\uDF53 createAnchor: \uD83C\uDF3A about to add anchor to Firestore")
             db.collection("anchors").add(anchor)
             val msg = "\uD83C\uDF3A createAnchor set up, added to Firestore. DONE!: " +
                     "${anchor.name} - ${anchor.email} \uD83C\uDF3A " +
@@ -118,7 +145,7 @@ object AnchorBee {
             return anchor
         } catch (e: Exception) {
             logger.error("\uD83D\uDE21 Anchor creation failed", e)
-            throw e;
+            throw e
         }
 
     }

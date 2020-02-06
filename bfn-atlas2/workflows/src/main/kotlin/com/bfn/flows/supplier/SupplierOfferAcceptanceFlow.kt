@@ -5,6 +5,7 @@ import com.bfn.contractstates.states.InvoiceOfferState
 import com.bfn.flows.regulator.BroadcastTransactionFlow
 import com.bfn.flows.services.InvoiceFinderService
 import com.bfn.flows.services.InvoiceOfferFinderService
+import com.bfn.flows.todaysDate
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.ourIdentity
 import com.template.InvoiceOfferContract
@@ -33,9 +34,6 @@ class SupplierOfferAcceptanceFlow(private val invoiceId: String) : FlowLogic<Sig
         val invoiceOfferState = finderService2.findAnchorOffer(invoiceId)
                 ?: throw IllegalArgumentException("Anchor InvoiceOfferState not found")
 
-        val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SS'Z'")
-                .withZone(ZoneId.systemDefault())
-                .format(Date().toInstant());
         val acceptedOffer = InvoiceOfferState(
                 invoiceId = invoiceState.state.data.invoiceId,
                 invoiceNumber = invoiceState.state.data.invoiceNumber,
@@ -47,7 +45,7 @@ class SupplierOfferAcceptanceFlow(private val invoiceId: String) : FlowLogic<Sig
                 customer = invoiceState.state.data.customerInfo,
                 supplier = invoiceOfferState.state.data.supplier,
                 investor = invoiceOfferState.state.data.investor,
-                acceptanceDate = fmt,
+                acceptanceDate = todaysDate(),
                 accepted = true
         )
         val command = InvoiceOfferContract.AcceptOffer()

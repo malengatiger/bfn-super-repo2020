@@ -8,8 +8,7 @@ data class TradeMatrix (
         val startInvoiceAmount: Double,
         val endInvoiceAmount: Double,
         val offerDiscount: Double,
-        val maximumInvoiceAgeInDays: Int,
-        val date: String? = Date().toString()
+        val date: String
 
 ) {
 }

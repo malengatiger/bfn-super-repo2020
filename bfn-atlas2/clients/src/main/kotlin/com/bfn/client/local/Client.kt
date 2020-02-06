@@ -1,7 +1,9 @@
 package com.bfn.client.local
 
 import com.bfn.client.dto.*
+import com.bfn.client.web.FirebaseUtil
 import com.bfn.contractstates.states.*
+import com.bfn.flows.todaysDate
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
@@ -53,15 +55,14 @@ private class Client {
     fun main(args: Array<String>) {
 
         setupLocalNodes()
-//        createAnchor("http://localhost:10050")
-//        createCustomer("http://localhost:10050")
-//        startSupplierAccounts(
-//                generateAccounts = true,
-//                deleteFirestore = true,
-//                numberOfAccounts = 20,
-//                url = "http://localhost:10050");
+        createAnchor("http://localhost:10050")
+        createCustomer("http://localhost:10050")
+        startSupplierAccounts(
+                numberOfAccounts = 40,
+                url = "http://localhost:10050");
 
-        generateInvoices("http://localhost:10053", 36)
+        generateInvoices("http://localhost:10050", 100)
+        generateAnchorOffers("http://localhost:10050")
 //        generateProfiles()
 //
 //        generateOffers(0)
@@ -75,6 +76,16 @@ private class Client {
 //
 //        printProfiles(proxyPartyA)
 //        printProfiles(proxyPartyB)
+
+    }
+
+    private fun generateAnchorOffers(url: String) {
+        logger.info("\uD83C\uDF4E Generating Anchor Offers \uD83C\uDF4E")
+        val response = httpGet(
+                timeout = 990000000.0,
+                url = "$url/bfn/admin/makeAnchorOffers")
+        logger.info("\uD83C\uDF4E  generateAnchorOffers; RESPONSE: statusCode: " +
+                "${response.statusCode} - ${response.text}")
 
     }
 
@@ -228,17 +239,17 @@ private class Client {
                 investor = getDTO(state.investor),
                 offerDate = state.offerDate.toString(),
                 investorDate = state.acceptanceDate.toString(),
-                accepted = state.accepted, externalId = state.externalId
+                accepted = state.accepted, externalId = state.externalId,
+                acceptanceDate = state.acceptanceDate
 
         )
     }
 
     fun getDTO(a: AccountInfo): AccountInfoDTO {
-        val info = AccountInfoDTO()
-        info.host = a.host.toString()
-        info.identifier = a.identifier.id.toString()
-        info.name = a.name
-        return info
+        return AccountInfoDTO(
+                host = a.host.toString(),
+                identifier = a.identifier.id.toString(),
+                name = a.name, status = "")
     }
 
     fun getDTO(a: InvestorProfileState): InvestorProfileStateDTO {
@@ -346,25 +357,18 @@ private class Client {
         }
     }
 
-    private fun startSupplierAccounts(generateAccounts: Boolean = false,
-                                      deleteFirestore: Boolean = false,
-                                      numberOfAccounts: Int = 9, url: String) {
-        if (generateAccounts) {
-            logger.info(" \uD83D\uDE21 generating accounts for AnchorInvestor")
-            val status = generateAccountsForNode(
-                    proxy = proxyAnchorInvestor,
-                    url = url,
-                    deleteFirestore = deleteFirestore, numberOfAccounts = numberOfAccounts)
-            if (status == 200) {
-                logger.info("\uD83E\uDD6C  Successfully generated AnchorInvestor accounts")
-            } else {
-                logger.info("Houston, we down, \uD83D\uDCA6 status :  $status ")
-            }
+    private fun startSupplierAccounts(numberOfAccounts: Int = 9, url: String) {
 
+        logger.info(" \uD83D\uDE21 generating accounts for AnchorInvestor")
+        val status = generateAccountsForNode(
+                proxy = proxyAnchorInvestor,
+                url = url,
+                numberOfAccounts = numberOfAccounts)
+        if (status == 200) {
+            logger.info("\uD83E\uDD6C  Successfully generated AnchorInvestor accounts")
         } else {
-            logger.info("Generating data .. \uD83D\uDCA6 but we are not generating accounts")
+            logger.info("Houston, we down, \uD83D\uDCA6 status :  $status ")
         }
-
 
     }
 
@@ -386,11 +390,11 @@ private class Client {
             val page = proxyAnchorInvestor.vaultQueryByWithPagingSpec(
                     contractStateType = AccountInfo::class.java,
                     criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED),
-                    paging = PageSpecification(1,2000)).states
+                    paging = PageSpecification(1, 2000)).states
             page.forEach() {
-                    if (it.state.data.name == "Customer001") {
-                        customer = getDTO(it.state.data )
-                    }
+                if (it.state.data.name == "Customer001") {
+                    customer = getDTO(it.state.data)
+                }
             }
 
         }
@@ -414,6 +418,12 @@ private class Client {
 
         val mx: MutableList<TradeMatrix> = mutableListOf()
         logger.info("\uD83D\uDE21 createAnchor for Node \uD83D\uDE21 \uD83D\uDE21 ")
+        logger.info("\uD83D\uDE21 deleting Firebase auth users and collections \uD83D\uDE21 \uD83D\uDE21 ")
+        val response0 = httpGet(
+                timeout = 990000000.0,
+                url = "$url/bfn/admin/deleteFirebase")
+        logger.info("\uD83C\uDF4E deleteFirebase; RESPONSE: statusCode: " +
+                "${response0.statusCode} - ${response0.text}")
 
         val a = AnchorDTO(
                 minimumInvoiceAmount = 25000.00,
@@ -425,9 +435,10 @@ private class Client {
                 cellphone = "+27710441887",
                 tradeFrequencyInMinutes = 240,
                 tradeMatrices = mx,
-                date = Date().toString(),
+                date = todaysDate(),
                 password = "bfnanchor33",
-                uid = UUID.randomUUID().toString()
+                uid = UUID.randomUUID().toString(),
+                issuedBy = "TBD", accountId = "TBD"
 
         )
 
@@ -435,48 +446,41 @@ private class Client {
                 startInvoiceAmount = 25000.00,
                 endInvoiceAmount = 100000.00,
                 offerDiscount = 8.8,
-                maximumInvoiceAgeInDays = 90,
-                date = Date().toString()
+                date = todaysDate()
         )
         val m2 = TradeMatrix(
                 startInvoiceAmount = 100001.00,
                 endInvoiceAmount = 200000.00,
                 offerDiscount = 8.3,
-                maximumInvoiceAgeInDays = 90,
-                date = Date().toString()
+                date = todaysDate()
         )
         val m3 = TradeMatrix(
                 startInvoiceAmount = 200001.00,
                 endInvoiceAmount = 300000.00,
                 offerDiscount = 7.9,
-                maximumInvoiceAgeInDays = 90,
-                date = Date().toString()
+                date = todaysDate()
         )
         val m4 = TradeMatrix(
                 startInvoiceAmount = 300001.00,
                 endInvoiceAmount = 400000.00,
                 offerDiscount = 7.4,
-                maximumInvoiceAgeInDays = 90,
-                date = Date().toString()
+                date = todaysDate()
         )
         val m5 = TradeMatrix(
                 startInvoiceAmount = 400001.00,
                 endInvoiceAmount = 1000000.00,
                 offerDiscount = 5.5,
-                maximumInvoiceAgeInDays = 90,
-                date = Date().toString())
+                date = todaysDate())
         val m6 = TradeMatrix(
                 startInvoiceAmount = 1000001.00,
                 endInvoiceAmount = 10000000.00,
                 offerDiscount = 4.2,
-                maximumInvoiceAgeInDays = 90,
-                date = Date().toString())
+                date = todaysDate())
         val m7 = TradeMatrix(
                 startInvoiceAmount = 10000001.00,
                 endInvoiceAmount = 100000000.00,
                 offerDiscount = 3.0,
-                maximumInvoiceAgeInDays = 90,
-                date = Date().toString())
+                date = todaysDate())
 
         a.tradeMatrices = mutableListOf(m1, m2, m3, m4, m5, m6, m7)
         val mGson = Gson()
@@ -490,10 +494,31 @@ private class Client {
         logger.info("\uD83C\uDF4E  create Anchor; RESPONSE: statusCode: " +
                 "${response.statusCode} - ${response.text}")
 
+    }
+
+    var customer: AccountInfoDTO? = null
+    val random = Random(Date().time)
+
+    private fun createAnchorAccount(url: String) {
+        val user = UserDTO(name = "AnchorInvestor",
+                password = "anchor#001$",
+                cellphone = "+27710441887",
+                email = "anchor001@bfn.com")
+
+        val mGson = Gson()
+        val jsonObject = JSONObject(mGson.toJson(user))
+        val response = httpPost(
+                json = jsonObject,
+                timeout = 990000000.0,
+                url = "$url/bfn/admin/startAccountRegistrationFlow")
+
+        customer = GSON.fromJson(response.text, AccountInfoDTO::class.java)
+        logger.info("\uD83C\uDF4E  create Anchor account; RESPONSE: " +
+                "statusCode: ${response.statusCode}  " +
+                response.text)
 
     }
 
-    var customer:AccountInfoDTO? = null
     private fun createCustomer(url: String) {
         val user = UserDTO(name = "Customer001",
                 password = "customer#001$",
@@ -511,10 +536,8 @@ private class Client {
         logger.info("\uD83C\uDF4E  create Customer; RESPONSE: " +
                 "statusCode: ${response.statusCode}  " +
                 response.text)
+        //todo - write to Firebase auth .....
     }
-
-
-    val random = Random(Date().time)
 
     private fun getAccounts(proxy: CordaRPCOps): List<AccountInfo> {
         val accts: MutableList<AccountInfo> = mutableListOf()
@@ -568,12 +591,10 @@ private class Client {
 
     }
 
-    private fun generateAccountsForNode(proxy: CordaRPCOps, url: String,
-                                        deleteFirestore: Boolean, numberOfAccounts: Int): Int {
+    private fun generateAccountsForNode(proxy: CordaRPCOps, url: String, numberOfAccounts: Int): Int {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
-                "\uD83D\uDD35 \uD83D\uDD35 generateAccounts: $url deleteFirestore: $deleteFirestore")
+                "\uD83D\uDD35 \uD83D\uDD35 generateAccounts: $url ")
         val params: MutableMap<String, String> = mutableMapOf()
-        params["deleteFirestore"] = deleteFirestore.toString()
         params["numberOfAccounts"] = numberOfAccounts.toString()
         val response = httpGet(
                 timeout = 990000000.0,
@@ -592,10 +613,14 @@ private class Client {
         val page = proxy.vaultQuery(AccountInfo::class.java)
         var cnt = 0
         page.states.forEach() {
-            if (it.state.data.host.toString() == proxy.nodeInfo().legalIdentities.first().toString()) {
-                cnt++
-                addSupplierProfile(it, url)
-                addInvestorProfile(it, url)
+            if (it.state.data.name == "AnchorInvestor" || it.state.data.name == "Customer001") {
+                logger.info("Ignore anchor and Customer001. \uD83C\uDF3A No need to create profiles")
+            } else {
+                if (it.state.data.host.toString() == proxy.nodeInfo().legalIdentities.first().toString()) {
+                    cnt++
+                    addSupplierProfile(it, url)
+                    addInvestorProfile(it, url)
+                }
             }
         }
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35" +
@@ -610,7 +635,7 @@ private class Client {
         val investorProfile = InvestorProfileStateDTO(
                 issuedBy = "thisNode",
                 accountId = it.state.data.identifier.id.toString(),
-                date = Date().toString(),
+                date = todaysDate(),
                 defaultDiscount = disc,
                 minimumInvoiceAmount = random.nextInt(100) * 1000.0,
                 totalInvestment = 900000000.0,
@@ -697,7 +722,7 @@ private class Client {
     }
 
     private fun getThisNode(proxy: CordaRPCOps) {
-        val me = proxy.nodeInfo();
+        val me = proxy.nodeInfo()
         logger.info("\uD83E\uDD6C \uD83E\uDD6C I am connected to (p2pPort): \uD83E\uDD6C ${me.addresses.first()} - \uD83C\uDF4A - ${me.legalIdentities.first()}")
     }
 
@@ -707,7 +732,7 @@ private class Client {
             logger.info("\uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C Node found: \uD83D\uDC9A ${it.addresses.first()}  \uD83C\uDF00 \uD83C\uDF00 ${it.legalIdentities.first()}")
         }
         logger.info("\uD83C\uDD7F️ \uD83C\uDD7F️ \uD83C\uDD7F️ Nodes: ${nodes.size}")
-        val notary = proxy.notaryIdentities().first();
+        val notary = proxy.notaryIdentities().first()
         logger.info("\uD83D\uDD31 \uD83D\uDD31 Notary is \uD83D\uDD31 ${notary.name}")
     }
 
@@ -775,7 +800,7 @@ private class Client {
         val page = proxy.vaultQueryByCriteria(criteria = criteria, contractStateType = AccountInfo::class.java)
         var cnt = 1
         val sorted = page.states.sortedBy { it.state.data.name }
-        sorted.forEach() {
+        sorted.forEach {
             logger.info("\uD83E\uDDE9\uD83E\uDDE9 Account #$cnt \uD83E\uDDE9 ${it.state.data}")
             cnt++
 
@@ -842,7 +867,7 @@ private class Client {
         }
 
         var cnt = 1
-        map.forEach() {
+        map.forEach {
             logger.info("\uD83C\uDF88 \uD83C\uDF88 Invoice to be processed: #$cnt " +
                     "\uD83D\uDC9A supplier: ${it.value.supplier.name} ${it.value.supplier.host} " +
                     "\uD83D\uDE21 \uD83D\uDE21 customer: ${it.value.customer.name} - ${it.value.customer.host}")
@@ -901,7 +926,7 @@ private class Client {
     private fun addToList(page: Vault.Page<InvoiceOfferState>) {
 
         var cnt = 1
-        page.states.forEach() {
+        page.states.forEach {
             mList.add(it.state.data)
             cnt++
         }

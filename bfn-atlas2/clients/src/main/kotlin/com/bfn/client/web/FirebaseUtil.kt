@@ -87,33 +87,6 @@ object FirebaseUtil {
         logger.info("\uD83D\uDE3C \uD83D\uDE3C Token added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
 
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun registerAnchor( name: String, email: String): AnchorDTO {
-        val password = "please#CHANGE@me33"
-        val anchor: AnchorDTO?
-        try {
-            val createRequest = CreateRequest().setEmail(email)
-                    .setDisplayName("BFN Anchor: $name")
-                    .setPassword(password)
-            val userRecord = auth.createUser(createRequest)
-            anchor = AnchorDTO(
-                    name = name, email = email, uid = userRecord.uid,
-                    date = Date().toString(), password = password
-            )
-
-            db.collection("anchors").add(anchor)
-            logger.info("\uD83D\uDC9B  Added ANCHOR to Firestore: ⚽ " +
-                    " ${anchor.name}  \uD83C\uDF00 ${userRecord.email}")
-        } catch (e: Exception) {
-            logger.error("Failed to add anchor", e)
-            throw e
-        }
-        return anchor
-    }
-
-
     @JvmStatic
     @Throws(Exception::class)
     fun deleteNodes(springBootProfile: String) {
@@ -160,7 +133,7 @@ object FirebaseUtil {
     @Throws(FirebaseAuthException::class)
     fun createUser(name: String?, email: String?, password: String?,
                    uid: String?): UserRecord {
-        logger.info("\uD83D\uDD37 \uD83D\uDD37 createUser: writing to Firestore ... \uD83D\uDD37 ")
+        logger.info("\uD83D\uDD37 \uD83D\uDD37 ..... createUser: writing to Firestore ... \uD83D\uDD37 ")
         val request = CreateRequest()
         request.setEmail(email)
         request.setDisplayName(name)
@@ -168,7 +141,7 @@ object FirebaseUtil {
         request.setUid(uid)
         val userRecord = auth.createUser(request)
         logger.info("\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C \uD83E\uDD66 \uD83E\uDD66 " +
-                "User record created in Firebase:  \uD83E\uDD66 " + userRecord.email)
+                "Auth User record created in Firebase:  \uD83E\uDD66 " + userRecord.email)
         return userRecord
     }
 
@@ -196,7 +169,7 @@ object FirebaseUtil {
             logger.info("\uD83C\uDF4A \uD83C\uDF4A \uD83C\uDF4A User delete .....: ")
             auth.deleteUser(user.uid)
             cnt++
-            logger.info("🔆 🔆 🔆 user deleted: 🔵 #$cnt")
+            logger.info("🔆 🔆 🔆 user deleted: 🔵 #$cnt ${user.displayName}")
         }
     }
 
@@ -231,8 +204,20 @@ object FirebaseUtil {
     fun deleteCollections() {
         val m = db.listCollections()
         for (reference in m) {
-            logger.info("\uD83C\uDF4A \uD83C\uDF4A Existing Firestore collection: " + reference.path)
+            logger.info("\uD83C\uDF4A \uD83C\uDF4A Remove Existing Firestore collection: " + reference.path)
             if (!reference.path.contains("nodes")) {
+                deleteCollection(reference, 200)
+            }
+            if (!reference.path.contains("accounts")) {
+                deleteCollection(reference, 200)
+            }
+            if (!reference.path.contains("invoices")) {
+                deleteCollection(reference, 200)
+            }
+            if (!reference.path.contains("responseTimes")) {
+                deleteCollection(reference, 200)
+            }
+            if (!reference.path.contains("webServerStarts")) {
                 deleteCollection(reference, 200)
             }
         }
@@ -240,7 +225,7 @@ object FirebaseUtil {
 
     /**
      * Delete a collection in batches to avoid out-of-memory errors.
-     * Batch size may be tuned based on document size (atmost 1MB) and application requirements.
+     * Batch size may be tuned based on document size (at most 1MB) and application requirements.
      */
     private fun deleteCollection(collection: CollectionReference, batchSize: Int) {
         try { // retrieve a small batch of documents to avoid out-of-memory errors

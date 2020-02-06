@@ -31,13 +31,27 @@ class AdminController(rpc: NodeRPCConnection) {
     private lateinit var profile: String
     @GetMapping(value = ["/demo"], produces = ["application/json"])
     @Throws(Exception::class)
-    private fun buildDemo(@RequestParam deleteFirestore: Boolean, @RequestParam numberOfAccounts: Int = 9): DemoSummary {
-        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting DemoUtil: buildDemo ... \uD83C\uDF4F deleteFirestore: $deleteFirestore")
-        val result = DemoUtil.generateLocalNodeAccounts(proxy, deleteFirestore, numberOfAccounts)
+    private fun buildDemo(@RequestParam numberOfAccounts: Int = 9): DemoSummary {
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting DemoUtil: buildDemo ... \uD83C\uDF4F ")
+        val result = DemoUtil.generateLocalNodeAccounts(proxy, numberOfAccounts)
         logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 DemoUtil result: " +
                 " \uD83C\uDF4F " + GSON.toJson(result)
                 + "    \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
         return result
+    }
+    @GetMapping(value = ["/deleteFirebase"], produces = ["application/json"])
+    @Throws(Exception::class)
+    private fun deleteFirebase(): String {
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting deleteFirebase: ... \uD83C\uDF4F ")
+        FirebaseUtil.deleteUsers()
+        FirebaseUtil.deleteCollections()
+        return "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 deleteFirebase completed. \uD83C\uDF4F "
+    }
+    @GetMapping(value = ["/makeAnchorOffers"], produces = ["application/json"])
+    @Throws(Exception::class)
+    private fun makeAnchorOffers(): List<InvoiceOfferDTO> {
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting makeAnchorOffers: ... \uD83C\uDF4F ")
+        return AnchorBee.makeOffers(proxy)
     }
     @GetMapping(value = ["/getInvoicesAcrossNodes"], produces = ["application/json"])
     @Throws(Exception::class)
@@ -52,7 +66,6 @@ class AdminController(rpc: NodeRPCConnection) {
         }
         return list
     }
-
     @GetMapping(value = ["/generateOffers"], produces = ["application/json"])
     @Throws(Exception::class)
     private fun generateOffers(@RequestParam max: Int?): String {
@@ -99,17 +112,12 @@ class AdminController(rpc: NodeRPCConnection) {
     private fun updateAnchor(@RequestBody anchor: AnchorDTO): AnchorDTO {
         return AnchorBee.updateAnchor(anchor = anchor, proxy = proxy)
     }
-    @PostMapping(value = ["/registerAnchor"], produces = ["application/json"])
-    @Throws(Exception::class)
-    private fun registerAnchor(name: String, email: String): AnchorDTO {
-        return FirebaseUtil.registerAnchor(name,email)
-    }
 
     @PostMapping(value = ["/startAccountRegistrationFlow"], produces = ["application/json"])
     @Throws(Exception::class)
     private fun startAccountRegistrationFlow(@RequestBody user: UserDTO): AccountInfoDTO {
-        return startAccountRegistrationFlow(proxy, user.name!!,
-                user.email, user.password, user.cellphone)
+        return startAccountRegistrationFlow(proxy, user.name,
+                user.email, user.password!!)
     }
 
     @PostMapping(value = ["/addSupplierProfile"], produces = ["application/json"])

@@ -12,6 +12,7 @@ data class InvoiceOfferDTO (
         var investor: AccountInfoDTO,
         var offerDate: String,
         var investorDate: String,
+        var acceptanceDate: String,
         var accepted: Boolean,
         var externalId: String
 )

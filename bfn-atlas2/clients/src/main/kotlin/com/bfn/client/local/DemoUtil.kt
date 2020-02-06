@@ -11,6 +11,7 @@ import com.bfn.client.web.WorkerBee.getNodeAccounts
 import com.bfn.client.web.WorkerBee.startAccountRegistrationFlow
 import com.bfn.client.web.WorkerBee.startInvoiceOfferFlow
 import com.bfn.client.web.WorkerBee.startInvoiceRegistrationFlow
+import com.bfn.flows.todaysDate
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.node.NodeInfo
 import org.slf4j.LoggerFactory
@@ -33,12 +34,11 @@ object DemoUtil {
     private val demoSummary = DemoSummary()
     private var myNode: NodeInfo? = null
     @Throws(Exception::class)
-    fun generateLocalNodeAccounts(mProxy: CordaRPCOps?,
-                                  deleteFirestore: Boolean, numberOfAccounts: Int = 1): DemoSummary {
+    fun generateLocalNodeAccounts(mProxy: CordaRPCOps?, numberOfAccounts: Int = 1): DemoSummary {
         proxy = mProxy
         logger.info("\n\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 " +
                 "DemoUtil started, proxy: ${proxy.toString()}...  \uD83D\uDD06 \uD83D\uDD06 " +
-                "will generate data 🧩🧩 deleteFirestore: $deleteFirestore")
+                "will generate data 🧩🧩 ")
 
         myNode = proxy!!.nodeInfo()
         logger.info(" \uD83D\uDD0B  \uD83D\uDD0B current node: ${myNode!!.addresses[0]}  \uD83D\uDD0B ")
@@ -48,24 +48,10 @@ object DemoUtil {
         if (myNode!!.legalIdentities[0].name.organisation.contains("Regulator")) {
             throw Exception("Cannot add demo data to Regulator")
         }
-        suppliers = ArrayList()
-        customers = ArrayList()
-        investors = ArrayList()
-        //delete Firestore data
-        logger.info("\n\n👽 👽 👽 👽 deleteFirestore: $deleteFirestore\n\n")
-        if (deleteFirestore) {
-            try {
-                deleteUsers()
-                deleteCollections()
-                logger.info(" 👽 👽 👽 👽 deleteFirestore: $deleteFirestore 🧩🧩 Firebase cleanUp complete")
-            } catch (e: Exception) {
-                e.printStackTrace()
-                logger.warn("Firebase shit bombed")
-                throw e
-            }
-        } else {
-            logger.warn("🧩🧩🧩🧩🧩🧩🧩🧩🧩 deleteFirestore is 🧩 FALSE 🧩🧩🧩🧩🧩 ")
-        }
+        suppliers = mutableListOf()
+        customers = mutableListOf()
+        investors = mutableListOf()
+
         //
         logger.info(" 👽 👽 👽 👽 start data generation:  numberOfAccounts $numberOfAccounts 👽 👽 👽 👽  ")
         generateAccounts(numberOfAccounts)
@@ -210,8 +196,7 @@ object DemoUtil {
                 startAccountRegistrationFlow(proxy!!,
                         randomName,
                         "$prefix$phone@gmail.com",
-                        "pass123",
-                        phone)
+                        "pass123")
             } catch (e1: Exception) {
                 logger.warn("Unable to add account - probable duplicate name")
             }
@@ -272,9 +257,7 @@ object DemoUtil {
 
     private var repeatCount = 0
     private fun buildInvoice(suppliers: List<AccountInfoDTO>): InvoiceDTO? {
-        val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SS'Z'")
-                .withZone(ZoneId.systemDefault())
-                .format(Date().toInstant());
+
         val index = random.nextInt(suppliers.size - 1)
         val supplier = suppliers[index]
         var invoice: InvoiceDTO? = null
@@ -289,7 +272,7 @@ object DemoUtil {
                     valueAddedTax = 15.0,
                     totalAmount = num * 1.15,
                     description = "Demo Invoice at " + Date().toString(),
-                    dateRegistered = fmt,
+                    dateRegistered = todaysDate(),
                     invoiceId = UUID.randomUUID().toString(),
                     externalId = UUID.randomUUID().toString()
             )
@@ -314,20 +297,18 @@ object DemoUtil {
     private fun registerInvoiceOffer(invoice: InvoiceDTO, supplier: AccountInfoDTO,
                                      investor: AccountInfoDTO, discount: Double) {
 
-        val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SS'Z'")
-                .withZone(ZoneId.systemDefault())
-                .format(Instant.now());
+
         val invoiceOffer = InvoiceOfferDTO(
                 invoiceId = invoice.invoiceId,
                 supplier = supplier,
                 investor = investor,
-                offerDate = fmt,
+                offerDate = todaysDate(),
                 discount = discount,
                 accepted = false,
                 offerAmount = (100.0 - discount / 100) * invoice.totalAmount,
                 originalAmount = invoice.totalAmount,
                 externalId = invoice.externalId, invoiceNumber = invoice.invoiceNumber,
-                investorDate = fmt
+                investorDate = todaysDate(), acceptanceDate = todaysDate()
         )
         try {
             val offer = startInvoiceOfferFlow(proxy!!, invoiceOffer)

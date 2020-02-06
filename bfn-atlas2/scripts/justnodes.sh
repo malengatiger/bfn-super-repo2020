@@ -24,16 +24,15 @@ echo "🕗 Sleeping for 15 seconds"
 sleep 15s
 echo "🔆 Woke up, 🔆 🔆 🔆  opening terminal for Customer"
 ttab ./scripts/ncustomer.sh
-
+echo "🕗 Sleeping for 15 seconds to let the Corda nodes finish booting up ..."
+sleep 15s
 echo "🔵 almost done ... 🍎 🍎 corda nodes booted up! 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵"
 
 
 # ------------ API Web Servers
-echo "🕗 Sleeping for 15 seconds to let the Corda nodes finish booting up ..."
-sleep 15s
 echo "🔆 Woke up, 🔆 🔆 🔆  starting web servers ..... 🔵 🔵"
 ttab ./scripts/apiservers.sh
-echo "🔵 🍎 🍎 READY TO RUMBLE IN THE JUNGLE!! 🍎 🍎 will start data generation ... 🔵 🔵 🔵 🔵 🔵 "
+echo "🔵 Waiting for web servers to finish booting up ... 🔵 🔵 🔵 🔵 🔵 "
 
 
 
