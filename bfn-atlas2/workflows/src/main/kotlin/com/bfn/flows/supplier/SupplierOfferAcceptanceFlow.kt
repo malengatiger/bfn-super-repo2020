@@ -2,6 +2,7 @@ package com.bfn.flows.supplier
 
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.states.InvoiceOfferState
+import com.bfn.contractstates.states.InvoiceState
 import com.bfn.flows.regulator.BroadcastTransactionFlow
 import com.bfn.flows.services.InvoiceFinderService
 import com.bfn.flows.services.InvoiceOfferFinderService
@@ -9,40 +10,59 @@ import com.bfn.flows.todaysDate
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.ourIdentity
 import com.template.InvoiceOfferContract
+import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
+import net.corda.core.node.services.Vault
+import net.corda.core.node.services.vault.PageSpecification
+import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import org.slf4j.LoggerFactory
 import java.lang.IllegalArgumentException
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.*
+import java.security.PublicKey
 
 @InitiatingFlow
 @StartableByRPC
 class SupplierOfferAcceptanceFlow(private val invoiceId: String) : FlowLogic<SignedTransaction>() {
     @Suspendable
-    @Throws(FlowException::class)
+    @Throws(FlowException::class, IllegalArgumentException::class)
     override fun call(): SignedTransaction {
+        Companion.logger.info("$nn SupplierOfferAcceptanceFlow started ... \uD83C\uDF4E $invoiceId")
+        //todo - 🍎 this query HAS to improve !!!
+        val consumedInvoices = serviceHub.vaultService.queryBy(
+                contractStateType = InvoiceState::class.java,
+                criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.CONSUMED),
+                paging = PageSpecification(1,2000)
+        ).states
 
-        val finderService = serviceHub.cordaService(InvoiceFinderService::class.java)
-        val invoiceState = finderService.findInvoiceStateAndRef(invoiceId)
-                ?: throw IllegalArgumentException("InvoiceState not found")
-        val finderService2 = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
-
-        val invoiceOfferState = finderService2.findAnchorOffer(invoiceId)
-                ?: throw IllegalArgumentException("Anchor InvoiceOfferState not found")
+        var invoiceState: StateAndRef<InvoiceState>? = null
+        consumedInvoices.forEach() {
+            if (it.state.data.invoiceId.toString() == invoiceId) {
+                invoiceState = it
+            }
+        }
+        if (invoiceState == null) {
+            throw IllegalArgumentException("Original consumed invoice not found")
+        }
+        val offerFinderService = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
+        var invoiceOfferState = offerFinderService.findAnchorOffer(invoiceId)
+        if (invoiceOfferState == null) {
+            invoiceOfferState = offerFinderService.findRegularOffer(invoiceId)
+            if (invoiceOfferState == null) {
+                throw IllegalArgumentException("Invoice Offer not found on Node")
+            }
+        }
 
         val acceptedOffer = InvoiceOfferState(
-                invoiceId = invoiceState.state.data.invoiceId,
-                invoiceNumber = invoiceState.state.data.invoiceNumber,
+                invoiceId = invoiceState!!.state.data.invoiceId,
+                invoiceNumber = invoiceState!!.state.data.invoiceNumber,
                 offerDate = invoiceOfferState.state.data.offerDate,
                 offerAmount = invoiceOfferState.state.data.offerAmount,
                 discount = invoiceOfferState.state.data.discount,
                 externalId = invoiceOfferState.state.data.externalId,
                 originalAmount = invoiceOfferState.state.data.originalAmount,
-                customer = invoiceState.state.data.customerInfo,
+                customer = invoiceState!!.state.data.customerInfo,
                 supplier = invoiceOfferState.state.data.supplier,
                 investor = invoiceOfferState.state.data.investor,
                 acceptanceDate = todaysDate(),
@@ -50,23 +70,24 @@ class SupplierOfferAcceptanceFlow(private val invoiceId: String) : FlowLogic<Sig
         )
         val command = InvoiceOfferContract.AcceptOffer()
         val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities[0])
-        val anchorParty = RequestKeyForAccount(invoiceOfferState.state.data.investor).ourIdentity
-        val supplierParty = RequestKeyForAccount(acceptedOffer.supplier).ourIdentity
-        val customerParty = RequestKeyForAccount(acceptedOffer.customer).ourIdentity
-        txBuilder.addInputState(invoiceState)
-        txBuilder.addInputState(invoiceOfferState)
-        txBuilder.addCommand(command,
-                anchorParty.owningKey, supplierParty.owningKey,
-                customerParty.owningKey)
-        txBuilder.addOutputState(acceptedOffer)
-
-        Companion.logger.info("\uD83D\uDD8D \uD83D\uDD8D \uD83D\uDD8D verify and sign Transaction ... ")
-        txBuilder.verify(serviceHub)
-        val signedTx = serviceHub.signInitialTransaction(txBuilder)
+        val anchorParty = serviceHub.myInfo.legalIdentities.first()
+        val supplierParty = acceptedOffer.supplier.host
+        val customerParty = acceptedOffer.customer.host
         val map: MutableMap<String, Party> = mutableMapOf()
         map[anchorParty.name.toString()] = anchorParty
         map[customerParty.name.toString()] = customerParty
         map[supplierParty.name.toString()] = supplierParty
+        val keys: MutableList<PublicKey> = mutableListOf()
+        map.values.forEach() {
+            keys.add(it.owningKey)
+        }
+        txBuilder.addInputState(invoiceOfferState)
+        txBuilder.addCommand(command, keys)
+        txBuilder.addOutputState(acceptedOffer)
+
+        Companion.logger.info("$nn verify and sign Transaction ... ")
+        txBuilder.verify(serviceHub)
+        val signedTx = serviceHub.signInitialTransaction(txBuilder)
         val parties = map.values.toList()
         return processAcceptance(parties,signedTx)
     }
@@ -76,7 +97,7 @@ class SupplierOfferAcceptanceFlow(private val invoiceId: String) : FlowLogic<Sig
             parties: List<Party>,
             signedTx: SignedTransaction) : SignedTransaction{
         val flowSessions: MutableList<FlowSession> = mutableListOf()
-
+        logger.info("processAcceptance")
         parties.forEach() {
             if (it.toString() != serviceHub.ourIdentity.toString()) {
                 flowSessions.add(initiateFlow(it))
@@ -84,13 +105,12 @@ class SupplierOfferAcceptanceFlow(private val invoiceId: String) : FlowLogic<Sig
         }
 
         return if (flowSessions.isEmpty()) {
-            Companion.logger.info(" \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 " +
-                    "All participants are LOCAL ... \uD83D\uDD06")
+            Companion.logger.info("$nn All participants are LOCAL ... \uD83D\uDD06")
             subFlow(BroadcastTransactionFlow(signedTx))
+            subFlow(FinalityFlow(signedTx, listOf()))
             signedTx
         } else {
-            Companion.logger.info(" \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 " +
-                    "Participants are LOCAL/REMOTE ... \uD83D\uDD06")
+            Companion.logger.info("$nn Participants are LOCAL/REMOTE ... \uD83D\uDD06")
             collectSignaturesAndFinalize(signedTx, flowSessions)
 
         }
@@ -103,22 +123,19 @@ class SupplierOfferAcceptanceFlow(private val invoiceId: String) : FlowLogic<Sig
 
         val signedTransaction = subFlow(CollectSignaturesFlow(
                 partiallySignedTx = signedTx, sessionsToCollectFrom = sessions))
-        logger.info("\uD83C\uDFBD \uD83C\uDFBD \uD83C\uDFBD \uD83C\uDFBD  " +
-                "Signatures collected OK!  \uD83D\uDE21 \uD83D\uDE21 " +
+        logger.info("$nn Signatures collected OK!  \uD83D\uDE21 \uD83D\uDE21 " +
                 ".... will call FinalityFlow ... \uD83C\uDF3A \uD83C\uDF3A ")
         val mSignedTransactionDone = subFlow(
                 FinalityFlow(signedTransaction, sessions))
 
-        logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D  " +
-                " \uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C  \uD83E\uDD66 \uD83E\uDD66  " +
-                "\uD83E\uDD66 \uD83E\uDD66  \uD83E\uDD66 \uD83E\uDD66 MULTIPLE NODE(S): FinalityFlow has been executed ... " +
-                "\uD83E\uDD66 \uD83E\uDD66")
+        logger.info("$xx MULTIPLE NODE(S): FinalityFlow has been executed ... $xx " )
 
         return mSignedTransactionDone
     }
     companion object {
         private val logger = LoggerFactory.getLogger(SupplierOfferAcceptanceFlow::class.java)
-
+        private const val nn = "\uD83C\uDFBD \uD83C\uDFBD \uD83C\uDFBD \uD83C\uDFBD"
+        private const val xx = "\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C  \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66"
     }
 
 }

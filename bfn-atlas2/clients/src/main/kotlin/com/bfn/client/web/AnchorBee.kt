@@ -10,6 +10,7 @@ import com.bfn.flows.AnchorCreationFlow
 import com.bfn.flows.CreateAccountFlow
 import com.bfn.flows.anchor.AnchorMakeOffersFlow
 import com.bfn.flows.anchor.AnchorUpdateFlow
+import com.bfn.flows.supplier.SupplierOfferAcceptanceFlow
 import com.google.cloud.firestore.Firestore
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import net.corda.core.contracts.StateAndRef
@@ -26,6 +27,17 @@ object AnchorBee {
     private val GSON = GsonBuilder().setPrettyPrinting().create()
     private val db: Firestore = FirestoreClient.getFirestore()
 
+    @JvmStatic
+    @Throws(Exception::class)
+    fun acceptOffer(proxy: CordaRPCOps, invoiceId: String) : String {
+        logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to acceptOffer ... " )
+
+        val cordaFuture = proxy.startFlowDynamic(
+                SupplierOfferAcceptanceFlow::class.java, invoiceId).returnValue
+        val result = cordaFuture.get()
+
+        return "\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C Offer accepted OK, txId: $result  \uD83D\uDC4C"
+    }
     @JvmStatic
     @Throws(Exception::class)
     fun updateAnchor(proxy: CordaRPCOps,

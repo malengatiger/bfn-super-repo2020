@@ -1,7 +1,6 @@
 package com.bfn.client.local
 
 import com.bfn.client.dto.*
-import com.bfn.client.web.FirebaseUtil
 import com.bfn.contractstates.states.*
 import com.bfn.flows.todaysDate
 import com.google.gson.Gson
@@ -52,17 +51,19 @@ private class Client {
     lateinit var proxyNotary: CordaRPCOps
     lateinit var proxyRegulator: CordaRPCOps
 
+    private val localAnchorURL = "http://localhost:10050"
     fun main(args: Array<String>) {
 
         setupLocalNodes()
-//        createAnchor("http://localhost:10050")
-//        createCustomer("http://localhost:10050")
-//        startSupplierAccounts(
-//                numberOfAccounts = 60,
-//                url = "http://localhost:10050");
+        createAnchor(localAnchorURL)
+        createCustomer(localAnchorURL)
+        startSupplierAccounts(
+                numberOfAccounts = 60,
+                url = localAnchorURL);
 
-        generateInvoices("http://localhost:10050", 100)
-        generateAnchorOffers("http://localhost:10050")
+        generateInvoices(localAnchorURL, 100)
+        generateAnchorOffers(localAnchorURL)
+        acceptOffers(localAnchorURL)
 //        getOffers()
 //        generateProfiles()
 //
@@ -80,6 +81,22 @@ private class Client {
 
     }
 
+    private fun acceptOffers(url: String) {
+        logger.info("\uD83C\uDF4E acceptOffers \uD83C\uDF4E")
+        val aList = getOffers()
+        aList.forEach() {
+            val params: MutableMap<String,String> = mutableMapOf()
+            params["invoiceId"] = it.state.data.invoiceId.toString()
+            val response = httpGet(
+                    timeout = 990000000.0, params = params,
+                    url = "$url/bfn/admin/acceptOffer")
+            logger.info("\uD83C\uDF4E  acceptOffers; RESPONSE: statusCode: " +
+                    "${response.statusCode} - ${response.text}")
+        }
+
+        val mList = getOffers()
+        logger.info("\uD83C\uDF4E \uD83C\uDF4E Invoice offers on node (should be accepted, mostly): \uD83C\uDF4E ${mList.size} \uD83C\uDF4E")
+    }
     private fun generateAnchorOffers(url: String) {
         logger.info("\uD83C\uDF4E Generating Anchor Offers \uD83C\uDF4E")
         val response = httpGet(
@@ -98,8 +115,10 @@ private class Client {
                 criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED),
                 paging = PageSpecification(1, 2000)
         ).states
+        var cnt = 0
         mList.forEach() {
-            logger.info("\uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A " +
+            cnt++
+            logger.info("\uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A #$cnt : " +
                     "${GSON.toJson(getDTO(it.state.data))} \uD83D\uDC9A")
         }
         logger.info("\uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A " +

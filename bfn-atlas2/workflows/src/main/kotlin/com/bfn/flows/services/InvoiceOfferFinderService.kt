@@ -53,7 +53,7 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
     @Suspendable
     @Throws(Exception::class)
     fun findAnchorOffer(invoiceId: String): StateAndRef<InvoiceOfferState>? {
-        logger.info(" \uD83D\uDC2C \uD83D\uDC2C BestOfferFinderService:findOffer ... " +
+        logger.info(" \uD83D\uDC2C \uD83D\uDC2C findAnchorOffer: ... " +
                 "\uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C")
         val existingAnchor = serviceHub.vaultService.queryBy(AnchorState::class.java).states.singleOrNull()
                 ?: throw IllegalArgumentException("Anchor does not exist")
@@ -63,6 +63,21 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
             if (it.state.data.invoiceId.toString() == invoiceId
                     && it.state.data.investor.identifier.id.toString() ==
                     existingAnchor.state.data.account.identifier.id.toString()) {
+                return it
+            }
+        }
+
+        return null
+    }
+    @Suspendable
+    @Throws(Exception::class)
+    fun findRegularOffer(invoiceId: String): StateAndRef<InvoiceOfferState>? {
+        logger.info(" \uD83D\uDC2C \uD83D\uDC2C findRegularOffer: ... " +
+                "\uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C")
+
+        val allOffers = getOffersOnNode()
+        allOffers.forEach() {
+            if (it.state.data.invoiceId.toString() == invoiceId) {
                 return it
             }
         }

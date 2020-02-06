@@ -4,7 +4,6 @@ import com.bfn.client.dto.*
 import com.bfn.client.local.DemoUtil
 import com.bfn.client.web.WorkerBee.getAccount
 import com.bfn.client.web.WorkerBee.getDashboardData
-import com.bfn.client.web.WorkerBee.getNodeAccounts
 import com.bfn.client.web.WorkerBee.getStates
 import com.bfn.client.web.WorkerBee.listFlows
 import com.bfn.client.web.WorkerBee.listNodes
@@ -14,9 +13,7 @@ import com.google.firebase.auth.UserRecord
 import com.google.gson.GsonBuilder
 import net.corda.core.messaging.CordaRPCOps
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.core.env.Environment
 import org.springframework.web.bind.annotation.*
 import java.util.*
 
@@ -51,14 +48,13 @@ class AdminController(rpc: NodeRPCConnection) {
     @Throws(Exception::class)
     private fun makeAnchorOffers(): List<InvoiceOfferDTO> {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting makeAnchorOffers: ... \uD83C\uDF4F ")
-        //todo - remove after test
-        val mList = AnchorBee.makeOffers(proxy)
-//        mList.forEach() {
-//            logger.info("\n\uD83D\uDE0E \uD83D\uDE0E \uD83D\uDE0E ${GSON.toJson(it)} \uD83D\uDE0E \uD83D\uDE0E \uD83D\uDE0E ")
-//        }
-//        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83C\uDF4E " +
-//                "Anchor offers made: \uD83C\uDF4E ${mList.size} \uD83C\uDF4E ")
-        return mList
+        return AnchorBee.makeOffers(proxy)
+    }
+    @GetMapping(value = ["/acceptOffer"], produces = ["application/json"])
+    @Throws(Exception::class)
+    private fun acceptOffer(@RequestParam invoiceId: String): String {
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting acceptOffer: ... \uD83C\uDF4F ")
+        return AnchorBee.acceptOffer(proxy,invoiceId = invoiceId)
     }
     @GetMapping(value = ["/getInvoicesAcrossNodes"], produces = ["application/json"])
     @Throws(Exception::class)
