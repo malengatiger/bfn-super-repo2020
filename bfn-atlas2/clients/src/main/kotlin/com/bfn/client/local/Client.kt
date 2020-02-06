@@ -1,6 +1,7 @@
 package com.bfn.client.local
 
 import com.bfn.client.dto.*
+import com.bfn.client.web.WorkerBee
 import com.bfn.contractstates.states.*
 import com.bfn.flows.todaysDate
 import com.google.gson.Gson
@@ -55,25 +56,20 @@ private class Client {
     fun main(args: Array<String>) {
 
         setupLocalNodes()
-        createAnchor(localAnchorURL)
-        createCustomer(localAnchorURL)
-        startSupplierAccounts(
-                numberOfAccounts = 60,
-                url = localAnchorURL);
+//        createAnchor(localAnchorURL)
+//        createCustomer(localAnchorURL)
+//        startSupplierAccounts(
+//                numberOfAccounts = 60,
+//                url = localAnchorURL);
 
-        generateInvoices(localAnchorURL, 100)
-        generateAnchorOffers(localAnchorURL)
-        acceptOffers(localAnchorURL)
-        makeMultiplePayments(localAnchorURL)
-//        getOffers()
-//        generateProfiles()
-//
-//        generateOffers(0)
-//        printTotals()
-//
-//        findBestOffers(proxyPartyA)
-//        getRegulatorTotals(proxyReg)
-//
+//        letsDance()
+//        logger.info("\n\n========================= \uD83C\uDF4E 2nd Set letsDance! \uD83C\uDF4E =================================\n\n")
+//        letsDance()
+
+        getOffers().forEach() {
+            logger.info("\uD83C\uDF00 \uD83D\uDC8A \uD83D\uDC8A InvoiceOffer: \uD83C\uDF21 \uD83C\uDF21 " +
+                    "${GSON.toJson(WorkerBee.getDTO(it.state.data))} \uD83C\uDF00 \uD83C\uDF21 \uD83C\uDF21 ")
+        }
 //        printInvoices(proxyPartyA, consumed = false)
 //        printInvoices(proxyPartyB, consumed = false)
 //
@@ -81,13 +77,22 @@ private class Client {
 //        printProfiles(proxyPartyB)
 
     }
+
+    private fun letsDance() {
+        generateInvoices(localAnchorURL, 100)
+        generateAnchorOffers(localAnchorURL)
+        acceptOffers(localAnchorURL)
+        makeMultiplePayments(localAnchorURL)
+        getOffers()
+    }
+
     private fun makeMultiplePayments(url: String) {
         logger.info("\uD83C\uDF4E makeMultiplePayments\uD83C\uDF4E")
         val response = httpGet(
                 timeout = 990000000.0,
                 url = "$url/bfn/admin/makeMultiplePayments")
         logger.info("\uD83C\uDF4E  makeMultiplePayments; RESPONSE: statusCode: " +
-                "${response.statusCode} - ${response.text}")
+                "${response.statusCode} ")
 
         val mList = proxyAnchorInvestor.vaultQueryByWithPagingSpec(
                 criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED),
@@ -119,7 +124,7 @@ private class Client {
                 timeout = 990000000.0,
                 url = "$url/bfn/admin/makeAnchorOffers")
         logger.info("\uD83C\uDF4E  generateAnchorOffers; RESPONSE: statusCode: " +
-                "${response.statusCode} - ${response.text}")
+                "${response.statusCode} ")
 
         val mList = getOffers()
         logger.info("Invoice offers on node: \uD83C\uDF4E ${mList.size} \uD83C\uDF4E")
@@ -131,12 +136,12 @@ private class Client {
                 criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED),
                 paging = PageSpecification(1, 2000)
         ).states
-        var cnt = 0
-        mList.forEach() {
-            cnt++
-            logger.info("\uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A #$cnt : " +
-                    "${GSON.toJson(getDTO(it.state.data))} \uD83D\uDC9A")
-        }
+//        var cnt = 0
+//        mList.forEach() {
+//            cnt++
+//            logger.info("\uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A #$cnt : " +
+//                    "${GSON.toJson(getDTO(it.state.data))} \uD83D\uDC9A")
+//        }
         logger.info("\uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A " +
                 "\uD83C\uDF4E ${mList.size} offers on Node \uD83C\uDF4E ")
                 return mList
@@ -500,12 +505,12 @@ private class Client {
 
         )
 
-        val m1 = TradeMatrix(
-                startInvoiceAmount = 100000.00,
-                endInvoiceAmount = 200000.00,
-                offerDiscount = 8.8,
-                date = todaysDate()
-        )
+//        val m1 = TradeMatrix(
+//                startInvoiceAmount = 100000.00,
+//                endInvoiceAmount = 200000.00,
+//                offerDiscount = 8.8,
+//                date = todaysDate()
+//        )
         val m2 = TradeMatrix(
                 startInvoiceAmount = 2000001.00,
                 endInvoiceAmount = 300000.00,
@@ -537,10 +542,10 @@ private class Client {
         val m7 = TradeMatrix(
                 startInvoiceAmount = 10000001.00,
                 endInvoiceAmount = 100000000.00,
-                offerDiscount = 3.0,
+                offerDiscount = 3.1,
                 date = todaysDate())
 
-        a.tradeMatrices = mutableListOf(m1, m2, m3, m4, m5, m6, m7)
+        a.tradeMatrices = mutableListOf(m2, m3, m4, m5, m6, m7)
         val mGson = Gson()
         val json = mGson.toJson(a)
         val jsonObject = JSONObject(json)

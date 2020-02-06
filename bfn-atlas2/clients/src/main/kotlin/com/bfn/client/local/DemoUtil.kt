@@ -254,13 +254,13 @@ object DemoUtil {
 
         var invoice: InvoiceDTO? = null
         var num = random.nextInt(1000)
-        if (num < 5) num = 33
+        if (num == 0) num = 33
         if (supplier.name != customer.name) {
             invoice = InvoiceDTO(
                     invoiceNumber = "INV_" + System.currentTimeMillis(),
                     supplier = supplier,
                     customer = customer,
-                    amount = num * 1000.0,
+                    amount = num * 700.0,
                     valueAddedTax = 15.0,
                     totalAmount = num * 1.15,
                     description = "Demo Invoice at ${Date()}",
