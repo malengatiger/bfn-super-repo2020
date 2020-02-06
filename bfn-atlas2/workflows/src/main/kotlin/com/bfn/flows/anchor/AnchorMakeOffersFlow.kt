@@ -35,10 +35,10 @@ class AnchorMakeOffersFlow : FlowLogic<List<InvoiceOfferState>>() {
                 paging = PageSpecification(
                         pageNumber = 1, pageSize = 1000)
         ).states
-        logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 Invoices found on node: " +
+        logger.info("$mm Invoices found on node: " +
                 "\uD83D\uDD06  ${states.size} .. getting anchor Party ...")
         val anchorParty = serviceHub.myInfo.legalIdentities.first()
-        logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 Anchor Party: " +
+        logger.info("$mm Anchor Party: " +
                 "\uD83D\uDD06  ${anchorParty.name} .. will attempt to make offers ...")
         var cnt = 0
         var cnt2 = 0
@@ -46,25 +46,30 @@ class AnchorMakeOffersFlow : FlowLogic<List<InvoiceOfferState>>() {
         val sessions: MutableList<FlowSession> = mutableListOf()
         val keys:MutableMap<String, PublicKey> = mutableMapOf()
         keys[anchorParty.toString()] = anchorParty.owningKey
+        val command = InvoiceOfferContract.MakeOffer()
+        val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
         states.forEach() {
             val offer = processInvoice(it, existingAnchor.state.data)
             if (offer != null) {
-                logger.info("\uD83D\uDD06 \uD83D\uDD06 Offer created: discount: ${offer.discount} offerAmount: ${offer.offerAmount}")
+                logger.info("$mm Offer created: discount: ${offer.discount} " +
+                        "\uD83D\uDC9A offerAmount: ${offer.offerAmount} \uD83D\uDC9A")
                 offerList.add(offer)
                 keys[it.state.data.supplierInfo.host.toString()] = it.state.data.supplierInfo.host.owningKey
+                txBuilder.addInputState(it)
+                txBuilder.addOutputState(offer)
                 cnt++
             } else {
-                logger.info("\uD83C\uDF4E\uD83C\uDF4E\uD83C\uDF4E This invoice does NOT meet anchor requirements" +
+                logger.info("$mm This invoice does NOT meet anchor requirements" +
                         " \uD83C\uDF4E\uD83C\uDF4E\uD83C\uDF4E totalAmount: ${it.state.data.totalAmount}")
+                cnt2++
             }
         }
-        logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 Building transaction ...")
-        val command = InvoiceOfferContract.MakeOffer()
-        val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
+        logger.info("$mm Building transaction ...  \uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A Offers created: $cnt  " +
+                "\uD83C\uDF4E Invoices rejected: $cnt2 \uD83C\uDF4E")
+
         txBuilder.addCommand(command, keys.values.toList())
-        logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 Adding output states ...")
+        logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 Adding ${offerList.size} output states ...")
         offerList.forEach() {
-            txBuilder.addOutputState(it)
             val supplierParty = it.supplier.host
             if (supplierParty.name.organisation != anchorParty.name.organisation) {
                 val session = initiateFlow(supplierParty)
@@ -75,6 +80,7 @@ class AnchorMakeOffersFlow : FlowLogic<List<InvoiceOfferState>>() {
 
         logger.info(".... \uD83D\uDD06 signInitialTransaction for this offer ..... ")
         val tx = serviceHub.signInitialTransaction(txBuilder)
+        cnt2 = 0
         if (sessions.isNotEmpty()) {
             val signedTransaction = subFlow(CollectSignaturesFlow(
                     partiallySignedTx = tx, sessionsToCollectFrom = sessions))
@@ -82,13 +88,16 @@ class AnchorMakeOffersFlow : FlowLogic<List<InvoiceOfferState>>() {
             logger.info("\uD83D\uDC7D Offer Transaction finalized with Supplier on another node")
             cnt2++
         } else {
+            subFlow(FinalityFlow(tx, listOf()))
             logger.info("\uD83D\uDC7D Offer Transaction finalized with Supplier on same node as anchor")
         }
 
-        logger.info("\uD83D\uDC7D \uD83D\uDC7D Anchor has made  \uD83C\uDF4E ${offerList.size} invoice offers; " +
-                "  \uD83C\uDF4E $cnt suppliers from this node;  \uD83C\uDF4E $cnt2 suppliers from other nodes")
+        logger.info("$bbx Yebo! \uD83C\uDF4E Anchor has made  \uD83C\uDF4E ${offerList.size} invoice offers; " +
+                "  \uD83C\uDF4E $cnt suppliers from this node;  \uD83C\uDF4E $cnt2 " +
+                "suppliers from other nodes \uD83C\uDF4E ")
         return offerList
     }
+
 
     @Suspendable
     private fun processInvoice(state: StateAndRef<InvoiceState>, anchor: AnchorState): InvoiceOfferState? {
@@ -146,6 +155,7 @@ class AnchorMakeOffersFlow : FlowLogic<List<InvoiceOfferState>>() {
 
     private val pp = "\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95";
     private val mm = "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35"
+    private val bbx = "\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D\uD83D\uDC7D \uD83D\uDC7D \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E "
 
     companion object {
         private val logger = LoggerFactory.getLogger(AnchorMakeOffersFlow::class.java)

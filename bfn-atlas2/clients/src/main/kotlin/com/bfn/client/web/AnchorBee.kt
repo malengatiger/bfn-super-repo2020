@@ -66,15 +66,17 @@ object AnchorBee {
             val dto = WorkerBee.getDTO(it)
             mList.add(dto)
         }
-        logger.info("\uD83C\uDF53 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 makeOffers: Anchor offers made OK: " +
+        logger.info("$xx makeOffers: Anchor offers made OK: " +
                 "\uD83C\uDF53 ${mList.size} \uD83C\uDF53 ")
         mList.forEach() {
-            logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 OFFER: ${GSON.toJson(it)}  " +
-                    "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35")
+            logger.info("$xx OFFER: ${GSON.toJson(it)}  $xx")
         }
+        logger.info("$xx makeOffers: Anchor offers made OK: " +
+                "\uD83C\uDF53 ${mList.size} \uD83C\uDF53 ")
         return mList
     }
 
+    private const val xx = "\uD83C\uDF53 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35"
     @JvmStatic
     @Throws(Exception::class)
     fun createAnchor(proxy: CordaRPCOps,

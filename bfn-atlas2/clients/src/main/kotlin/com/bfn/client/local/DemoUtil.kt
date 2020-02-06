@@ -222,28 +222,23 @@ object DemoUtil {
         }
 
     private val random = Random(System.currentTimeMillis())
-    private lateinit  var customer: AccountInfoDTO
-    fun generateInvoices(proxy: CordaRPCOps, customer: AccountInfoDTO, count:Int = 40): String {
+    private lateinit var customer: AccountInfoDTO
+    fun generateInvoices(proxy: CordaRPCOps, customer: AccountInfoDTO, count: Int = 40): String {
         DemoUtil.proxy = proxy
         this.customer = customer
         val accounts = getNodeAccounts(DemoUtil.proxy!!).shuffled()
         logger.info("\uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C accounts to have invoices generated: $count")
         repeatCount = 0
         var invoiceCnt = 0
-        for (i in 1..count) {
-            val invoice = buildInvoice(accounts)
-            if (invoice?.supplier?.name == "AnchorInvestor"
-                    || invoice?.supplier?.name == "Customer001") {
-                logger.info("Ignoring Anchor and Customer - not needed for generation")
-            } else {
-                if (invoice != null) {
-                    val result = startInvoiceRegistrationFlow(DemoUtil.proxy!!, invoice)
-                    invoiceCnt++
-                    logger.info("\uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C invoice #$invoiceCnt " +
-                            "generated, result: ${result.invoiceId}")
-                }
-            }
 
+        accounts.forEach() {
+            val invoice = buildInvoice(it)
+            if (invoice != null) {
+                val result = startInvoiceRegistrationFlow(DemoUtil.proxy!!, invoice)
+                invoiceCnt++
+                logger.info("\uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C invoice #$invoiceCnt " +
+                        "generated, result: ${result.totalAmount} ${result.invoiceId}")
+            }
         }
 
         val invoiceStates = WorkerBee.findInvoicesForNode(DemoUtil.proxy!!)
@@ -254,37 +249,27 @@ object DemoUtil {
     }
 
 
-
     private var repeatCount = 0
-    private fun buildInvoice(suppliers: List<AccountInfoDTO>): InvoiceDTO? {
+    private fun buildInvoice(supplier: AccountInfoDTO): InvoiceDTO? {
 
-        val index = random.nextInt(suppliers.size - 1)
-        val supplier = suppliers[index]
         var invoice: InvoiceDTO? = null
-        var num = random.nextInt(500)
-        if (num == 0) num = 92
-        if (supplier.name != customer!!.name) {
+        var num = random.nextInt(1000)
+        if (num < 5) num = 33
+        if (supplier.name != customer.name) {
             invoice = InvoiceDTO(
                     invoiceNumber = "INV_" + System.currentTimeMillis(),
                     supplier = supplier,
-                    customer = customer!!,
+                    customer = customer,
                     amount = num * 1000.0,
                     valueAddedTax = 15.0,
                     totalAmount = num * 1.15,
-                    description = "Demo Invoice at " + Date().toString(),
+                    description = "Demo Invoice at ${Date()}",
                     dateRegistered = todaysDate(),
                     invoiceId = UUID.randomUUID().toString(),
                     externalId = UUID.randomUUID().toString()
             )
-        }
-        if (invoice == null) {
-            logger.info("Invoice is null, repeating build .... repeatCount: $repeatCount")
-            if (repeatCount < 6) {
-                repeatCount++
-                buildInvoice(suppliers)
-            } else {
-                return null
-            }
+        } else {
+            logger.warn("... ... Supplier and Customer are the same. Ignoring ...")
         }
 
         return invoice

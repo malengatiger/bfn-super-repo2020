@@ -51,7 +51,14 @@ class AdminController(rpc: NodeRPCConnection) {
     @Throws(Exception::class)
     private fun makeAnchorOffers(): List<InvoiceOfferDTO> {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting makeAnchorOffers: ... \uD83C\uDF4F ")
-        return AnchorBee.makeOffers(proxy)
+        //todo - remove after test
+        val mList = AnchorBee.makeOffers(proxy)
+//        mList.forEach() {
+//            logger.info("\n\uD83D\uDE0E \uD83D\uDE0E \uD83D\uDE0E ${GSON.toJson(it)} \uD83D\uDE0E \uD83D\uDE0E \uD83D\uDE0E ")
+//        }
+//        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83C\uDF4E " +
+//                "Anchor offers made: \uD83C\uDF4E ${mList.size} \uD83C\uDF4E ")
+        return mList
     }
     @GetMapping(value = ["/getInvoicesAcrossNodes"], produces = ["application/json"])
     @Throws(Exception::class)

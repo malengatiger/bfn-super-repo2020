@@ -55,14 +55,15 @@ private class Client {
     fun main(args: Array<String>) {
 
         setupLocalNodes()
-        createAnchor("http://localhost:10050")
-        createCustomer("http://localhost:10050")
-        startSupplierAccounts(
-                numberOfAccounts = 40,
-                url = "http://localhost:10050");
+//        createAnchor("http://localhost:10050")
+//        createCustomer("http://localhost:10050")
+//        startSupplierAccounts(
+//                numberOfAccounts = 60,
+//                url = "http://localhost:10050");
 
         generateInvoices("http://localhost:10050", 100)
         generateAnchorOffers("http://localhost:10050")
+//        getOffers()
 //        generateProfiles()
 //
 //        generateOffers(0)
@@ -87,6 +88,23 @@ private class Client {
         logger.info("\uD83C\uDF4E  generateAnchorOffers; RESPONSE: statusCode: " +
                 "${response.statusCode} - ${response.text}")
 
+        val mList = getOffers()
+        logger.info("Invoice offers on node: \uD83C\uDF4E ${mList.size} \uD83C\uDF4E")
+    }
+
+    private fun getOffers(): List<StateAndRef<InvoiceOfferState>> {
+        val mList = proxyAnchorInvestor.vaultQueryByWithPagingSpec(
+                contractStateType = InvoiceOfferState::class.java,
+                criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED),
+                paging = PageSpecification(1, 2000)
+        ).states
+        mList.forEach() {
+            logger.info("\uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A " +
+                    "${GSON.toJson(getDTO(it.state.data))} \uD83D\uDC9A")
+        }
+        logger.info("\uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A " +
+                "\uD83C\uDF4E ${mList.size} offers on Node \uD83C\uDF4E ")
+                return mList
     }
 
 
@@ -386,17 +404,22 @@ private class Client {
 
         logger.info("\uD83D\uDE21 generateInvoices for CUSTOMER \uD83D\uDE21 \uD83D\uDE21 ")
         if (customer == null) {
-            logger.info("Finding customer on Anchor Node ...")
+            logger.info("\uD83D\uDD06 \uD83D\uDD06 Finding customer on Anchor Node ...")
             val page = proxyAnchorInvestor.vaultQueryByWithPagingSpec(
                     contractStateType = AccountInfo::class.java,
                     criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED),
                     paging = PageSpecification(1, 2000)).states
+            logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                    "accounts found: ${page.size}")
             page.forEach() {
                 if (it.state.data.name == "Customer001") {
                     customer = getDTO(it.state.data)
                 }
             }
 
+        }
+        if (customer == null) {
+            throw IllegalArgumentException("Customer001 not found")
         }
         logger.info("CUSTOMER \uD83D\uDE0E \uD83D\uDE0E \uD83D\uDE0E " +
                 "to be used for invoice generation: \uD83D\uDE0E " +
@@ -426,7 +449,7 @@ private class Client {
                 "${response0.statusCode} - ${response0.text}")
 
         val a = AnchorDTO(
-                minimumInvoiceAmount = 25000.00,
+                minimumInvoiceAmount = 100000.00,
                 maximumInvoiceAmount = 20000000.00,
                 maximumInvestment = 1000000000.00,
                 defaultOfferDiscount = 8.8,
@@ -443,31 +466,31 @@ private class Client {
         )
 
         val m1 = TradeMatrix(
-                startInvoiceAmount = 25000.00,
-                endInvoiceAmount = 100000.00,
+                startInvoiceAmount = 100000.00,
+                endInvoiceAmount = 200000.00,
                 offerDiscount = 8.8,
                 date = todaysDate()
         )
         val m2 = TradeMatrix(
-                startInvoiceAmount = 100001.00,
-                endInvoiceAmount = 200000.00,
+                startInvoiceAmount = 2000001.00,
+                endInvoiceAmount = 300000.00,
                 offerDiscount = 8.3,
                 date = todaysDate()
         )
         val m3 = TradeMatrix(
-                startInvoiceAmount = 200001.00,
-                endInvoiceAmount = 300000.00,
+                startInvoiceAmount = 300001.00,
+                endInvoiceAmount = 400000.00,
                 offerDiscount = 7.9,
                 date = todaysDate()
         )
         val m4 = TradeMatrix(
-                startInvoiceAmount = 300001.00,
-                endInvoiceAmount = 400000.00,
+                startInvoiceAmount = 400001.00,
+                endInvoiceAmount = 500000.00,
                 offerDiscount = 7.4,
                 date = todaysDate()
         )
         val m5 = TradeMatrix(
-                startInvoiceAmount = 400001.00,
+                startInvoiceAmount = 500001.00,
                 endInvoiceAmount = 1000000.00,
                 offerDiscount = 5.5,
                 date = todaysDate())
