@@ -84,6 +84,10 @@ private class Client {
         acceptOffers(localAnchorURL)
         makeMultiplePayments(localAnchorURL)
         getOffers()
+        logger.info("\n\n =========  \uD83C\uDF81 DATA GENERATION COMPLETE. Bravo!!  \uD83C\uDF81 ============= \n\n")
+        doNodesAndAggregates(proxyAnchorInvestor, proxyCustomer001, proxyRegulator)
+        logger.info("\n\n =========  \uD83C\uDF81 Ready to check that the whole business process happened, " +
+                "\uD83C\uDF4F Senor!  \uD83C\uDF81 ============= \n\n")
     }
 
     private fun makeMultiplePayments(url: String) {
@@ -823,14 +827,14 @@ private class Client {
                 cnt2++
             }
         }
-        logger.info("Local Accounts on Node: ♻️ $cnt ♻️")
-        logger.info("Remote Accounts on Node: ♻️ $cnt2 ♻️")
+        logger.info("\uD83C\uDF4A Local Accounts on Node: \uD83C\uDF4A $cnt \uD83C\uDF4A")
+        logger.info("\uD83C\uDF4A Remote Accounts on Node: 🍊 $cnt2 🍊")
 
         val profiles = proxy.vaultQueryByWithPagingSpec(criteria = criteria,
                 contractStateType = InvestorProfileState::class.java,
                 paging = PageSpecification(pageNumber = 1, pageSize = 2000))
 
-        logger.info("Local Profiles on Node: ♻️ ${profiles.totalStatesAvailable} ♻️")
+        logger.info("Local Profiles on Node: 🍊 ${profiles.totalStatesAvailable} 🍊")
         //
         val pageInvoices = proxy.vaultQueryByWithPagingSpec(criteria = criteria,
                 contractStateType = InvoiceState::class.java,
@@ -844,8 +848,8 @@ private class Client {
                 cnt2++
             }
         }
-        logger.info("Local Invoices on Node: ♻️ $cnt♻️")
-        logger.info("Remote Invoices on Node: ♻️ $cnt2♻️")
+        logger.info("Local Invoices on Node: 🍊 $cnt 🍊")
+        logger.info("Remote Invoices on Node: 🍊 $cnt2 🍊")
 
         val pageInvoiceOffers =
                 proxy.vaultQueryByWithPagingSpec(
@@ -864,8 +868,8 @@ private class Client {
             }
         }
 
-        logger.info("Local InvoiceOffers on Node: ♻️ $cnt ♻️")
-        logger.info("Remote InvoiceOffers on Node: ♻️ $cnt2 ♻️")
+        logger.info("Local InvoiceOffers on Node: 🍊 $cnt 🍊")
+        logger.info("Remote InvoiceOffers on Node: 🍊 $cnt2 🍊")
     }
 
     private fun getAccountDetails(proxy: CordaRPCOps) {
@@ -878,7 +882,7 @@ private class Client {
             cnt++
 
         }
-        logger.info("Accounts on Node: ♻️ ${page.states.size} ♻️")
+        logger.info("Accounts on Node: 🍊 ${page.states.size} 🍊")
 
 
     }
@@ -892,7 +896,7 @@ private class Client {
             logger.info("\uD83C\uDF4A\uD83C\uDF4A Invoice #$cnt \uD83C\uDF4A R${it.state.data.amount} - ${it.state.data.supplierInfo.name}")
             cnt++
         }
-        logger.info("Invoices on Node: ♻️ ${pageInvoices.states.size} ♻️")
+        logger.info("Invoices on Node: 🍊 ${pageInvoices.states.size} 🍊")
 
     }
 
@@ -927,8 +931,8 @@ private class Client {
 //                    "from ${it.originalAmount} :: discount: ${it.discount}")
 //            cnt++
 //        }
-        logger.info("\n\nInvoiceOffers on Node: ♻️ ${page.totalStatesAvailable} ♻️")
-        logger.info("InvoiceOffers gathered: ♻️ ${mList.size} ♻️")
+        logger.info("\n\nInvoiceOffers on Node: 🍊 ${page.totalStatesAvailable} 🍊")
+        logger.info("InvoiceOffers gathered: 🍊 ${mList.size} 🍊")
         selectBestOffers()
 
     }
