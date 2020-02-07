@@ -53,9 +53,13 @@ class InvoiceRegistrationFlow(private val invoiceState: InvoiceState) : FlowLogi
     @Throws(FlowException::class)
     override fun call(): SignedTransaction? {
         val serviceHub = serviceHub
-        Companion.logger.info(" \uD83E\uDD1F \uD83E\uDD1F  \uD83E\uDD1F \uD83E\uDD1F  ... InvoiceRegistrationFlow call started ...")
+        Companion.logger.info("\uD83E\uDD1F \uD83E\uDD1F  \uD83E\uDD1F \uD83E\uDD1F" +
+                "  ... InvoiceRegistrationFlow call started ...")
         val notary = serviceHub.networkMapCache.notaryIdentities[0]
         checkDuplicate(serviceHub)
+        if (invoiceState.supplierInfo.name == invoiceState.customerInfo.name) {
+            throw IllegalArgumentException("Customer and Supplier cannot be the same entity")
+        }
         progressTracker.currentStep = GENERATING_KEYS
 
         //todo - SORT OUT THIS ACCOUNT THING ---> EXAMPLES FUCKED!

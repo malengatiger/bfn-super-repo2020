@@ -56,14 +56,14 @@ private class Client {
     fun main(args: Array<String>) {
 
         setupLocalNodes()
-//        createAnchor(localAnchorURL)
-//        createCustomer(localAnchorURL)
-//        startSupplierAccounts(
-//                numberOfAccounts = 60,
-//                url = localAnchorURL);
+        createAnchor(localAnchorURL)
+        createCustomer(localAnchorURL)
+        startSupplierAccounts(
+                numberOfAccounts = 40,
+                url = localAnchorURL);
 
-//        letsDance()
-//        logger.info("\n\n========================= \uD83C\uDF4E 2nd Set letsDance! \uD83C\uDF4E =================================\n\n")
+        letsDance()
+//        logger.info("\n\n========================= \uD83C\uDF4E 2nd Set; letsDance! \uD83C\uDF4E =================================\n\n")
 //        letsDance()
 
         getOffers().forEach() {
@@ -87,12 +87,16 @@ private class Client {
     }
 
     private fun makeMultiplePayments(url: String) {
-        logger.info("\uD83C\uDF4E makeMultiplePayments\uD83C\uDF4E")
+        logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E" +
+                " makeMultiplePayments started ..... \uD83C\uDF4E")
         val response = httpGet(
                 timeout = 990000000.0,
                 url = "$url/bfn/admin/makeMultiplePayments")
         logger.info("\uD83C\uDF4E  makeMultiplePayments; RESPONSE: statusCode: " +
-                "${response.statusCode} ")
+                "\uD83C\uDF0D ${response.statusCode} \uD83C\uDF0D ")
+        if (response.statusCode > 200) {
+            logger.info("\uD83D\uDC7F ERROR: \uD83D\uDC7F\n${response.text} \uD83D\uDC7F \uD83D\uDC7F")
+        }
 
         val mList = proxyAnchorInvestor.vaultQueryByWithPagingSpec(
                 criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED),
@@ -125,6 +129,9 @@ private class Client {
                 url = "$url/bfn/admin/makeAnchorOffers")
         logger.info("\uD83C\uDF4E  generateAnchorOffers; RESPONSE: statusCode: " +
                 "${response.statusCode} ")
+        if (response.statusCode > 200) {
+            logger.info("\uD83D\uDC7F ERROR: \uD83D\uDC7F\n${response.text} \uD83D\uDC7F \uD83D\uDC7F")
+        }
 
         val mList = getOffers()
         logger.info("Invoice offers on node: \uD83C\uDF4E ${mList.size} \uD83C\uDF4E")
@@ -451,6 +458,7 @@ private class Client {
                     paging = PageSpecification(1, 2000)).states
             logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
                     "accounts found: ${page.size}")
+
             page.forEach() {
                 if (it.state.data.name == "Customer001") {
                     customer = getDTO(it.state.data)
@@ -505,12 +513,6 @@ private class Client {
 
         )
 
-//        val m1 = TradeMatrix(
-//                startInvoiceAmount = 100000.00,
-//                endInvoiceAmount = 200000.00,
-//                offerDiscount = 8.8,
-//                date = todaysDate()
-//        )
         val m2 = TradeMatrix(
                 startInvoiceAmount = 2000001.00,
                 endInvoiceAmount = 300000.00,
@@ -549,13 +551,14 @@ private class Client {
         val mGson = Gson()
         val json = mGson.toJson(a)
         val jsonObject = JSONObject(json)
-        logger.info("\uD83C\uDF4E GSON.toJson produces: ${GSON.toJson(a)} \uD83C\uDF4E")
+        logger.info("\uD83C\uDF4E Anchor about to be created: ${GSON.toJson(a)} \uD83C\uDF4E")
         val response = httpPost(
                 json = jsonObject,
                 timeout = 990000000.0,
                 url = "$url/bfn/admin/createAnchor")
-        logger.info("\uD83C\uDF4E  create Anchor; RESPONSE: statusCode: " +
-                "${response.statusCode} - ${response.text}")
+
+        logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E create Anchor; RESPONSE: statusCode: " +
+                "🌍 ${response.statusCode} 🌍  - ${response.text}")
 
     }
 
@@ -577,7 +580,7 @@ private class Client {
 
         customer = GSON.fromJson(response.text, AccountInfoDTO::class.java)
         logger.info("\uD83C\uDF4E  create Anchor account; RESPONSE: " +
-                "statusCode: ${response.statusCode}  " +
+                "statusCode: 🌍 ${response.statusCode} 🌍   " +
                 response.text)
 
     }
@@ -597,7 +600,7 @@ private class Client {
 
         customer = GSON.fromJson(response.text, AccountInfoDTO::class.java)
         logger.info("\uD83C\uDF4E  create Customer; RESPONSE: " +
-                "statusCode: ${response.statusCode}  " +
+                "statusCode: 🌍 ${response.statusCode} 🌍   " +
                 response.text)
         //todo - write to Firebase auth .....
     }
@@ -625,7 +628,7 @@ private class Client {
                 val arr = JSONArray(response.text)
                 logger.info("\uD83D\uDE3C Made \uD83D\uDD39 ${arr.length()} \uD83D\uDD39 offers based on profile for: ${it.name} \uD83C\uDF3A")
             } else {
-                logger.warn("\uD83C\uDF4E RESPONSE: statusCode: ${response.statusCode}  ${response.text}")
+                logger.warn("\uD83C\uDF4E RESPONSE: statusCode: 🌍 ${response.statusCode} 🌍   ${response.text}")
             }
         }
     }
@@ -664,7 +667,7 @@ private class Client {
                 url = "$url/bfn/admin/demo",
                 params = params)
 
-        logger.info("\uD83C\uDF4E RESPONSE: statusCode: ${response.statusCode}  " +
+        logger.info("\uD83C\uDF4E RESPONSE: statusCode: 🌍 ${response.statusCode} 🌍   " +
                 "\uD83C\uDF4E ${response.text}")
         makeProfilesForNode(proxy, url)
 
@@ -713,7 +716,8 @@ private class Client {
                 json = jsonObject,
                 timeout = 8000000000.0
         )
-        logger.info("\uD83D\uDE0E Create INVESTOR profile  \uD83C\uDF3A ${it.state.data.name} - RESPONSE: statusCode: ${resp.statusCode}  " +
+        logger.info("\uD83D\uDE0E Create INVESTOR profile  \uD83C\uDF3A ${it.state.data.name} " +
+                "- RESPONSE: statusCode: \uD83C\uDF0D ${resp.statusCode}  \uD83C\uDF0D " +
                 "\uD83D\uDE0E  ${resp.text}")
     }
 
@@ -726,14 +730,14 @@ private class Client {
         val params: MutableMap<String, String> = mutableMapOf()
         params["issuedBy"] = "me"
         params["accountId"] = account.state.data.identifier.id.toString()
-        params["date"] = "2020-01-01"
+        params["date"] = todaysDate()
         params["bank"] = "BlackOx Bank"
         params["bankAccount"] = "786980765"
         params["maximumDiscount"] = disc.toString()
         val prof = SupplierProfileStateDTO(
                 accountId = account.state.data.identifier.id.toString(),
-                date = "2020-01-01",
-                bankAccount = "988007654",
+                date = todaysDate(),
+                bankAccount = (random.nextInt(123445) * 132647).toString(),
                 bank = "BlackOx Investment Bank",
                 maximumDiscount = disc,
                 issuedBy = "moi"
@@ -746,7 +750,8 @@ private class Client {
                 json = jsonObject,
                 timeout = 8000000000.0
         )
-        logger.info("\uD83E\uDD8A Create SUPPLIER profile for \uD83C\uDF3A ${account.state.data.name} - RESPONSE: statusCode: ${resp.statusCode}  " +
+        logger.info("\uD83E\uDD8A Create SUPPLIER profile for \uD83C\uDF3A ${account.state.data.name} " +
+                "- RESPONSE: statusCode: \uD83C\uDF0D ${resp.statusCode} \uD83C\uDF0D  " +
                 "\uD83E\uDD8A ${resp.text} \n")
     }
 

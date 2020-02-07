@@ -47,9 +47,13 @@ class InvoiceOfferFlow(invoiceOfferState: InvoiceOfferState) : FlowLogic<SignedT
     @Throws(FlowException::class)
     override fun call(): SignedTransaction {
         val serviceHub = serviceHub
-        Companion.logger.info(" \uD83E\uDD1F \uD83E\uDD1F  \uD83E\uDD1F \uD83E\uDD1F  ... InvoiceOfferFlow call started ...")
+        Companion.logger.info("\uD83E\uDD1F \uD83E\uDD1F  \uD83E\uDD1F \uD83E\uDD1F  ... InvoiceOfferFlow call started ...")
         val notary = serviceHub.networkMapCache.notaryIdentities[0]
         checkDuplicate()
+
+        if (invoiceOfferState.supplier.name == invoiceOfferState.investor.name) {
+            throw IllegalArgumentException("Investor and Supplier cannot be the same entity")
+        }
        
         val command = InvoiceOfferContract.MakeOffer()
         val investorParty = invoiceOfferState.investor.host //subFlow(RequestKeyForAccount(investorAccount))

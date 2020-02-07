@@ -65,7 +65,7 @@ object AnchorBee {
                 SupplierOfferAcceptanceFlow::class.java, invoiceId).returnValue
         val result = cordaFuture.get()
 
-        return "\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C Offer accepted OK, txId: $result  \uD83D\uDC4C"
+        return "\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C Offer accepted OK, txId: ${result.id.toString()}  \uD83D\uDC4C"
     }
     @JvmStatic
     @Throws(Exception::class)
@@ -97,7 +97,8 @@ object AnchorBee {
     @JvmStatic
     @Throws(Exception::class)
     fun makeOffers(proxy: CordaRPCOps) : List<InvoiceOfferDTO> {
-        logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to make Offers for Anchor ... " )
+        logger.info("\uD83C\uDFC0 \uD83C\uDFC0 .............. " +
+                "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 Starting to make Offers for Anchor ... " )
 
         val cordaFuture = proxy.startFlowDynamic(
                 AnchorMakeOffersFlow::class.java).returnValue
@@ -107,12 +108,11 @@ object AnchorBee {
             val dto = WorkerBee.getDTO(it)
             mList.add(dto)
         }
-        logger.info("$xx makeOffers: Anchor offers made OK: " +
-                "\uD83C\uDF53 ${mList.size} \uD83C\uDF53 ")
+
         mList.forEach() {
             logger.info("$xx OFFER: ${GSON.toJson(it)}  $xx")
         }
-        logger.info("$xx makeOffers: Anchor offers made OK: " +
+        logger.info("$xx makeOffers: Number of Anchor offers made OK: " +
                 "\uD83C\uDF53 ${mList.size} \uD83C\uDF53 ")
         return mList
     }

@@ -252,6 +252,9 @@ object DemoUtil {
     private var repeatCount = 0
     private fun buildInvoice(supplier: AccountInfoDTO): InvoiceDTO? {
 
+        if (supplier.name == customer.name) {
+            return null
+        }
         var invoice: InvoiceDTO? = null
         var num = random.nextInt(1000)
         if (num == 0) num = 33
