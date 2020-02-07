@@ -29,8 +29,9 @@ class AnchorMakeMultiplePaymentsFlow() : FlowLogic<List<SupplierPaymentState>>()
                 ?: throw IllegalArgumentException("Anchor does not exist")
         val service = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
         val acceptedOffers = service.getAnchorOffersAccepted()
+        val paymentList: MutableList<SupplierPaymentState> = mutableListOf()
         if (acceptedOffers.isEmpty()) {
-            throw IllegalArgumentException("Accepted offers not found")
+            return paymentList
         }
         //todo - fix this query - find a way!!
         val payments = serviceHub.vaultService.queryBy(
@@ -65,7 +66,7 @@ class AnchorMakeMultiplePaymentsFlow() : FlowLogic<List<SupplierPaymentState>>()
         val command = SupplierPaymentContract.Pay()
         val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
 
-        val paymentList: MutableList<SupplierPaymentState> = mutableListOf()
+
         acceptedOffers.forEach() {
             val supplierProfile = serviceHub.cordaService(ProfileFinderService::class.java)
                     .findSupplierProfile(it.state.data.supplier.identifier.id.toString())

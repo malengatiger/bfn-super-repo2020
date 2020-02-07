@@ -232,13 +232,29 @@ object DemoUtil {
         var invoiceCnt = 0
 
         accounts.forEach() {
-            val invoice = buildInvoice(it)
-            if (invoice != null) {
-                val result = startInvoiceRegistrationFlow(DemoUtil.proxy!!, invoice)
-                invoiceCnt++
-                logger.info("\uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C invoice #$invoiceCnt " +
-                        "generated, result: ${result.totalAmount} ${result.invoiceId}")
+            if (it.name == "AnchorInvestor" || it.name == "Customer001") {
+                logger.info("............ \uD83E\uDD80 these baby don't do invoices. IGNORED! \uD83D\uDC2C ")
+            } else {
+                val invoice = buildInvoice(it)
+                val smallInvoice = buildSmallInvoice(it)
+                val choice = random.nextBoolean()
+                if (choice) {
+                    if (invoice != null) {
+                        val result = startInvoiceRegistrationFlow(DemoUtil.proxy!!, invoice)
+                        invoiceCnt++
+                        logger.info("\uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C LARGE invoice #$invoiceCnt " +
+                                "generated, result: ${result.totalAmount} ${result.invoiceId}")
+                    }
+                } else {
+                    if (smallInvoice != null) {
+                        val result = startInvoiceRegistrationFlow(DemoUtil.proxy!!, smallInvoice)
+                        invoiceCnt++
+                        logger.info("\uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C SMALL invoice #$invoiceCnt " +
+                                "generated, result: ${result.totalAmount} ${result.invoiceId}")
+                    }
+                }
             }
+
         }
 
         val invoiceStates = WorkerBee.findInvoicesForNode(DemoUtil.proxy!!)
@@ -263,7 +279,7 @@ object DemoUtil {
                     invoiceNumber = "INV_" + System.currentTimeMillis(),
                     supplier = supplier,
                     customer = customer,
-                    amount = num * 700.0,
+                    amount = num * 1200.0,
                     valueAddedTax = 15.0,
                     totalAmount = num * 1.15,
                     description = "Demo Invoice at ${Date()}",
@@ -272,8 +288,35 @@ object DemoUtil {
                     externalId = UUID.randomUUID().toString()
             )
         } else {
-            logger.warn("... ... Supplier and Customer are the same. Ignoring ...")
+            logger.warn("... ... \uD83E\uDD80 \uD83E\uDD80 Supplier and Customer are the same. Ignoring ...\uD83D\uDC2C ")
         }
+
+        return invoice
+
+
+    }
+    private fun buildSmallInvoice(supplier: AccountInfoDTO): InvoiceDTO? {
+
+        if (supplier.name == customer.name) {
+            return null
+        }
+        var invoice: InvoiceDTO? = null
+        var num = random.nextInt(200)
+        if (num == 0) num = 10
+
+            invoice = InvoiceDTO(
+                    invoiceNumber = "INV_" + System.currentTimeMillis(),
+                    supplier = supplier,
+                    customer = customer,
+                    amount = num * 500.0,
+                    valueAddedTax = 15.0,
+                    totalAmount = num * 1.15,
+                    description = "Demo Small Invoice at ${Date()}",
+                    dateRegistered = todaysDate(),
+                    invoiceId = UUID.randomUUID().toString(),
+                    externalId = UUID.randomUUID().toString()
+            )
+
 
         return invoice
 

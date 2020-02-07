@@ -7,7 +7,6 @@ import com.bfn.flows.regulator.BroadcastTransactionFlow
 import com.bfn.flows.services.InvoiceFinderService
 import com.bfn.flows.services.InvoiceOfferFinderService
 import com.bfn.flows.todaysDate
-import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.ourIdentity
 import com.template.InvoiceOfferContract
 import net.corda.core.contracts.StateAndRef
@@ -28,23 +27,13 @@ class SupplierOfferAcceptanceFlow(private val invoiceId: String) : FlowLogic<Sig
     @Suspendable
     @Throws(FlowException::class, IllegalArgumentException::class)
     override fun call(): SignedTransaction {
-        Companion.logger.info("$nn SupplierOfferAcceptanceFlow started ... \uD83C\uDF4E $invoiceId")
-        //todo - 🍎 this query HAS to improve !!!
-        val consumedInvoices = serviceHub.vaultService.queryBy(
-                contractStateType = InvoiceState::class.java,
-                criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.CONSUMED),
-                paging = PageSpecification(1,2000)
-        ).states
+        Companion.logger.info("$nn SupplierOfferAcceptanceFlow started ... \uD83C\uDF4E $invoiceId \uD83D\uDE21 ")
 
-        var invoiceState: StateAndRef<InvoiceState>? = null
-        consumedInvoices.forEach() {
-            if (it.state.data.invoiceId.toString() == invoiceId) {
-                invoiceState = it
-            }
-        }
-        if (invoiceState == null) {
-            throw IllegalArgumentException("Original consumed invoice not found")
-        }
+        //todo - 🍎 this query HAS to improve !!!
+        val invoiceState = serviceHub.cordaService(InvoiceFinderService::class.java)
+                .findInvoiceStateAndRef(invoiceId)
+                ?: throw IllegalArgumentException("\uD83D\uDE21 Original unconsumed invoice not found \uD83D\uDE21 ")
+
         val offerFinderService = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
         var invoiceOfferState = offerFinderService.findAnchorOffer(invoiceId)
         if (invoiceOfferState == null) {
@@ -82,10 +71,11 @@ class SupplierOfferAcceptanceFlow(private val invoiceId: String) : FlowLogic<Sig
             keys.add(it.owningKey)
         }
         txBuilder.addInputState(invoiceOfferState)
+        txBuilder.addInputState(invoiceState!!)
         txBuilder.addCommand(command, keys)
         txBuilder.addOutputState(acceptedOffer)
 
-        Companion.logger.info("$nn verify and sign Transaction ... ")
+        Companion.logger.info("$nn verify and sign this fucking Transaction ...! \uD83C\uDF1D ")
         txBuilder.verify(serviceHub)
         val signedTx = serviceHub.signInitialTransaction(txBuilder)
         val parties = map.values.toList()
@@ -97,7 +87,7 @@ class SupplierOfferAcceptanceFlow(private val invoiceId: String) : FlowLogic<Sig
             parties: List<Party>,
             signedTx: SignedTransaction) : SignedTransaction{
         val flowSessions: MutableList<FlowSession> = mutableListOf()
-        logger.info("processAcceptance")
+        logger.info("process offer and finalize acceptance: \uD83C\uDF1D ${parties.size} parties in this thing ...\uD83C\uDF1D ")
         parties.forEach() {
             if (it.toString() != serviceHub.ourIdentity.toString()) {
                 flowSessions.add(initiateFlow(it))
@@ -119,7 +109,6 @@ class SupplierOfferAcceptanceFlow(private val invoiceId: String) : FlowLogic<Sig
     @Throws(FlowException::class)
     private fun collectSignaturesAndFinalize(
             signedTx: SignedTransaction, sessions: List<FlowSession>): SignedTransaction {
-
 
         val signedTransaction = subFlow(CollectSignaturesFlow(
                 partiallySignedTx = signedTx, sessionsToCollectFrom = sessions))

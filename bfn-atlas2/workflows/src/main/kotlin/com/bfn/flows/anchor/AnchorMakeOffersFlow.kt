@@ -55,7 +55,6 @@ class AnchorMakeOffersFlow : FlowLogic<List<InvoiceOfferState>>() {
                         "\uD83D\uDC9A offerAmount: ${offer.offerAmount} \uD83D\uDC9A")
                 offerList.add(offer)
                 keys[it.state.data.supplierInfo.host.toString()] = it.state.data.supplierInfo.host.owningKey
-                txBuilder.addInputState(it)
                 txBuilder.addOutputState(offer)
                 cnt++
             } else {

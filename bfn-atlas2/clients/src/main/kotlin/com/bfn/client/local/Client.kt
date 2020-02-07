@@ -63,8 +63,8 @@ private class Client {
                 url = localAnchorURL);
 
         letsDance()
-//        logger.info("\n\n========================= \uD83C\uDF4E 2nd Set; letsDance! \uD83C\uDF4E =================================\n\n")
-//        letsDance()
+        logger.info("\n\n========================= \uD83C\uDF4E 2nd Set; letsDance! \uD83C\uDF4E =================================\n\n")
+        letsDance()
 
         getOffers().forEach() {
             logger.info("\uD83C\uDF00 \uD83D\uDC8A \uD83D\uDC8A InvoiceOffer: \uD83C\uDF21 \uD83C\uDF21 " +
@@ -104,6 +104,14 @@ private class Client {
                 paging = PageSpecification(1,6000)
         ).states
         logger.info("Supplier Payments on node: \uD83C\uDF4E ${mList.size} \uD83C\uDF4E")
+        val mList1 = proxyAnchorInvestor.vaultQueryByWithPagingSpec(
+                criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED),
+                contractStateType = InvoiceState::class.java,
+                paging = PageSpecification(1,6000)
+        ).states
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 Invoices on node: " +
+                "\uD83C\uDF4E ${mList1.size} \uD83C\uDF4E these have no Anchor offers! " +
+                "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 ")
     }
 
     private fun acceptOffers(url: String) {
@@ -116,11 +124,11 @@ private class Client {
                     timeout = 990000000.0, params = params,
                     url = "$url/bfn/admin/acceptOffer")
             logger.info("\uD83C\uDF4E  acceptOffers; RESPONSE: statusCode: " +
-                    "${response.statusCode} - ${response.text}")
+                    "\uD83C\uDF0D ${response.statusCode} \uD83C\uDF0D ${response.text}")
         }
-
         val mList = getOffers()
-        logger.info("\uD83C\uDF4E \uD83C\uDF4E Invoice offers on node (should be accepted, mostly): \uD83C\uDF4E ${mList.size} \uD83C\uDF4E")
+        logger.info("\uD83C\uDF4E \uD83C\uDF4E Invoice offers on node (should be accepted, where appropriate): " +
+                "\uD83C\uDF4E ${mList.size} \uD83C\uDF4E")
     }
     private fun generateAnchorOffers(url: String) {
         logger.info("\uD83C\uDF4E Generating Anchor Offers \uD83C\uDF4E")
@@ -128,13 +136,12 @@ private class Client {
                 timeout = 990000000.0,
                 url = "$url/bfn/admin/makeAnchorOffers")
         logger.info("\uD83C\uDF4E  generateAnchorOffers; RESPONSE: statusCode: " +
-                "${response.statusCode} ")
+                "\uD83C\uDF00 ${response.statusCode} \uD83C\uDF00 ")
         if (response.statusCode > 200) {
             logger.info("\uD83D\uDC7F ERROR: \uD83D\uDC7F\n${response.text} \uD83D\uDC7F \uD83D\uDC7F")
         }
 
-        val mList = getOffers()
-        logger.info("Invoice offers on node: \uD83C\uDF4E ${mList.size} \uD83C\uDF4E")
+        getOffers()
     }
 
     private fun getOffers(): List<StateAndRef<InvoiceOfferState>> {
@@ -717,8 +724,7 @@ private class Client {
                 timeout = 8000000000.0
         )
         logger.info("\uD83D\uDE0E Create INVESTOR profile  \uD83C\uDF3A ${it.state.data.name} " +
-                "- RESPONSE: statusCode: \uD83C\uDF0D ${resp.statusCode}  \uD83C\uDF0D " +
-                "\uD83D\uDE0E  ${resp.text}")
+                "- RESPONSE: statusCode: \uD83C\uDF0D ${resp.statusCode} \uD83C\uDF0D ")
     }
 
     private fun addSupplierProfile(account: StateAndRef<AccountInfo>, url: String) {
@@ -751,8 +757,7 @@ private class Client {
                 timeout = 8000000000.0
         )
         logger.info("\uD83E\uDD8A Create SUPPLIER profile for \uD83C\uDF3A ${account.state.data.name} " +
-                "- RESPONSE: statusCode: \uD83C\uDF0D ${resp.statusCode} \uD83C\uDF0D  " +
-                "\uD83E\uDD8A ${resp.text} \n")
+                "- RESPONSE: statusCode: \uD83C\uDF0D ${resp.statusCode} \uD83C\uDF0D \n")
     }
 
     private fun doNodesAndAggregates(proxyAnchor: CordaRPCOps, proxyCustomer: CordaRPCOps, proxyReg: CordaRPCOps) {

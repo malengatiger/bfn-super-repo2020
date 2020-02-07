@@ -59,13 +59,14 @@ object AnchorBee {
     @JvmStatic
     @Throws(Exception::class)
     fun acceptOffer(proxy: CordaRPCOps, invoiceId: String) : String {
-        logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to acceptOffer ... " )
+        logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to acceptOffer " +
+                ".....\uD83C\uDFC0 invoiceId: $invoiceId \uD83C\uDFC0" )
 
         val cordaFuture = proxy.startFlowDynamic(
                 SupplierOfferAcceptanceFlow::class.java, invoiceId).returnValue
         val result = cordaFuture.get()
 
-        return "\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C Offer accepted OK, txId: ${result.id.toString()}  \uD83D\uDC4C"
+        return "\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C Offer accepted OK, txId: ${result.id}  \uD83D\uDC4C"
     }
     @JvmStatic
     @Throws(Exception::class)
