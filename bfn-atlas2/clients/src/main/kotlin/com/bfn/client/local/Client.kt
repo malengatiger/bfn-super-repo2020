@@ -335,7 +335,8 @@ private class Client {
                 defaultDiscount = a.defaultDiscount,
                 maximumInvoiceAmount = a.maximumInvoiceAmount,
                 totalInvestment = a.totalInvestment,
-                minimumInvoiceAmount = a.minimumInvoiceAmount
+                minimumInvoiceAmount = a.minimumInvoiceAmount,
+                bank = a.bank, bankAccount = a.bankAccount
         )
     }
 
@@ -716,7 +717,9 @@ private class Client {
                 defaultDiscount = disc,
                 minimumInvoiceAmount = random.nextInt(100) * 1000.0,
                 totalInvestment = 900000000.0,
-                maximumInvoiceAmount = 750000.0
+                maximumInvoiceAmount = 750000.0,
+                bank = "BlackOx Investment Bank",
+                bankAccount = (random.nextInt(12345) * 647).toString()
         )
 
         val mGson = Gson()
@@ -737,13 +740,6 @@ private class Client {
             disc = 5.5
         }
 
-        val params: MutableMap<String, String> = mutableMapOf()
-        params["issuedBy"] = "me"
-        params["accountId"] = account.state.data.identifier.id.toString()
-        params["date"] = todaysDate()
-        params["bank"] = "BlackOx Bank"
-        params["bankAccount"] = "786980765"
-        params["maximumDiscount"] = disc.toString()
         val prof = SupplierProfileStateDTO(
                 accountId = account.state.data.identifier.id.toString(),
                 date = todaysDate(),
@@ -827,14 +823,14 @@ private class Client {
                 cnt2++
             }
         }
-        logger.info("\uD83C\uDF4A Local Accounts on Node: \uD83C\uDF4A $cnt \uD83C\uDF4A")
-        logger.info("\uD83C\uDF4A Remote Accounts on Node: 🍊 $cnt2 🍊")
+        logger.info("\uD83D\uDC2C \uD83D\uDC2C Local Accounts on Node: \uD83C\uDF4A $cnt \uD83C\uDF4A")
+        logger.info("\uD83D\uDC2C \uD83D\uDC2C Remote Accounts on Node: 🍊 $cnt2 🍊")
 
         val profiles = proxy.vaultQueryByWithPagingSpec(criteria = criteria,
                 contractStateType = InvestorProfileState::class.java,
                 paging = PageSpecification(pageNumber = 1, pageSize = 2000))
 
-        logger.info("Local Profiles on Node: 🍊 ${profiles.totalStatesAvailable} 🍊")
+        logger.info("\uD83D\uDE0E \uD83D\uDE0E Local Profiles on Node: 🍊 ${profiles.totalStatesAvailable} 🍊")
         //
         val pageInvoices = proxy.vaultQueryByWithPagingSpec(criteria = criteria,
                 contractStateType = InvoiceState::class.java,
@@ -848,8 +844,8 @@ private class Client {
                 cnt2++
             }
         }
-        logger.info("Local Invoices on Node: 🍊 $cnt 🍊")
-        logger.info("Remote Invoices on Node: 🍊 $cnt2 🍊")
+        logger.info("\uD83C\uDF50 \uD83C\uDF50  Local Invoices on Node: 🍊 $cnt 🍊")
+        logger.info("\uD83C\uDF50 \uD83C\uDF50  Remote Invoices on Node: 🍊 $cnt2 🍊")
 
         val pageInvoiceOffers =
                 proxy.vaultQueryByWithPagingSpec(
@@ -868,8 +864,8 @@ private class Client {
             }
         }
 
-        logger.info("Local InvoiceOffers on Node: 🍊 $cnt 🍊")
-        logger.info("Remote InvoiceOffers on Node: 🍊 $cnt2 🍊")
+        logger.info("\uD83E\uDDE1 \uD83D\uDC9B Local InvoiceOffers on Node: 🍊 $cnt 🍊")
+        logger.info("\uD83E\uDDE1 \uD83D\uDC9B Remote InvoiceOffers on Node: 🍊 $cnt2 🍊")
     }
 
     private fun getAccountDetails(proxy: CordaRPCOps) {

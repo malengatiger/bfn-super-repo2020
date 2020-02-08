@@ -17,6 +17,8 @@ class InvestorProfileState(var issuedBy: Party,
                            val maximumInvoiceAmount: Double,
                            val totalInvestment: Double,
                            val defaultDiscount: Double,
+                           val bank: String,
+                           val bankAccount: String,
                            var date: Date
                    ) : ContractState {
 

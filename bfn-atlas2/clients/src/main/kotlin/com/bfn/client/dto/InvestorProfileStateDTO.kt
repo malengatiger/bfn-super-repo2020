@@ -8,4 +8,6 @@ data class InvestorProfileStateDTO (val issuedBy: String?,
                                     val maximumInvoiceAmount: Double,
                                     val totalInvestment: Double,
                                     val defaultDiscount: Double,
+                                    val bank: String,
+                                    val bankAccount: String,
                                     val date: String)

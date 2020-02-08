@@ -296,6 +296,7 @@ object WorkerBee {
                 defaultDiscount = profile.defaultDiscount,
                 maximumInvoiceAmount = profile.maximumInvoiceAmount,
                 totalInvestment = profile.totalInvestment,
+                bank = profile.bank, bankAccount = profile.bankAccount,
                 minimumInvoiceAmount = profile.minimumInvoiceAmount, date = Date()
         )
         val fut = proxy.startTrackedFlowDynamic(
@@ -895,7 +896,8 @@ object WorkerBee {
                 defaultDiscount = a.defaultDiscount,
                 maximumInvoiceAmount = a.maximumInvoiceAmount,
                 totalInvestment = a.totalInvestment,
-                minimumInvoiceAmount = a.minimumInvoiceAmount
+                minimumInvoiceAmount = a.minimumInvoiceAmount,
+                bank = a.bank, bankAccount = a.bankAccount
         )
     }
 
