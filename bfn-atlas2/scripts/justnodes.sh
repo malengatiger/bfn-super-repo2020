@@ -32,8 +32,8 @@ echo "🔵 almost done ... 🍎 🍎 corda nodes booted up! 🔵 🔵 🔵 🔵 
 # ------------ API Web Servers
 echo "🔆 Woke up, 🔆 🔆 🔆  starting web api servers ..... 🔵 🔵"
 ./scripts/apiservers.sh
-echo "🔵 Waiting for web servers to finish booting up, sleeping for 30 seconds ... 🔵 🔵 🔵 🔵 🔵 "
-sleep 30s
+echo "🔵 Waiting for web servers to finish booting up, sleeping for another 15 seconds ... 🔵 🔵 🔵 🔵 🔵 "
+sleep 15s
 echo "🔵 🍎 🍎 🍎 🍎 🍎 🍎 🍎 🍎 corda nodes and web servers should all be booted up by now! 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵"
 
 # ------------ API Web Servers

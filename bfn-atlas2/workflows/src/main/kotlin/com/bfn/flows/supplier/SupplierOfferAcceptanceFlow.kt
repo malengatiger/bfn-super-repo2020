@@ -70,6 +70,7 @@ class SupplierOfferAcceptanceFlow(private val invoiceId: String) : FlowLogic<Sig
         map.values.forEach() {
             keys.add(it.owningKey)
         }
+
         txBuilder.addInputState(invoiceOfferState)
         txBuilder.addInputState(invoiceState!!)
         txBuilder.addCommand(command, keys)

@@ -1,4 +1,4 @@
-package com.bfn.flows.invoices
+package com.bfn.flows.supplier
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.workflows.ourIdentity

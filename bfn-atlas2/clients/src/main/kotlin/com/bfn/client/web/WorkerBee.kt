@@ -3,7 +3,7 @@ package com.bfn.client.web
 import com.bfn.client.dto.*
 import com.bfn.flows.CreateAccountFlow
 import com.bfn.flows.InvestorProfileFlow
-import com.bfn.flows.invoices.BestOfferForInvoiceFlow
+import com.bfn.flows.supplier.BestOfferForInvoiceFlow
 import com.bfn.flows.invoices.InvoiceOfferFlow
 import com.bfn.flows.invoices.InvoiceRegistrationFlow
 import com.bfn.flows.queries.InvoiceOfferQueryFlow

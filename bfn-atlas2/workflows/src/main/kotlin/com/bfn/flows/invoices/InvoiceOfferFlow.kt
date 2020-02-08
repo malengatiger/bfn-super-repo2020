@@ -12,35 +12,35 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.ProgressTracker
 import org.slf4j.LoggerFactory
+import java.security.PublicKey
 
 
 @InitiatingFlow
 @StartableByRPC
-class InvoiceOfferFlow(invoiceOfferState: InvoiceOfferState) : FlowLogic<SignedTransaction>() {
-    private val invoiceOfferState: InvoiceOfferState = invoiceOfferState
-    private val SENDING_TRANSACTION = ProgressTracker.Step("Sending transaction to counterParty")
-    private val GENERATING_TRANSACTION = ProgressTracker.Step("Generating transaction based on new IOU.")
-    private val VERIFYING_TRANSACTION = ProgressTracker.Step("Verifying contract constraints.")
-    private val SIGNING_TRANSACTION = ProgressTracker.Step("Signing transaction with our private key.")
-    private val GATHERING_SIGNATURES: ProgressTracker.Step = object : ProgressTracker.Step("Gathering the counterparty's signature.") {
+class InvoiceOfferFlow(private val invoiceOfferState: InvoiceOfferState) : FlowLogic<SignedTransaction>() {
+    private val sendingTransaction = ProgressTracker.Step("Sending transaction to counterParty")
+    private val generatingTransaction = ProgressTracker.Step("Generating transaction")
+    private val verifyingTransaction = ProgressTracker.Step("Verifying contract constraints.")
+    private val signingTransaction = ProgressTracker.Step("Signing transaction with our private key.")
+    private val gatheringTransactions: ProgressTracker.Step = object : ProgressTracker.Step("Gathering the counterParty's signature.") {
         override fun childProgressTracker(): ProgressTracker? {
             Companion.logger.info("\uD83C\uDF3A \uD83C\uDF3A ProgressTracker childProgressTracker ...")
             return CollectSignaturesFlow.tracker()
         }
     }
-    private val FINALISING_TRANSACTION: ProgressTracker.Step = object : ProgressTracker.Step("Obtaining notary signature and recording transaction.") {
+    private val finalizingTransaction: ProgressTracker.Step = object : ProgressTracker.Step("Obtaining notary signature and recording transaction.") {
         override fun childProgressTracker(): ProgressTracker? {
             return FinalityFlow.tracker()
         }
     }
 
     override val progressTracker = ProgressTracker(
-            GENERATING_TRANSACTION,
-            VERIFYING_TRANSACTION,
-            SIGNING_TRANSACTION,
-            GATHERING_SIGNATURES,
-            FINALISING_TRANSACTION,
-            SENDING_TRANSACTION
+            generatingTransaction,
+            verifyingTransaction,
+            signingTransaction,
+            gatheringTransactions,
+            finalizingTransaction,
+            sendingTransaction
     )
 
     @Suspendable
@@ -54,96 +54,64 @@ class InvoiceOfferFlow(invoiceOfferState: InvoiceOfferState) : FlowLogic<SignedT
         if (invoiceOfferState.supplier.name == invoiceOfferState.investor.name) {
             throw IllegalArgumentException("Investor and Supplier cannot be the same entity")
         }
-       
-        val command = InvoiceOfferContract.MakeOffer()
-        val investorParty = invoiceOfferState.investor.host //subFlow(RequestKeyForAccount(investorAccount))
-        val supplierParty = invoiceOfferState.supplier.host //subFlow(RequestKeyForAccount(supplierAccount))
 
+        progressTracker.currentStep = generatingTransaction
         val txBuilder = TransactionBuilder(notary)
         txBuilder.addOutputState(invoiceOfferState, InvoiceOfferContract.ID)
-        txBuilder.addCommand(command, supplierParty.owningKey,
-                investorParty.owningKey)
 
-        return processFlow(txBuilder, investorParty, supplierParty)
+        progressTracker.currentStep = verifyingTransaction
+        return processFlow(txBuilder)
     }
 
     @Suspendable
-    private fun processFlow(txBuilder: TransactionBuilder, investorParty: Party, supplierParty: Party): SignedTransaction {
-        progressTracker.currentStep = VERIFYING_TRANSACTION
-        txBuilder.verify(serviceHub)
-        progressTracker.currentStep = SIGNING_TRANSACTION
-        val signedTx = serviceHub.signInitialTransaction(txBuilder)
-
-        val nodeInfo = serviceHub.myInfo
+    private fun processFlow(txBuilder: TransactionBuilder): SignedTransaction {
+        val map: MutableMap<String, Party> = mutableMapOf()
         val investorOrg: String = invoiceOfferState.investor.host.name.organisation
         val supplierOrg: String = invoiceOfferState.supplier.host.name.organisation
-        val thisNodeOrg = nodeInfo.legalIdentities.first().name.organisation
 
-        val supplierStatus: Int
-        val investorStatus: Int
-        val supplierSession: FlowSession
-        val investorSession: FlowSession
-        var signedTransaction: SignedTransaction? = null
-        supplierStatus = if (supplierOrg.equals(thisNodeOrg, ignoreCase = true)) {
-            LOCAL_SUPPLIER
-        } else {
-            REMOTE_SUPPLIER
+        map[investorOrg] = invoiceOfferState.investor.host
+        map[supplierOrg] = invoiceOfferState.supplier.host
+        val keys: MutableList<PublicKey> = mutableListOf()
+        map.values.forEach() {
+            keys.add(it.owningKey)
         }
-        investorStatus = if (investorOrg.equals(thisNodeOrg, ignoreCase = true)) {
-            LOCAL_INVESTOR
-        } else {
-            REMOTE_INVESTOR
+        val command = InvoiceOfferContract.MakeOffer()
+        txBuilder.addCommand(command, keys)
+
+        progressTracker.currentStep = verifyingTransaction
+        txBuilder.verify(serviceHub)
+        progressTracker.currentStep = signingTransaction
+        val signedTx = serviceHub.signInitialTransaction(txBuilder)
+
+
+        progressTracker.currentStep = sendingTransaction
+        val mSessions: MutableList<FlowSession> = mutableListOf()
+        map.values.forEach() {
+            if (it.toString() != serviceHub.myInfo.legalIdentities.first().toString()) {
+                mSessions.add(initiateFlow(it))
+            }
         }
-        if (supplierStatus == LOCAL_SUPPLIER && investorStatus == LOCAL_INVESTOR) {
+        if (mSessions.isEmpty()) {
             Companion.logger.info(" \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 " +
                     "All participants are LOCAL ... \uD83D\uDD06")
             val mSignedTransactionDone = subFlow(
                     FinalityFlow(signedTx, ImmutableList.of<FlowSession>()))
-            Companion.logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D  SAME NODE ==> " +
+            Companion.logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D  SINGLE NODE ==> " +
                     " \uD83E\uDD66 \uD83E\uDD66  \uD83E\uDD66 \uD83E\uDD66 FinalityFlow has been executed " +
                     "...\uD83E\uDD66 \uD83E\uDD66")
             return mSignedTransactionDone
 
-        }
-        Companion.logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 " +
-                "Supplier and/or Investor are NOT on the same node ..." +
-                "  \uD83D\uDE21 flowSession(s) required \uD83D\uDE21")
-
-        if (supplierStatus == LOCAL_SUPPLIER && investorStatus == REMOTE_INVESTOR) {
-            Companion.logger.info(" \uD83D\uDE21  \uD83D\uDE21 \uD83D\uDE21 " +
-                    "Investor is REMOTE \uD83D\uDE21 ")
-            investorSession = initiateFlow(investorParty)
-            signedTransaction = collectSignatures(signedTx, ImmutableList.of(
-                    investorSession))
-            return signedTransaction
-        }
-        if (supplierStatus == REMOTE_SUPPLIER && investorStatus == REMOTE_INVESTOR) {
-            Companion.logger.info(" \uD83D\uDE21  \uD83D\uDE21 \uD83D\uDE21 " +
-                    "Supplier and Investor are REMOTE \uD83D\uDE21 ")
-            investorSession = initiateFlow(investorParty)
-
-            return if (invoiceOfferState.investor.host.name == invoiceOfferState.supplier.host.name) {
-                signedTransaction = collectSignatures(signedTx, ImmutableList.of(
-                        investorSession))
-                signedTransaction
-            } else {
-                supplierSession = initiateFlow(supplierParty)
-                signedTransaction = collectSignatures(signedTx, ImmutableList.of(
-                        investorSession, supplierSession))
-                signedTransaction
-            }
-
-        }
-        if (supplierStatus == REMOTE_SUPPLIER && investorStatus == LOCAL_INVESTOR) {
-            Companion.logger.info(" \uD83D\uDE21  \uD83D\uDE21 \uD83D\uDE21 " +
-                    "Supplier is REMOTE \uD83D\uDE21 ")
-            supplierSession = initiateFlow(supplierParty)
-            signedTransaction = collectSignatures(signedTx, ImmutableList.of(
-                    supplierSession))
-            return signedTransaction
+        } else {
+            Companion.logger.info(" \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 " +
+                    " Participants are LOCAL and REMOTE ... \uD83D\uDD06")
+            val mSignedTransactionDone = subFlow(
+                    FinalityFlow(signedTx, mSessions))
+            Companion.logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D  MULTI NODE ==> " +
+                    " \uD83E\uDD66 \uD83E\uDD66  \uD83E\uDD66 \uD83E\uDD66 FinalityFlow has been executed " +
+                    "...\uD83E\uDD66 \uD83E\uDD66")
+            return mSignedTransactionDone
         }
 
-        return signedTransaction!!
     }
 
     @Suspendable
@@ -185,7 +153,7 @@ class InvoiceOfferFlow(invoiceOfferState: InvoiceOfferState) : FlowLogic<SignedT
     @Throws(FlowException::class)
     private fun collectSignatures(signedTx: SignedTransaction, sessions: List<FlowSession>): SignedTransaction {
 
-        progressTracker.currentStep = GATHERING_SIGNATURES
+        progressTracker.currentStep = gatheringTransactions
 
         val signedTransaction = subFlow(CollectSignaturesFlow(
                 partiallySignedTx = signedTx, sessionsToCollectFrom = sessions))
@@ -193,6 +161,8 @@ class InvoiceOfferFlow(invoiceOfferState: InvoiceOfferState) : FlowLogic<SignedT
                 "Signatures collected OK!  \uD83D\uDE21 \uD83D\uDE21 " +
                 ".... will call FinalityFlow ... \uD83C\uDF3A \uD83C\uDF3A txId: "
                 + signedTransaction.id.toString())
+
+        progressTracker.currentStep = finalizingTransaction
         val mSignedTransactionDone = subFlow(
                 FinalityFlow(signedTransaction, sessions))
 
@@ -207,10 +177,7 @@ class InvoiceOfferFlow(invoiceOfferState: InvoiceOfferState) : FlowLogic<SignedT
 
     companion object {
         private val logger = LoggerFactory.getLogger(InvoiceOfferFlow::class.java)
-        private const val LOCAL_SUPPLIER = 1
-        private const val LOCAL_INVESTOR = 2
-        private const val REMOTE_SUPPLIER = 3
-        private const val REMOTE_INVESTOR= 4
+
     }
 
     init {

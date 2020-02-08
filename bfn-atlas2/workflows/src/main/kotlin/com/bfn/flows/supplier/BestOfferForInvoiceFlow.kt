@@ -1,4 +1,4 @@
-package com.bfn.flows.invoices
+package com.bfn.flows.supplier
 
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.ZAR
@@ -129,9 +129,7 @@ class BestOfferForInvoiceFlow(private val supplierAccountId: String,
                 "\uD83D\uDE3C signInitialTransaction ")
         val signedTokenTx = serviceHub.signInitialTransaction(transactionBuilderToken)
 
-        Companion.logger.info("\uD83D\uDE3C \uD83D\uDE3C \uD83D\uDE3C \uD83D\uDE3C \uD83D\uDE3C " +
-                "\uD83D\uDE3C Start InvoiceCloseFlow")
-        subFlow(InvoiceCloseFlow(invoiceId = invoiceId))
+
         Companion.logger.warn("\uD83D\uDC38  \uD83D\uDC38  \uD83D\uDC38  \uD83D\uDC38  " +
                 "\uD83D\uDC38 Finally. ready. to. finish. this. ...")
         return finalizeToken(parties, signedTokenTx)

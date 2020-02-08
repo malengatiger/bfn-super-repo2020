@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.contracts.SupplierPaymentContract
 import com.bfn.contractstates.states.AnchorState
 import com.bfn.contractstates.states.SupplierPaymentState
+import com.bfn.flows.regulator.ReportToRegulatorFlow
 import com.bfn.flows.services.InvoiceOfferFinderService
 import com.bfn.flows.services.ProfileFinderService
 import com.bfn.flows.todaysDate
@@ -12,6 +13,7 @@ import net.corda.core.identity.Party
 import net.corda.core.node.services.Vault
 import net.corda.core.node.services.vault.PageSpecification
 import net.corda.core.node.services.vault.QueryCriteria
+import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import org.slf4j.LoggerFactory
 import java.security.PublicKey
@@ -99,15 +101,29 @@ class AnchorMakeMultiplePaymentsFlow() : FlowLogic<List<SupplierPaymentState>>()
             val signedTransaction = subFlow(CollectSignaturesFlow(
                     partiallySignedTx = tx, sessionsToCollectFrom = sessions))
             subFlow(FinalityFlow(signedTransaction, sessions))
+            reportToRegulator(signedTransaction)
             logger.info("$pp AnchorMakeMultiplePaymentsFlow: Transaction finalized with parties on ${sessions.size} multiple nodes")
         } else {
-            subFlow(FinalityFlow(tx, listOf()))
+            val finalTx = subFlow(FinalityFlow(tx, listOf()))
+            reportToRegulator(finalTx)
             logger.info("$pp AnchorMakeMultiplePaymentsFlow: Transaction finalized with parties on same node")
         }
         logger.info("$pp Payment list created OK: ${paymentList.size} payment states created $pp")
+
         return paymentList
     }
-
+    @Suspendable
+    @Throws(FlowException::class)
+    private fun reportToRegulator(mSignedTransactionDone: SignedTransaction) {
+       logger.info("\uD83D\uDCCC \uD83D\uDCCC \uD83D\uDCCC  Talking to the Regulator, for compliance, Senor! .............")
+        try {
+            subFlow(ReportToRegulatorFlow(mSignedTransactionDone))
+           logger.info("\uD83D\uDCCC \uD83D\uDCCC \uD83D\uDCCC  DONE talking to the Regulator, Phew!")
+        } catch (e: Exception) {
+            logger.error(" \uD83D\uDC7F  \uD83D\uDC7F  \uD83D\uDC7F Regulator fell down.  \uD83D\uDC7F IGNORED  \uD83D\uDC7F ", e)
+            throw FlowException("Regulator fell down!")
+        }
+    }
 
     private val pp = "\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95";
 
