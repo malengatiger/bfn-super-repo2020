@@ -71,15 +71,55 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
     }
     @Suspendable
     @Throws(Exception::class)
+    fun findInvestorOffer(offerId: String): StateAndRef<InvoiceOfferState>? {
+        logger.info(" \uD83D\uDC2C \uD83D\uDC2C findInvestorOffer: ... " +
+                "\uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C")
+
+        val allOffers = getOffersOnNode()
+        allOffers.forEach() {
+            if (it.state.data.offerId == offerId) {
+                return it
+            }
+        }
+
+        return null
+    }
+    @Suspendable
+    @Throws(Exception::class)
+    fun getInvestorOffersAccepted(investorId: String): List<StateAndRef<InvoiceOfferState>> {
+        logger.info(" \uD83D\uDC2C \uD83D\uDC2C getInvestorOffersAccepted: ... " +
+                "\uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C")
+
+        val offers:MutableList<StateAndRef<InvoiceOfferState>> = mutableListOf()
+        val allOffers = getOffersOnNode()
+        logger.info("\uD83D\uDC2C \uD83D\uDC2C allOffers: ${allOffers.size} investor offers found on node ...")
+        allOffers.forEach() {
+            if (it.state.data.investor.identifier.id.toString() == investorId
+                    && it.state.data.accepted) {
+                    offers.add(it)
+            }
+
+        }
+        logger.info("\uD83D\uDC2C \uD83D\uDC2C filtered Offers: ${offers.size} " +
+                "investor offers found for $investorId ...")
+        if (offers.isNotEmpty()) {
+            logger.info("\uD83D\uDC2C \uD83D\uDC2C INVESTOR: ${offers.first().state.data.investor.name} " +
+                    "has made ${offers.size} offers")
+
+        }
+        return offers
+    }
+    @Suspendable
+    @Throws(Exception::class)
     fun getAnchorOffersAccepted(): List<StateAndRef<InvoiceOfferState>> {
-        logger.info(" \uD83D\uDC2C \uD83D\uDC2C findAnchorOffer: ... " +
+        logger.info(" \uD83D\uDC2C \uD83D\uDC2C findAnchorOffers: ... " +
                 "\uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C")
         val existingAnchor = serviceHub.vaultService.queryBy(AnchorState::class.java).states.singleOrNull()
                 ?: throw IllegalArgumentException("Anchor does not exist")
 
         val offers:MutableList<StateAndRef<InvoiceOfferState>> = mutableListOf()
         val allOffers = getOffersOnNode()
-        logger.info("\uD83D\uDC2C \uD83D\uDC2C ${allOffers.size} offers found on node ...")
+        logger.info("\uD83D\uDC2C \uD83D\uDC2C ${allOffers.size} anchor offers found on node ...")
         allOffers.forEach() {
             if (it.state.data.investor.name == existingAnchor.state.data.name) {
                 if (it.state.data.accepted) {
@@ -92,18 +132,19 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
     }
     @Suspendable
     @Throws(Exception::class)
-    fun findRegularOffer(invoiceId: String): StateAndRef<InvoiceOfferState>? {
+    fun findOffersByInvoice(invoiceId: String): List<StateAndRef<InvoiceOfferState>> {
         logger.info(" \uD83D\uDC2C \uD83D\uDC2C findRegularOffer: ... " +
                 "\uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C")
 
         val allOffers = getOffersOnNode()
+        val mList:MutableList<StateAndRef<InvoiceOfferState>> = mutableListOf()
         allOffers.forEach() {
             if (it.state.data.invoiceId.toString() == invoiceId) {
-                return it
+                mList.add(it)
             }
         }
-
-        return null
+        logger.info("\uD83C\uDF3F ${mList.size} \uD83C\uDF3F offers found for this invoice: \uD83C\uDF3F $invoiceId")
+        return mList
     }
     @Suspendable
     @Throws(Exception::class)

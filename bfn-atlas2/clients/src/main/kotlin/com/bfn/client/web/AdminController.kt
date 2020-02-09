@@ -50,12 +50,7 @@ class AdminController(rpc: NodeRPCConnection) {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting makeAnchorOffers: ... \uD83C\uDF4F ")
         return AnchorBee.makeOffers(proxy)
     }
-    @GetMapping(value = ["/acceptOffer"], produces = ["application/json"])
-    @Throws(Exception::class)
-    private fun acceptOffer(@RequestParam invoiceId: String): String {
-        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting acceptOffer: ... \uD83C\uDF4F ")
-        return AnchorBee.acceptOffer(proxy,invoiceId = invoiceId)
-    }
+
     @GetMapping(value = ["/makeSinglePayment"], produces = ["application/json"])
     @Throws(Exception::class)
     private fun makeSinglePayment(@RequestParam invoiceId: String): SupplierPaymentDTO {
@@ -76,9 +71,9 @@ class AdminController(rpc: NodeRPCConnection) {
         val cx = CrossNodeService()
         val list = cx.getInvoicesAcrossNodes();
         list.forEach() {
-            logger.info("\uD83C\uDF4E \uD83C\uDF4E ${it.supplier?.host} " +
-                    "\uD83C\uDF51 supplier: ${it.supplier?.name} " +
-                    "\uD83E\uDD66 customer: ${it.customer?.name} amount: ${it.amount}")
+            logger.info("\uD83C\uDF4E \uD83C\uDF4E ${it.supplier.host} " +
+                    "\uD83C\uDF51 supplier: ${it.supplier.name} " +
+                    "\uD83E\uDD66 customer: ${it.customer.name} amount: ${it.amount}")
         }
         return list
     }
@@ -100,22 +95,6 @@ class AdminController(rpc: NodeRPCConnection) {
         val result = DemoUtil.generateInvoices(proxy, count = 20, customer = customer)
         logger.info(result)
         return result
-    }
-
-    @GetMapping(value = ["/selectBestOffer"], produces = ["application/json"])
-    @Throws(Exception::class)
-    private fun selectBestOffer(@RequestParam accountId: String,
-                                @RequestParam invoiceId: String): OfferAndTokenDTO? {
-
-        val offerAndTokenDTO = WorkerBee.selectBestOffer(proxy = proxy,
-                accountId = accountId, invoiceId = invoiceId)
-        if (offerAndTokenDTO == null) {
-            logger.info("\uD83D\uDC80 \uD83D\uDC80 \uD83D\uDC80 \uD83D\uDC80  NO OFFER MADE: \uD83C\uDF0E ")
-        } else {
-            logger.info("\uD83C\uDF0E \uD83C\uDF0E Best Offer found, Token Issued and returned: \uD83C\uDF0E $offerAndTokenDTO")
-        }
-
-        return offerAndTokenDTO
     }
 
     @PostMapping(value = ["/createAnchor"], produces = ["application/json"])
@@ -192,11 +171,6 @@ class AdminController(rpc: NodeRPCConnection) {
         return WorkerBee.findOffersForNode(proxy)
     }
 
-    @GetMapping(value = ["/selectBestOffers"])
-    @Throws(Exception::class)
-    fun selectBestOffers(): List<OfferAndTokenDTO> {
-        return WorkerBee.selectBestOffers(proxy)
-    }
     @GetMapping(value = ["/getProxy"])
     @Throws(Exception::class)
     fun getProxy(): CordaRPCOps {

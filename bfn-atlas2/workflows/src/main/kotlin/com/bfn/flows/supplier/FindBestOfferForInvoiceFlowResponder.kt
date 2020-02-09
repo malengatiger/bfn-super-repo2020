@@ -6,8 +6,8 @@ import net.corda.core.flows.*
 import net.corda.core.transactions.SignedTransaction
 import org.slf4j.LoggerFactory
 
-@InitiatedBy(BestOfferForInvoiceFlow::class)
-class BestOfferForInvoiceFlowResponder(private val counterPartySession: FlowSession) : FlowLogic<SignedTransaction>() {
+@InitiatedBy(FindBestOfferForInvoiceFlow::class)
+class FindBestOfferForInvoiceFlowResponder(private val counterPartySession: FlowSession) : FlowLogic<SignedTransaction>() {
     @Suspendable
     @Throws(FlowException::class)
     override fun call(): SignedTransaction {
@@ -38,7 +38,7 @@ class BestOfferForInvoiceFlowResponder(private val counterPartySession: FlowSess
     }
 
     companion object {
-        private val logger = LoggerFactory.getLogger(BestOfferForInvoiceFlowResponder::class.java)
+        private val logger = LoggerFactory.getLogger(FindBestOfferForInvoiceFlowResponder::class.java)
     }
 
 }

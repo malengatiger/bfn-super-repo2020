@@ -84,10 +84,10 @@ object DemoUtil {
         val shuffledInvoices = mList.shuffled()
         val shuffledAccts = acctList.shuffled()
         shuffledInvoices.forEach() { invoice ->
-            if (invoice.supplier!!.host.toString() == proxy.nodeInfo().legalIdentities.first().toString()) {
+            if (invoice.supplier.host == proxy.nodeInfo().legalIdentities.first().toString()) {
                 shuffledAccts.forEach() {
                     val account = it
-                    if (invoice.supplier!!.name == account.name) {
+                    if (invoice.supplier.name == account.name) {
                         logger.info("\uD83D\uDD35 Ignore: ${it.name} Account is the supplier. " +
                                 "\uD83D\uDD35 Cannot offer invoice to self: \uD83C\uDF3A ${account.name}")
                     } else {
@@ -99,12 +99,12 @@ object DemoUtil {
                             logger.info("\uD83D\uDE21 Processing .... ${invoice.invoiceNumber} " +
                                     "\uD83C\uDF4F ${invoice.amount} for account:  \uD83D\uDC9C ${account.name}")
                             registerInvoiceOffer(
-                                    supplier = invoice.supplier!!,
+                                    supplier = invoice.supplier,
                                     investor = account,
                                     invoice = invoice,
                                     discount = discount)
                             logger.info("\uD83D\uDE21 registered InvoiceOffer for supplier: \uD83C\uDF4F " +
-                                    "${invoice.supplier!!.name} ${invoice.supplier!!.host} " +
+                                    "${invoice.supplier.name} ${invoice.supplier.host} " +
                                     "\uD83C\uDF4F \uD83D\uDCA6 investor: ${account.name} \uD83D\uDCA6 ${account.host} ")
                             cnt++
                         }
@@ -339,7 +339,8 @@ object DemoUtil {
                 offerAmount = (100.0 - discount / 100) * invoice.totalAmount,
                 originalAmount = invoice.totalAmount,
                 externalId = invoice.externalId, invoiceNumber = invoice.invoiceNumber,
-                investorDate = todaysDate(), acceptanceDate = todaysDate()
+                investorDate = todaysDate(), acceptanceDate = todaysDate(),
+                offerId = UUID.randomUUID().toString()
         )
         try {
             val offer = startInvoiceOfferFlow(proxy!!, invoiceOffer)

@@ -1,16 +1,6 @@
 package com.bfn.client.web
 
 import com.bfn.client.dto.*
-import com.bfn.client.local.DemoUtil
-import com.bfn.client.web.WorkerBee.getAccount
-import com.bfn.client.web.WorkerBee.getDashboardData
-import com.bfn.client.web.WorkerBee.getNodeAccounts
-import com.bfn.client.web.WorkerBee.getStates
-import com.bfn.client.web.WorkerBee.listFlows
-import com.bfn.client.web.WorkerBee.listNodes
-import com.bfn.client.web.WorkerBee.listNotaries
-import com.bfn.client.web.WorkerBee.startAccountRegistrationFlow
-import com.google.firebase.auth.UserRecord
 import com.google.gson.GsonBuilder
 import net.corda.core.messaging.CordaRPCOps
 import org.slf4j.LoggerFactory
@@ -34,17 +24,26 @@ class SupplierController(rpc: NodeRPCConnection) {
     @GetMapping(value = ["/selectBestOffer"], produces = ["application/json"])
     @Throws(Exception::class)
     private fun selectBestOffer(@RequestParam accountId: String,
-                                @RequestParam invoiceId: String): OfferAndTokenDTO? {
+                                @RequestParam invoiceId: String): InvoiceOfferDTO? {
 
-        val offerAndTokenDTO = WorkerBee.selectBestOffer(proxy = proxy,
+        val offer = SupplierBee.selectBestOffer(proxy = proxy,
                 accountId = accountId, invoiceId = invoiceId)
-        if (offerAndTokenDTO == null) {
+        if (offer == null) {
             logger.info("\uD83D\uDC80 \uD83D\uDC80 \uD83D\uDC80 \uD83D\uDC80  NO OFFER MADE: \uD83C\uDF0E ")
         } else {
-            logger.info("\uD83C\uDF0E \uD83C\uDF0E Best Offer found, Token Issued and returned: \uD83C\uDF0E $offerAndTokenDTO")
+            logger.info("\uD83C\uDF0E \uD83C\uDF0E Best Offer found: \uD83C\uDF0E ${GSON.toJson(offer)}")
         }
 
-        return offerAndTokenDTO
+        return offer
+    }
+    @GetMapping(value = ["/acceptOffer"], produces = ["application/json"])
+    @Throws(Exception::class)
+    private fun acceptOffer(@RequestParam offerId: String): Int {
+
+        val tx = SupplierBee.acceptOffer(proxy = proxy,offerId = offerId)
+        logger.info("\uD83C\uDF0E \uD83C\uDF0E Offer accepted, txId: \uD83C\uDF0E $tx")
+
+        return tx
     }
 
     @GetMapping(value = ["findInvoicesForSupplier"])
@@ -53,6 +52,21 @@ class SupplierController(rpc: NodeRPCConnection) {
             @RequestParam(value = "accountId", required = true) accountId: String): List<InvoiceDTO> {
         return WorkerBee.findInvoicesForSupplier(proxy, accountId)
     }
+    @GetMapping(value = ["findOffersForSupplier"])
+    @Throws(Exception::class)
+    fun findOffersForSupplier(
+            @RequestParam(value = "accountId", required = true) accountId: String): List<InvoiceOfferDTO> {
+        return WorkerBee.findOffersForSupplier(proxy, accountId)
+    }
+
+    @GetMapping(value = ["createPayments"])
+    @Throws(Exception::class)
+    fun createPayments(
+            @RequestParam(value = "investorId", required = true) investorId: String): List<SupplierPaymentDTO> {
+        return SupplierBee.createPayments(proxy,investorId)
+    }
+
+
 
     @GetMapping(value = ["getSupplierProfile"])
     @Throws(Exception::class)
@@ -88,7 +102,7 @@ class SupplierController(rpc: NodeRPCConnection) {
     }
 
     init {
-        logger.info("\uD83C\uDF3A \uD83C\uDF3A \uD83C\uDF3A AdminController:" +
+        logger.info("\uD83C\uDF3A \uD83C\uDF3A \uD83C\uDF3A SupplierController:" +
                 " NodeRPCConnection proxy has been injected: \uD83C\uDF3A "
                 + proxy.nodeInfo().toString() +  " \uD83C\uDF3A ")
     }

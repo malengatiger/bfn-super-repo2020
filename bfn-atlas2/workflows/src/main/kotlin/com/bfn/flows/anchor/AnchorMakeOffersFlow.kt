@@ -15,6 +15,7 @@ import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.transactions.TransactionBuilder
 import org.slf4j.LoggerFactory
 import java.security.PublicKey
+import java.util.*
 
 
 @InitiatingFlow
@@ -130,7 +131,9 @@ class AnchorMakeOffersFlow : FlowLogic<List<InvoiceOfferState>>() {
                 investor = anchor.account,
                 offerDate = todaysDate(),
                 originalAmount = invoice.totalAmount,
-                acceptanceDate = todaysDate(), accepted = false, externalId = invoice.externalId
+                acceptanceDate = todaysDate(), accepted = false,
+                offerId = UUID.randomUUID().toString(),
+                externalId = invoice.externalId
         )
     }
     @Suspendable

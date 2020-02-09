@@ -8,6 +8,7 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
+import khttp.responses.Response
 
 import net.corda.client.rpc.CordaRPCClient
 import net.corda.core.contracts.ContractState
@@ -56,20 +57,24 @@ private class Client {
     fun main(args: Array<String>) {
 
         setupLocalNodes()
-        createAnchor(localAnchorURL)
-        createCustomer(localAnchorURL)
-        startSupplierAccounts(
-                numberOfAccounts = 40,
-                url = localAnchorURL);
+//        createAnchor(localAnchorURL)
+//        createCustomer(localAnchorURL)
+//        startSupplierAccounts(
+//                numberOfAccounts = 20,
+//                url = localAnchorURL);
 
         letsDance()
-        logger.info("\n\n========================= \uD83C\uDF4E 2nd Set; letsDance! \uD83C\uDF4E =================================\n\n")
-        letsDance()
-
-        getOffers().forEach() {
-            logger.info("\uD83C\uDF00 \uD83D\uDC8A \uD83D\uDC8A InvoiceOffer: \uD83C\uDF21 \uD83C\uDF21 " +
-                    "${GSON.toJson(WorkerBee.getDTO(it.state.data))} \uD83C\uDF00 \uD83C\uDF21 \uD83C\uDF21 ")
-        }
+//        logger.info("\n\n========================= \uD83C\uDF4E 2nd Set; letsDance! \uD83C\uDF4E =================================\n\n")
+//        letsDance()
+//
+//        acceptOffers(localAnchorURL)
+//        getOffers().forEach() {
+//            logger.info("\uD83C\uDF00 \uD83D\uDC8A \uD83D\uDC8A InvoiceOffer: \uD83C\uDF21 \uD83C\uDF21 " +
+//                    "${GSON.toJson(WorkerBee.getDTO(it.state.data))} \uD83C\uDF00 \uD83C\uDF21 \uD83C\uDF21 ")
+//        }
+//        makeProfilesForNode(proxyAnchorInvestor, localAnchorURL)
+//        generateInvoices(localAnchorURL, 40)
+//        generateCasualOffers()
 //        printInvoices(proxyPartyA, consumed = false)
 //        printInvoices(proxyPartyB, consumed = false)
 //
@@ -79,18 +84,21 @@ private class Client {
     }
 
     private fun letsDance() {
-        generateInvoices(localAnchorURL, 100)
+        generateInvoices(localAnchorURL)
         generateAnchorOffers(localAnchorURL)
-        acceptOffers(localAnchorURL)
-        makeMultiplePayments(localAnchorURL)
+        generateCasualOffers()
+        acceptAnchorOffers(localAnchorURL)
+        findAndAcceptBestOffers(localAnchorURL)
+        makeMultipleAnchorPayments(localAnchorURL)
+        makeMultipleInvestorPayments(localAnchorURL)
         getOffers()
         logger.info("\n\n =========  \uD83C\uDF81 DATA GENERATION COMPLETE. Bravo!!  \uD83C\uDF81 ============= \n\n")
-        doNodesAndAggregates(proxyAnchorInvestor, proxyCustomer001, proxyRegulator)
+        //doNodesAndAggregates(proxyAnchorInvestor, proxyCustomer001, proxyRegulator)
         logger.info("\n\n =========  \uD83C\uDF81 Ready to check that the whole business process happened, " +
                 "\uD83C\uDF4F Senor!  \uD83C\uDF81 ============= \n\n")
     }
 
-    private fun makeMultiplePayments(url: String) {
+    private fun makeMultipleAnchorPayments(url: String) {
         logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E" +
                 " makeMultiplePayments started ..... \uD83C\uDF4E")
         val response = httpGet(
@@ -98,42 +106,163 @@ private class Client {
                 url = "$url/bfn/admin/makeMultiplePayments")
         logger.info("\uD83C\uDF4E  makeMultiplePayments; RESPONSE: statusCode: " +
                 "\uD83C\uDF0D ${response.statusCode} \uD83C\uDF0D ")
-        if (response.statusCode > 200) {
-            logger.info("\uD83D\uDC7F ERROR: \uD83D\uDC7F\n${response.text} \uD83D\uDC7F \uD83D\uDC7F")
+        if (response.statusCode == 200) {
+            val arr = JSONArray(response.text)
+            logger.info("\uD83D\uDC7F payments created for Anchor: \uD83D\uDC9A \uD83D\uDC7F ${arr.length()} \uD83D\uDC7F \uD83D\uDC7F")
+        } else {
+            logger.info("\uD83D\uDC7F \uD83D\uDC7F makeMultiplePayments ERROR: " +
+                    "${response.statusCode} \uD83D\uDC7F ${response.text}")
         }
+        reportPaymentsAftermath()
+    }
 
+    private fun reportPaymentsAftermath() {
         val mList = proxyAnchorInvestor.vaultQueryByWithPagingSpec(
                 criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED),
                 contractStateType = SupplierPaymentState::class.java,
-                paging = PageSpecification(1,6000)
+                paging = PageSpecification(1, 6000)
         ).states
-        logger.info("Supplier Payments on node: \uD83C\uDF4E ${mList.size} \uD83C\uDF4E")
+        logger.info("\n\nSupplier Payments on node: \uD83C\uDF4E ${mList.size} \uD83C\uDF4E")
         val mList1 = proxyAnchorInvestor.vaultQueryByWithPagingSpec(
                 criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED),
                 contractStateType = InvoiceState::class.java,
-                paging = PageSpecification(1,6000)
+                paging = PageSpecification(1, 6000)
         ).states
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 Invoices on node: " +
                 "\uD83C\uDF4E ${mList1.size} \uD83C\uDF4E these have no Anchor offers! " +
-                "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 ")
+                "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \n\n")
     }
 
-    private fun acceptOffers(url: String) {
-        logger.info("\uD83C\uDF4E acceptOffers \uD83C\uDF4E")
-        val aList = getOffers()
-        aList.forEach() {
-            val params: MutableMap<String,String> = mutableMapOf()
-            params["invoiceId"] = it.state.data.invoiceId.toString()
+    private fun makeMultipleInvestorPayments(url: String) {
+        val accounts = getAccounts(proxyAnchorInvestor)
+        accounts.forEach() {
+            if (it.name == "AnchorInvestor" || it.name == "Customer001") {
+                logger.info("Ignore anchor or customer")
+            } else {
+                val investorId = it.identifier.id.toString()
+                val profile = getProfile(investorId)
+                val params: MutableMap<String, String> = mutableMapOf()
+                params["investorId"] = investorId
+                val response = httpGet(
+                        timeout = 990000000.0, params = params,
+                        url = "$url/bfn/supplier/createPayments")
+
+                if (response.statusCode == 200) {
+                    val arr = JSONArray(response.text)
+                    logger.info("\uD83D\uDC7F ${arr.length()} payments created for: \uD83D\uDC9A ${it.name} : \uD83D\uDC7F " +
+                            " \uD83D\uDC7F \uD83D\uDC7F defaultDiscount: ${profile?.defaultDiscount} min: ${profile?.minimumInvoiceAmount} max: ${profile?.maximumInvoiceAmount}")
+                } else {
+                    logger.info("\uD83D\uDC7F \uD83D\uDC7F makeMultipleInvestorPayments ERROR: ${response.statusCode} \uD83D\uDC7F ${response.text}")
+                }
+            }
+        }
+
+        reportPaymentsAftermath()
+    }
+
+    private fun getProfile(accountId: String): InvestorProfileStateDTO? {
+
+        val states = proxyAnchorInvestor.vaultQueryByWithPagingSpec(
+                contractStateType = InvestorProfileState::class.java,
+                criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED),
+                paging = PageSpecification(1, 2000)
+        ).states
+        states.forEach() {
+            if (it.state.data.accountId == accountId) {
+                return WorkerBee.getDTO(it.state.data)
+            }
+        }
+
+        return null
+    }
+
+    private fun findAndAcceptBestOffers(url: String) {
+        logger.info("\uD83C\uDF4E findAndAcceptBestOffers \uD83C\uDF4E")
+
+        val invoiceStates = proxyAnchorInvestor.vaultQueryByWithPagingSpec(
+                contractStateType = InvoiceState::class.java,
+                criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED),
+                paging = PageSpecification(1, 2000)
+        ).states
+        logger.info("Number of invoices on node: ${invoiceStates.size}, will find best offer ...")
+        invoiceStates.forEach() {
+            val accountId = it.state.data.supplierInfo.identifier.id.toString()
+            val invoiceId = it.state.data.invoiceId.toString()
+            val prof = getProfile(accountId)
+            val params: MutableMap<String, String> = mutableMapOf()
+            params["accountId"] = accountId
+            params["invoiceId"] = invoiceId
             val response = httpGet(
                     timeout = 990000000.0, params = params,
-                    url = "$url/bfn/admin/acceptOffer")
-            logger.info("\uD83C\uDF4E  acceptOffers; RESPONSE: statusCode: " +
-                    "\uD83C\uDF0D ${response.statusCode} \uD83C\uDF0D ${response.text}")
+                    url = "$url/bfn/supplier/selectBestOffer")
+            if (response.statusCode == 200) {
+                takeBestOffer(response.text, url, prof)
+            } else {
+                logger.error("this is fucked: \uD83D\uDE21 \uD83D\uDE21 " +
+                        "${response.statusCode} \uD83D\uDE21 ${response.text}")
+            }
+
+        }
+
+    }
+
+    private val mGson = Gson()
+
+    private fun takeBestOffer(json: String, url: String, prof: InvestorProfileStateDTO?) {
+
+        val obj = mGson.fromJson(json, InvoiceOfferDTO::class.java)
+        if (obj != null) {
+            val params1: MutableMap<String, String> = mutableMapOf()
+            params1["offerId"] = obj.offerId
+            val response2 = httpGet(
+                    timeout = 990000000.0, params = params1,
+                    url = "$url/bfn/supplier/acceptOffer")
+            if (response2.statusCode == 200) {
+                if (response2.text == "0") {
+                    logger.info("\uD83E\uDD6C \uD83E\uDD6C Offer accepted for this investor; defaultDiscount: " +
+                            "${prof?.defaultDiscount} \uD83E\uDD6C min: ${prof?.minimumInvoiceAmount} max: ${prof?.maximumInvoiceAmount}")
+                } else {
+                    logger.info("No offer accepted for this investor, \uD83D\uDE21 " +
+                            "defaultDiscount: ${prof?.defaultDiscount}  \uD83C\uDF4E min: ${prof?.minimumInvoiceAmount} max: ${prof?.maximumInvoiceAmount}")
+                }
+            } else {
+                logger.warn("\uD83D\uDE21 ERROR: ${response2.statusCode} ${response2.text}")
+            }
+        } else {
+            logger.info("No offer accepted for this investor, \uD83D\uDE21 " +
+                    "defaultDiscount: ${prof?.defaultDiscount} \uD83C\uDF4E min: ${prof?.minimumInvoiceAmount} max: ${prof?.maximumInvoiceAmount}")
+        }
+    }
+
+    private fun acceptAnchorOffers(url: String) {
+        logger.info("\uD83C\uDF4E acceptAnchorOffers \uD83C\uDF4E")
+        val aList = getOffers()
+        var cnt = 0
+        aList.forEach() {
+            if (it.state.data.investor.name == "AnchorInvestor") {
+                val params: MutableMap<String, String> = mutableMapOf()
+                params["offerId"] = it.state.data.offerId.toString()
+                val response = httpGet(
+                        timeout = 990000000.0, params = params,
+                        url = "$url/bfn/supplier/acceptOffer")
+                cnt++
+                if (response.statusCode == 200) {
+                    if (response.text == "0") {
+                        logger.info("\uD83C\uDF4E  acceptOffers; \uD83C\uDF4F RESPONSE #$cnt: \uD83C\uDF4F statusCode: " +
+                                "\uD83C\uDF0D ${response.statusCode} \uD83C\uDF0D ${response.text}")
+                    } else {
+                        logger.info("\uD83C\uDF1E acceptOffers; \uD83C\uDF4F this cookie already eaten, ")
+                    }
+                } else {
+                    logger.error("this is fucked: \uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 ${response.text}")
+                }
+            }
         }
         val mList = getOffers()
-        logger.info("\uD83C\uDF4E \uD83C\uDF4E Invoice offers on node (should be accepted, where appropriate): " +
+        logger.info("\uD83C\uDF4E \uD83C\uDF4E Invoice offers left over on node : " +
                 "\uD83C\uDF4E ${mList.size} \uD83C\uDF4E")
     }
+
     private fun generateAnchorOffers(url: String) {
         logger.info("\uD83C\uDF4E Generating Anchor Offers \uD83C\uDF4E")
         val response = httpGet(
@@ -162,7 +291,7 @@ private class Client {
 //        }
         logger.info("\uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A " +
                 "\uD83C\uDF4E ${mList.size} offers on Node \uD83C\uDF4E ")
-                return mList
+        return mList
     }
 
 
@@ -316,7 +445,8 @@ private class Client {
                 offerDate = state.offerDate.toString(),
                 investorDate = state.acceptanceDate.toString(),
                 accepted = state.accepted, externalId = state.externalId,
-                acceptanceDate = state.acceptanceDate
+                acceptanceDate = state.acceptanceDate,
+                offerId = state.offerId
 
         )
     }
@@ -459,7 +589,7 @@ private class Client {
 
     }
 
-    private fun generateInvoices(url: String, max: Int = 1) {
+    private fun generateInvoices(url: String) {
 
         logger.info("\uD83D\uDE21 generateInvoices for CUSTOMER \uD83D\uDE21 \uD83D\uDE21 ")
         if (customer == null) {
@@ -497,7 +627,7 @@ private class Client {
 
     }
 
-    private fun createAnchor(url: String, max: Int = 1) {
+    private fun createAnchor(url: String) {
 
         val mx: MutableList<TradeMatrix> = mutableListOf()
         logger.info("\uD83D\uDE21 createAnchor for Node \uD83D\uDE21 \uD83D\uDE21 ")
@@ -628,44 +758,29 @@ private class Client {
         return accts
     }
 
-    private fun makeOffers(accts: List<AccountInfo>, port: String) {
+    private fun generateCasualOffers() {
+        logger.info("\uD83D\uDE21 generate Offers for non-anchor investors  \uD83D\uDE21  \uD83D\uDE21 ")
+        val accts = getAccounts(proxyAnchorInvestor)
         logger.info("\uD83D\uDE3C \uD83D\uDE3C accounts from node: \uD83C\uDF3A ${accts.size}, calling makeInvoiceOffers ...")
+        getOffers()
         accts.forEach() {
-            val params: MutableMap<String, String> = mutableMapOf()
-            params["investorId"] = it.identifier.id.toString()
-            val response = httpGet(
-                    timeout = 990000000.0, params = params,
-                    url = "http://localhost:$port/admin/makeInvoiceOffers")
-            if (response.statusCode == 200) {
-                val arr = JSONArray(response.text)
-                logger.info("\uD83D\uDE3C Made \uD83D\uDD39 ${arr.length()} \uD83D\uDD39 offers based on profile for: ${it.name} \uD83C\uDF3A")
+            if (it.name == "AnchorInvestor" || it.name == "Customer001") {
+                logger.info("Ignore accounts: Anchor & Customer")
             } else {
-                logger.warn("\uD83C\uDF4E RESPONSE: statusCode: 🌍 ${response.statusCode} 🌍   ${response.text}")
+                val params: MutableMap<String, String> = mutableMapOf()
+                params["investorId"] = it.identifier.id.toString()
+                val response = httpGet(
+                        timeout = 990000000.0, params = params,
+                        url = "http://localhost:10050/bfn/admin/makeInvoiceOffers")
+                if (response.statusCode == 200) {
+                    val arr = JSONArray(response.text)
+                    logger.info("\uD83D\uDE3C Made \uD83D\uDD39 ${arr.length()} \uD83D\uDD39 offers based on profile for: ${it.name} \uD83C\uDF3A")
+                } else {
+                    logger.warn("\uD83C\uDF4E RESPONSE: statusCode: 🌍 ${response.statusCode} 🌍   ${response.text}")
+                }
             }
         }
-    }
-
-    private fun generateOffers(index: Int) {
-        when (index) {
-            0 -> {
-                logger.info("\uD83D\uDE21 generateOffers for PARTY A  \uD83D\uDE21  \uD83D\uDE21 ")
-                val accts = getAccounts(proxyAnchorInvestor)
-                makeOffers(accts, "10050")
-
-            }
-            1 -> {
-                logger.info("\uD83D\uDE21 generateOffers for PARTY B  \uD83D\uDE21  \uD83D\uDE21 ")
-                val accts = getAccounts(proxyCustomer001)
-                makeOffers(accts, "10053")
-
-            }
-            2 -> {
-                logger.info("\uD83D\uDE21 generateOffers for PARTY C  \uD83D\uDE21  \uD83D\uDE21 ")
-                val accts = getAccounts(proxyNotary)
-                makeOffers(accts, "10056")
-            }
-        }
-
+        getOffers()
 
     }
 
@@ -710,14 +825,22 @@ private class Client {
         if (disc < 3.0) {
             disc = 3.5
         }
+        var min = random.nextInt(10) * 1000.00
+        if (min == 0.0) {
+            min = 1000.00
+        }
+        var max = random.nextInt(200) * 1000.00
+        if (max == 0.0) {
+            max = 200000.00
+        }
         val investorProfile = InvestorProfileStateDTO(
                 issuedBy = "thisNode",
                 accountId = it.state.data.identifier.id.toString(),
                 date = todaysDate(),
                 defaultDiscount = disc,
-                minimumInvoiceAmount = random.nextInt(100) * 1000.0,
-                totalInvestment = 900000000.0,
-                maximumInvoiceAmount = 750000.0,
+                minimumInvoiceAmount = min,
+                totalInvestment = 2999000.00,
+                maximumInvoiceAmount = max,
                 bank = "BlackOx Investment Bank",
                 bankAccount = (random.nextInt(12345) * 647).toString()
         )
@@ -735,9 +858,9 @@ private class Client {
     }
 
     private fun addSupplierProfile(account: StateAndRef<AccountInfo>, url: String) {
-        var disc = random.nextInt(5) * 1.5
+        var disc = random.nextInt(5) * 2.5
         if (disc < 2.0) {
-            disc = 5.5
+            disc = 6.5
         }
 
         val prof = SupplierProfileStateDTO(
@@ -775,11 +898,6 @@ private class Client {
                 " \uD83E\uDD6C ${proxyReg.nodeInfo().legalIdentities.first().name} \uD83C\uDFC0 \uD83C\uDFC0 \uD83C\uDFC0 ++++++++++++++++++++++++\n")
         getAggregates(proxyReg)
 
-        getFlows(proxyAnchor)
-        //        getFlows(proxyPartyB)
-        //        getFlows(proxyPartyC)
-        //        getFlows(proxyReg)
-        //        getFlows(proxyNotary)
     }
 
     private fun getFlows(proxy: CordaRPCOps) {

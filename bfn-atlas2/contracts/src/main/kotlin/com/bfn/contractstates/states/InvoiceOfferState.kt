@@ -22,6 +22,7 @@ class InvoiceOfferState(val invoiceId: UUID,
                         val externalId: String,
                         val invoiceNumber: String,
                         val accepted: Boolean,
+                        val offerId: String,
                         val customer: AccountInfo) : ContractState {
 
     override val participants: List<AbstractParty>

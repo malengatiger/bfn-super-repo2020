@@ -129,8 +129,7 @@ private open class ApiApp: ApplicationListener<ApplicationReadyEvent> {
         Timer().schedule(object : TimerTask() {
             override fun run() {
                 logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E Timer TRIGGERED : The time is now \uD83C\uDF4F  ${dateFormat.format(Date())}" +
-                        "\uD83C\uDF36 \uD83C\uDF36 \uD83C\uDF36  selectBestOffers on $name every $minutes minutes \uD83C\uDF4F  ")
-                bean.selectBestOffers()
+                        "\uD83C\uDF36 \uD83C\uDF36 \uD83C\uDF36  in future, do something ... on $name every $minutes minutes \uD83C\uDF4F  ")
             }
         }, ms, ms)
     }

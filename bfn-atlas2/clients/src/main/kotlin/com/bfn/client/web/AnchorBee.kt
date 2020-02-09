@@ -4,23 +4,18 @@ import com.bfn.client.dto.*
 import com.google.firebase.cloud.FirestoreClient
 import com.google.gson.GsonBuilder
 
-import com.bfn.client.web.FirebaseUtil.createUser
 import com.bfn.contractstates.states.*
 import com.bfn.flows.AnchorCreationFlow
-import com.bfn.flows.CreateAccountFlow
 import com.bfn.flows.anchor.AnchorMakeMultiplePaymentsFlow
 import com.bfn.flows.anchor.AnchorMakeOffersFlow
 import com.bfn.flows.anchor.AnchorMakeSinglePaymentFlow
 import com.bfn.flows.anchor.AnchorUpdateFlow
-import com.bfn.flows.supplier.SupplierOfferAcceptanceFlow
 import com.google.cloud.firestore.Firestore
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
-import net.corda.core.contracts.StateAndRef
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.node.services.Vault
 import net.corda.core.node.services.vault.PageSpecification
 import net.corda.core.node.services.vault.QueryCriteria
-import net.corda.core.node.services.vault.Sort
 import org.slf4j.LoggerFactory
 import java.util.*
 
@@ -56,18 +51,7 @@ object AnchorBee {
         logger.info("\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C ${mList.size} payment states made")
         return mList
     }
-    @JvmStatic
-    @Throws(Exception::class)
-    fun acceptOffer(proxy: CordaRPCOps, invoiceId: String) : String {
-        logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to acceptOffer " +
-                ".....\uD83C\uDFC0 invoiceId: $invoiceId \uD83C\uDFC0" )
 
-        val cordaFuture = proxy.startFlowDynamic(
-                SupplierOfferAcceptanceFlow::class.java, invoiceId).returnValue
-        val result = cordaFuture.get()
-
-        return "\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C Offer accepted OK, txId: ${result.id}  \uD83D\uDC4C"
-    }
     @JvmStatic
     @Throws(Exception::class)
     fun updateAnchor(proxy: CordaRPCOps,

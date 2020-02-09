@@ -3,14 +3,12 @@ package com.bfn.client.web
 import com.bfn.client.dto.*
 import com.bfn.flows.CreateAccountFlow
 import com.bfn.flows.InvestorProfileFlow
-import com.bfn.flows.supplier.BestOfferForInvoiceFlow
 import com.bfn.flows.invoices.InvoiceOfferFlow
 import com.bfn.flows.invoices.InvoiceRegistrationFlow
 import com.bfn.flows.queries.InvoiceOfferQueryFlow
 import com.bfn.flows.queries.InvoiceQueryFlow
 import com.bfn.flows.queries.TokenQueryFlow
 import com.bfn.flows.scheduled.CreateInvoiceOffersFlow
-import com.bfn.flows.scheduled.RunAuctionFlow
 import com.google.firebase.cloud.FirestoreClient
 import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
@@ -81,7 +79,7 @@ object WorkerBee {
                     "#$cnt \uD83C\uDF3A ${state.data.name} \uD83C\uDF50️ ")
             val dto = AccountInfoDTO(acct.identifier.id.toString(),
                     acct.host.toString(), acct.name, "")
-            if (dto.host.toString() == node) {
+            if (dto.host == node) {
                 list.add(dto)
             }
         }
@@ -257,34 +255,6 @@ object WorkerBee {
         return dtos
     }
 
-    @JvmStatic
-    @Throws(Exception::class)
-    fun selectBestOffers(proxy: CordaRPCOps): List<OfferAndTokenDTO> {
-        logger.info("\uD83C\uDF3A \uD83C\uDF3A \uD83C\uDF3A \uD83C\uDF3A " +
-                "WorkerBee selectBestOffers starting ....")
-        val dtos: MutableList<OfferAndTokenDTO> = mutableListOf()
-        try {
-            val fut = proxy.startTrackedFlowDynamic(
-                    RunAuctionFlow::class.java).returnValue
-            val tokens = fut.get()
-
-            tokens!!.forEach() {
-                val token = getDTO(token = it.token, account = it.invoiceOffer.investor,
-                        invoiceId = it.invoiceOffer.invoiceId.toString(),
-                        accountId = it.invoiceOffer.investor.identifier.id.toString(),
-                        invoiceAmount = it.invoiceOffer.originalAmount)
-                val oat = OfferAndTokenDTO(invoiceOffer = getDTO(it.invoiceOffer),
-                        token = token)
-                dtos.add(oat)
-
-            }
-            val m = "\uD83C\uDF3A done running selectBestOffers:  \uD83C\uDF3A " + dtos.size
-            logger.info(m)
-        } catch (e: Exception) {
-            logger.error("selectBestOffers fucked up! : $e")
-        }
-        return dtos
-    }
 
     @JvmStatic
     @Throws(Exception::class)
@@ -333,65 +303,21 @@ object WorkerBee {
         val fut = proxy.startTrackedFlowDynamic(
                 CreateInvoiceOffersFlow::class.java, investorId).returnValue
         val offerStates = fut.get()
-        val dtos: MutableList<InvoiceOfferDTO> = mutableListOf()
+        val offers: MutableList<InvoiceOfferDTO> = mutableListOf()
         offerStates!!.forEach() {
             val offer = getDTO(it)
-            dtos.add(offer)
+            offers.add(offer)
 
         }
         val m = "\uD83C\uDF3A makeInvoiceOffers, DONE!:  \uD83C\uDF3A " + offerStates.size
-        dtos.forEach() {
-            logger.info("Investor  \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 ${it.investor!!.name} " +
-                    ":: \uD83C\uDF4E Offer made: ${it.supplier!!.name} " +
-                    "offered: ${it.offerAmount!!} \uD83D\uDD35 \uD83D\uDD35 originalAmt: ${it.originalAmount!!} " +
-                    " discount: ${it.discount!!}  \uD83C\uDF40 delta: ${it.originalAmount!! - it.offerAmount!!} ")
+        offers.forEach() {
+            logger.info("Investor  \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 ${it.investor.name} " +
+                    ":: \uD83C\uDF4E Offer made: ${it.supplier.name} " +
+                    "offered: ${it.offerAmount} \uD83D\uDD35 \uD83D\uDD35 originalAmt: ${it.originalAmount} " +
+                    " discount: ${it.discount}  \uD83C\uDF40 delta: ${it.originalAmount - it.offerAmount} ")
         }
         logger.info(m)
-        return dtos
-    }
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun findTokensForNode(proxy: CordaRPCOps): List<OfferAndTokenDTO> {
-        val fut = proxy.startTrackedFlowDynamic(
-                TokenQueryFlow::class.java, null).returnValue
-        val tokens = fut.get()
-        val dtos: MutableList<OfferAndTokenDTO> = mutableListOf()
-        tokens.forEach() {
-            val token = getDTO(token = it.token, account = it.invoiceOffer.investor,
-                    invoiceId = it.invoiceOffer.invoiceId.toString(),
-                    accountId = it.invoiceOffer.investor.identifier.id.toString(),
-                    invoiceAmount = it.invoiceOffer.originalAmount)
-            val oat = OfferAndTokenDTO(invoiceOffer = getDTO(it.invoiceOffer),
-                    token = token)
-            dtos.add(oat)
-
-        }
-        val m = "\uD83C\uDF3A done listing Tokens:  \uD83C\uDF3A " + tokens.size
-        logger.info(m)
-        return dtos
-    }
-
-    @JvmStatic
-    @Throws(Exception::class)
-    fun findTokensForAccount(proxy: CordaRPCOps, accountId: String): List<OfferAndTokenDTO> {
-        val fut = proxy.startTrackedFlowDynamic(
-                TokenQueryFlow::class.java, accountId).returnValue
-        val tokens = fut.get()
-        val dtos: MutableList<OfferAndTokenDTO> = mutableListOf()
-        tokens.forEach() {
-            val token = getDTO(token = it.token, account = it.invoiceOffer.investor,
-                    invoiceId = it.invoiceOffer.invoiceId.toString(),
-                    accountId = it.invoiceOffer.investor.identifier.id.toString(),
-                    invoiceAmount = it.invoiceOffer.originalAmount)
-            val oat = OfferAndTokenDTO(invoiceOffer = getDTO(it.invoiceOffer),
-                    token = token)
-            dtos.add(oat)
-
-        }
-        val m = "\uD83C\uDF3A done listing Tokens:  \uD83C\uDF3A " + tokens.size
-        logger.info(m)
-        return dtos
+        return offers
     }
 
     @JvmStatic
@@ -593,10 +519,10 @@ object WorkerBee {
             var supplierInfo: AccountInfo? = null
             var customerInfo: AccountInfo? = null
             for ((state) in accounts) {
-                if (state.data.identifier.toString().equals(invoice.customer!!.identifier, ignoreCase = true)) {
+                if (state.data.identifier.toString().equals(invoice.customer.identifier, ignoreCase = true)) {
                     customerInfo = state.data
                 }
-                if (state.data.identifier.toString().equals(invoice.supplier!!.identifier, ignoreCase = true)) {
+                if (state.data.identifier.toString().equals(invoice.supplier.identifier, ignoreCase = true)) {
                     supplierInfo = state.data
                 }
             }
@@ -606,9 +532,9 @@ object WorkerBee {
             if (customerInfo == null) {
                 throw Exception("Customer is bloody missing")
             }
-            val taxPercentage = (invoice.valueAddedTax.div(100.0) ?: 0.0)
+            val taxPercentage = invoice.valueAddedTax.div(100.0)
             val totalTaxAmt = invoice.amount * taxPercentage
-            invoice.totalAmount = totalTaxAmt + invoice.amount;
+            invoice.totalAmount = totalTaxAmt + invoice.amount
             //
 
             val invoiceState = InvoiceState(
@@ -632,7 +558,7 @@ object WorkerBee {
                     "\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C  signedTransaction returned: \uD83E\uDD4F "
                     + issueTx.toString() + " \uD83E\uDD4F \uD83E\uDD4F ")
 
-            val dto = invoiceState?.let { getDTO(it) }
+            val dto = invoiceState.let { getDTO(it) }
             //logger.info("Check amount discount total calculations: " + GSON.toJson(dto))
             try {
                 sendInvoiceMessage(dto)
@@ -643,7 +569,7 @@ object WorkerBee {
             } catch (e: Exception) {
                 logger.error(e.message)
             }
-            dto!!
+            dto
         } catch (e: Exception) {
             if (e.message != null) {
                 throw Exception("Failed to register invoice. " + e.message)
@@ -737,7 +663,7 @@ object WorkerBee {
                     AccountInfo::class.java, criteria,
                     PageSpecification(1, 200))
             for ((state) in states1) {
-                if (state.data.identifier.toString().equals(invoiceOffer.investor!!.identifier, ignoreCase = true)) {
+                if (state.data.identifier.toString().equals(invoiceOffer.investor.identifier, ignoreCase = true)) {
                     investorInfo = state.data
                 }
             }
@@ -747,8 +673,8 @@ object WorkerBee {
             if (invoiceOffer.discount == Double.MIN_VALUE) {
                 throw Exception("Discount not found")
             }
-            val nPercentage = 100.0 - invoiceOffer.discount!!
-            invoiceOffer.offerAmount = invoiceOffer.originalAmount!! * (nPercentage / 100)
+            val nPercentage = 100.0 - invoiceOffer.discount
+            invoiceOffer.offerAmount = invoiceOffer.originalAmount * (nPercentage / 100)
             processInvoiceOffer(proxy, invoiceOffer, invoiceState, investorInfo)
         } catch (e: Exception) {
             if (e.message != null) {
@@ -766,13 +692,13 @@ object WorkerBee {
                 customer = invoiceState.customerInfo,
                 investor = investorInfo,
                 supplier = invoiceState.supplierInfo,
-                discount = invoiceOffer.discount!!,
+                discount = invoiceOffer.discount,
                 invoiceNumber = invoiceState.invoiceNumber,
-                offerAmount = invoiceOffer.offerAmount!!,
+                offerAmount = invoiceOffer.offerAmount,
                 offerDate = invoiceOffer.offerDate,
                 originalAmount = invoiceState.totalAmount,
                 acceptanceDate = invoiceOffer.acceptanceDate,
-                accepted = false,
+                accepted = false, offerId = invoiceOffer.offerId,
                 externalId = invoiceState.externalId
         )
         val signedTransactionCordaFuture = proxy.startTrackedFlowDynamic(
@@ -794,39 +720,6 @@ object WorkerBee {
         return offerDTO
     }
 
-    fun selectBestOffer(proxy: CordaRPCOps, accountId: String,
-                        invoiceId: String): OfferAndTokenDTO? {
-
-        val cordaFuture = proxy.startTrackedFlowDynamic(
-                BestOfferForInvoiceFlow::class.java, accountId, invoiceId)
-                .returnValue
-        val offerAndToken: OfferAndTokenState = cordaFuture.get() ?: return null
-        //todo - refactor query -
-        val criteria = VaultQueryCriteria(status = StateStatus.UNCONSUMED)
-        val page =
-                proxy.vaultQueryByWithPagingSpec(
-                        contractStateType = AccountInfo::class.java,
-                        criteria = criteria,
-                        paging = PageSpecification(
-                                pageNumber = 1, pageSize = 400))
-        var account: AccountInfo? = null
-        page.states.forEach() {
-            if (it.state.data.identifier.id.toString() == accountId) {
-                account = it.state.data
-            }
-        }
-        if (account == null) {
-            throw java.lang.Exception("Account not found")
-        }
-
-        val tokenDTO = getDTO(offerAndToken.token, accountId,
-                invoiceId, account!!, offerAndToken.invoiceOffer.originalAmount)
-        FirebaseUtil.addToken(tokenDTO)
-        logger.info("\uD83C\uDF4F \uD83C\uDF4F selectBestOffer completed... token issued " +
-                "\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C   ${GSON.toJson(tokenDTO)}")
-        return OfferAndTokenDTO(invoiceOffer = getDTO(offerAndToken.invoiceOffer),
-                token = tokenDTO)
-    }
 
     @JvmStatic
     fun getDTO(token: FungibleToken, accountId: String,
@@ -854,7 +747,7 @@ object WorkerBee {
                 description = state.description,
                 invoiceId = state.invoiceId.toString(),
                 invoiceNumber = state.invoiceNumber,
-                dateRegistered = state.dateRegistered.toString(),
+                dateRegistered = state.dateRegistered,
                 valueAddedTax = state.valueAddedTax,
                 totalAmount = state.totalAmount,
                 externalId = state.externalId
@@ -875,7 +768,8 @@ object WorkerBee {
                 offerDate = state.offerDate,
                 investorDate = state.acceptanceDate,
                 accepted = state.accepted, externalId = state.externalId,
-                acceptanceDate = state.acceptanceDate
+                acceptanceDate = state.acceptanceDate,
+                offerId = state.offerId
 
         )
     }

@@ -101,8 +101,13 @@ class InvoiceRegistrationFlow(private val invoiceState: InvoiceState) : FlowLogi
             REMOTE_CUSTOMER
         }
 
-        return processTransaction(supplierStatus, customerStatus, customerParty, signedTx,
+        val tranx = processTransaction(supplierStatus, customerStatus, customerParty, signedTx,
                 supplierParty, regulatorNode.legalIdentities.first())
+        if (tranx != null) {
+            reportToRegulator(tranx)
+        }
+
+        return tranx
     }
 
     @Suspendable
@@ -144,6 +149,18 @@ class InvoiceRegistrationFlow(private val invoiceState: InvoiceState) : FlowLogi
         }
 
         return signedTransaction
+    }
+    @Suspendable
+    @Throws(FlowException::class)
+    private fun reportToRegulator(mSignedTransactionDone: SignedTransaction) {
+        logger.info("\uD83D\uDCCC \uD83D\uDCCC \uD83D\uDCCC  Talking to the Regulator, for InvoiceRegistrationFlow, Senor! .............")
+        try {
+            subFlow(ReportToRegulatorFlow(mSignedTransactionDone))
+            logger.info("\uD83D\uDCCC \uD83D\uDCCC \uD83D\uDCCC  DONE talking to the Regulator for InvoiceRegistrationFlow, Phew!")
+        } catch (e: Exception) {
+            logger.error(" \uD83D\uDC7F  \uD83D\uDC7F  \uD83D\uDC7F Regulator fell down on InvoiceRegistrationFlow.  \uD83D\uDC7F IGNORED  \uD83D\uDC7F ", e)
+            throw FlowException("Regulator fell down on InvoiceRegistrationFlow!")
+        }
     }
 
     @Suspendable
