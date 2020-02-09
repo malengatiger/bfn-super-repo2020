@@ -553,10 +553,7 @@ object WorkerBee {
             val issueTx = proxy.startTrackedFlowDynamic(
                     InvoiceRegistrationFlow::class.java, invoiceState).returnValue.getOrThrow()
 
-            logger.info("\uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F flow completed... " +
-                    "\uD83C\uDF4F \uD83C\uDF4F \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06  " +
-                    "\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C  signedTransaction returned: \uD83E\uDD4F "
-                    + issueTx.toString() + " \uD83E\uDD4F \uD83E\uDD4F ")
+            logger.info("\uD83C\uDF4F flow completed... ")
 
             val dto = invoiceState.let { getDTO(it) }
             //logger.info("Check amount discount total calculations: " + GSON.toJson(dto))
@@ -564,7 +561,7 @@ object WorkerBee {
                 sendInvoiceMessage(dto)
                 val db = FirestoreClient.getFirestore()
                 val reference = db.collection("invoices").add(dto)
-                logger.info("\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9 " +
+                logger.info("\uD83E\uDDE9" +
                         "Firestore path: " + reference.get().path)
             } catch (e: Exception) {
                 logger.error(e.message)
@@ -601,9 +598,7 @@ object WorkerBee {
             val accountInfoCordaFuture = proxy.startTrackedFlowDynamic(
                     CreateAccountFlow::class.java, accountName).returnValue
             val (name, host, identifier) = accountInfoCordaFuture.get()
-            logger.info("\uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F Flow completed... " +
-                    " \uD83D\uDC4C \uD83D\uDC4C " +
-                    "\uD83D\uDC4C accountInfo returned: \uD83E\uDD4F " + name + " \uD83E\uDD4F \uD83E\uDD4F ")
+            logger.info("\uD83C\uDF4F Flow completed... \uD83D\uDC4C accountInfo returned: \uD83E\uDD4F $name")
             //create user record in firebase
             try {
                 createUser(accountName, email, password,
@@ -624,8 +619,7 @@ object WorkerBee {
                 sendAccountMessage(dto)
                 val db = FirestoreClient.getFirestore()
                 val reference = db.collection("accounts").add(dto)
-                logger.info("\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9 " +
-                        "Firestore path: " + reference.get().path)
+                logger.info("\uD83E\uDDE9 Firestore path: " + reference.get().path)
             } catch (e: Exception) {
                 logger.error(e.message)
             }

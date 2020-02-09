@@ -3,14 +3,12 @@ package com.bfn.client.local
 import com.google.gson.GsonBuilder
 import com.bfn.client.dto.*
 import com.bfn.client.web.FirebaseUtil
-import com.bfn.client.web.FirebaseUtil.deleteCollections
-import com.bfn.client.web.FirebaseUtil.deleteUsers
 import com.bfn.client.web.WorkerBee
-import com.bfn.client.web.WorkerBee.getNetworkAccounts
 import com.bfn.client.web.WorkerBee.getNodeAccounts
 import com.bfn.client.web.WorkerBee.startAccountRegistrationFlow
 import com.bfn.client.web.WorkerBee.startInvoiceOfferFlow
 import com.bfn.client.web.WorkerBee.startInvoiceRegistrationFlow
+import com.bfn.flows.thisDate
 import com.bfn.flows.todaysDate
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.node.NodeInfo
@@ -19,9 +17,6 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.util.*
 
 object DemoUtil {
@@ -223,45 +218,62 @@ object DemoUtil {
 
     private val random = Random(System.currentTimeMillis())
     private lateinit var customer: AccountInfoDTO
+    private val cal: Calendar = GregorianCalendar.getInstance()
+    private var invoiceCnt = 0
     fun generateInvoices(proxy: CordaRPCOps, customer: AccountInfoDTO, count: Int = 40): String {
         DemoUtil.proxy = proxy
         this.customer = customer
         val accounts = getNodeAccounts(DemoUtil.proxy!!).shuffled()
-        logger.info("\uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C accounts to have invoices generated: $count")
+        logger.info("\uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C accounts to have invoices generated: $count; generating 12 months worth of invoices")
         repeatCount = 0
-        var invoiceCnt = 0
+        invoiceCnt = 0
 
-        accounts.forEach() {
-            if (it.name == "AnchorInvestor" || it.name == "Customer001") {
-                logger.info("............ \uD83E\uDD80 these baby don't do invoices. IGNORED! \uD83D\uDC2C ")
-            } else {
-                val invoice = buildInvoice(it)
-                val smallInvoice = buildSmallInvoice(it)
-                val choice = random.nextBoolean()
-                if (choice) {
-                    if (invoice != null) {
-                        val result = startInvoiceRegistrationFlow(DemoUtil.proxy!!, invoice)
-                        invoiceCnt++
-                        logger.info("\uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C LARGE invoice #$invoiceCnt " +
-                                "generated, result: ${result.totalAmount} ${result.invoiceId}")
-                    }
+        //todo - generate monthly invoices starting jan 2019
+        cal.set(2019,0,25)
+        for (i in 1..2) {
+            logger.info("⏰ ⏰ ⏰ create invoices for month:  ⏰ ${cal.time}  ⏰ \n")
+            var cnt2 = 0
+            accounts.forEach() {
+                if (it.name == "AnchorInvestor" || it.name == "Customer001") {
+                    logger.info("${it.name} \uD83E\uDD80 this baby don't do invoices. IGNORED! \uD83D\uDC2C ")
                 } else {
-                    if (smallInvoice != null) {
-                        val result = startInvoiceRegistrationFlow(DemoUtil.proxy!!, smallInvoice)
-                        invoiceCnt++
-                        logger.info("\uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C SMALL invoice #$invoiceCnt " +
-                                "generated, result: ${result.totalAmount} ${result.invoiceId}")
+                    val randomInvoice = random.nextBoolean()
+                    if (randomInvoice) {
+                        startInvoiceFlow(it)
+                        cnt2++
                     }
                 }
-            }
 
+            }
+            cal.add(Calendar.MONTH,1)
+            logger.info("\n\n⏰ ⏰ ⏰ created $cnt2 invoices this month; \uD83D\uDD35 " +
+                    "roll over to the next month:  ⏰ ${cal.time}  ⏰ \n\n")
         }
 
-        val invoiceStates = WorkerBee.findInvoicesForNode(DemoUtil.proxy!!)
-        logger.info("from WorkerBee.findInvoicesForNode: \uD83C\uDF4A \uD83C\uDF4A " +
-                "${invoiceStates.size} InvoiceStates on node ...  \uD83C\uDF4A ")
-        demoSummary.numberOfInvoices = invoiceStates.size
-        return "\uD83D\uDC9A Invoices on Node: ${invoiceStates.size} \uD83D\uDC9C"
+        demoSummary.numberOfInvoices = invoiceCnt
+        return "\uD83D\uDC9A Invoices on Node: $invoiceCnt \uD83D\uDC9C"
+    }
+
+    private fun startInvoiceFlow(it: AccountInfoDTO) {
+
+        val invoice = buildInvoice(it)
+        val smallInvoice = buildSmallInvoice(it)
+        val choice = random.nextBoolean()
+        if (choice) {
+            if (invoice != null) {
+                val result = startInvoiceRegistrationFlow(proxy!!, invoice)
+                invoiceCnt++
+                logger.info("\uD83D\uDC9C LARGE invoice #$invoiceCnt" +
+                        "generated, result: ${result.totalAmount} ${result.invoiceId}")
+            }
+        } else {
+            if (smallInvoice != null) {
+                val result = startInvoiceRegistrationFlow(proxy!!, smallInvoice)
+                invoiceCnt++
+                logger.info("\uD83D\uDC9C SMALL invoice #$invoiceCnt " +
+                        "generated, result: ${result.totalAmount} ${result.invoiceId}")
+            }
+        }
     }
 
 
@@ -283,7 +295,7 @@ object DemoUtil {
                     valueAddedTax = 15.0,
                     totalAmount = num * 1.15,
                     description = "Demo Invoice at ${Date()}",
-                    dateRegistered = todaysDate(),
+                    dateRegistered = thisDate(cal.time),
                     invoiceId = UUID.randomUUID().toString(),
                     externalId = UUID.randomUUID().toString()
             )
@@ -300,7 +312,7 @@ object DemoUtil {
         if (supplier.name == customer.name) {
             return null
         }
-        var invoice: InvoiceDTO? = null
+        val invoice: InvoiceDTO?
         var num = random.nextInt(200)
         if (num == 0) num = 10
 
@@ -312,7 +324,7 @@ object DemoUtil {
                     valueAddedTax = 15.0,
                     totalAmount = num * 1.15,
                     description = "Demo Small Invoice at ${Date()}",
-                    dateRegistered = todaysDate(),
+                    dateRegistered = thisDate(cal.time),
                     invoiceId = UUID.randomUUID().toString(),
                     externalId = UUID.randomUUID().toString()
             )

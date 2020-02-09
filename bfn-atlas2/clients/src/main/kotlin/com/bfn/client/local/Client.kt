@@ -51,19 +51,19 @@ private class Client {
 //        createAnchor(localAnchorURL)
 //        createCustomer(localAnchorURL)
 //        startSupplierAccounts(
-//                numberOfAccounts = 20,
+//                numberOfAccounts = 10,
 //                url = localAnchorURL);
 //
 //        letsDance()
 //        logger.info("\n\n========================= \uD83C\uDF4E 2nd Set; letsDance! \uD83C\uDF4E =================================\n\n")
-//        letsDance()
+        letsDance()
 //
 //        acceptAnchorOffers(localAnchorURL)
-        findAndAcceptBestOffers(localAnchorURL)
-        getOffers().forEach() {
-            logger.info("\uD83C\uDF00 \uD83D\uDC8A \uD83D\uDC8A InvoiceOffer: \uD83C\uDF21 \uD83C\uDF21 " +
-                    "${GSON.toJson(WorkerBee.getDTO(it.state.data))} \uD83C\uDF00 \uD83C\uDF21 \uD83C\uDF21 ")
-        }
+//        findAndAcceptBestOffers(localAnchorURL)
+//        getOffers().forEach() {
+//            logger.info("\uD83C\uDF00 \uD83D\uDC8A \uD83D\uDC8A InvoiceOffer: \uD83C\uDF21 \uD83C\uDF21 " +
+//                    "${GSON.toJson(WorkerBee.getDTO(it.state.data))} \uD83C\uDF00 \uD83C\uDF21 \uD83C\uDF21 ")
+//        }
 //        makeProfilesForNode(proxyAnchorInvestor, localAnchorURL)
 //        generateInvoices(localAnchorURL, 40)
 //        generateCasualOffers()
@@ -132,7 +132,7 @@ private class Client {
                 logger.info("Ignore anchor or customer")
             } else {
                 val investorId = it.identifier.id.toString()
-                val profile = getProfile(investorId)
+                val profile = getInvestorProfile(investorId)
                 val params: MutableMap<String, String> = mutableMapOf()
                 params["investorId"] = investorId
                 val response = httpGet(
@@ -152,7 +152,7 @@ private class Client {
         reportPaymentsAftermath()
     }
 
-    private fun getProfile(accountId: String): InvestorProfileStateDTO? {
+    private fun getInvestorProfile(accountId: String): InvestorProfileStateDTO? {
 
         val states = proxyAnchorInvestor.vaultQueryByWithPagingSpec(
                 contractStateType = InvestorProfileState::class.java,
@@ -167,9 +167,25 @@ private class Client {
 
         return null
     }
+    private fun getSupplierProfile(accountId: String): SupplierProfileStateDTO? {
+
+        val states = proxyAnchorInvestor.vaultQueryByWithPagingSpec(
+                contractStateType = SupplierProfileState::class.java,
+                criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED),
+                paging = PageSpecification(1, 2000)
+        ).states
+        states.forEach() {
+            if (it.state.data.accountId == accountId) {
+                return WorkerBee.getDTO(it.state.data)
+            }
+        }
+
+        return null
+    }
+
 
     private fun findAndAcceptBestOffers(url: String) {
-        logger.info("\uD83C\uDF4E findAndAcceptBestOffers \uD83C\uDF4E")
+        logger.info("\uD83C\uDF4E .............findAndAcceptBestOffers \uD83C\uDF4E")
 
         val invoiceStates = proxyAnchorInvestor.vaultQueryByWithPagingSpec(
                 contractStateType = InvoiceState::class.java,
@@ -180,7 +196,7 @@ private class Client {
         invoiceStates.forEach() {
             val accountId = it.state.data.supplierInfo.identifier.id.toString()
             val invoiceId = it.state.data.invoiceId.toString()
-            val prof = getProfile(accountId)
+            val prof = getInvestorProfile(accountId)
             val params: MutableMap<String, String> = mutableMapOf()
             params["accountId"] = accountId
             params["invoiceId"] = invoiceId
@@ -206,22 +222,25 @@ private class Client {
         if (obj != null) {
             val params1: MutableMap<String, String> = mutableMapOf()
             params1["offerId"] = obj.offerId
+            val  supplierProf = getSupplierProfile(obj.supplier.identifier)
             val response2 = httpGet(
                     timeout = 990000000.0, params = params1,
                     url = "$url/bfn/supplier/acceptOffer")
             if (response2.statusCode == 200) {
                 if (response2.text == "0") {
-                    logger.info("\uD83E\uDD6C \uD83E\uDD6C Offer accepted for this investor; defaultDiscount: " +
-                            "${prof?.defaultDiscount} \uD83E\uDD6C min: ${prof?.minimumInvoiceAmount} max: ${prof?.maximumInvoiceAmount}")
+                    logger.info("\uD83E\uDD6C \uD83E\uDD6C Offer accepted for this investor: ${obj.investor.name}  \uD83D\uDD35 defaultDiscount: " +
+                            "${prof?.defaultDiscount} \uD83E\uDD6C min: ${prof?.minimumInvoiceAmount} max: ${prof?.maximumInvoiceAmount}  " +
+                            "\uD83D\uDD35 supplier max discount: ${supplierProf?.maximumDiscount}")
                 } else {
-                    logger.info("No offer accepted for this investor, \uD83D\uDE21 " +
-                            "defaultDiscount: ${prof?.defaultDiscount}  \uD83C\uDF4E min: ${prof?.minimumInvoiceAmount} max: ${prof?.maximumInvoiceAmount}")
+                    logger.info("No offer accepted for this investor: ${obj.investor.name}  \uD83D\uDE21 " +
+                            "defaultDiscount: ${prof?.defaultDiscount}  \uD83C\uDF4E min: ${prof?.minimumInvoiceAmount} max: ${prof?.maximumInvoiceAmount}" +
+                            "\uD83D\uDD35 supplier max discount: ${supplierProf?.maximumDiscount}")
                 }
             } else {
                 logger.warn("\uD83D\uDE21 ERROR: ${response2.statusCode} ${response2.text}")
             }
         } else {
-            logger.info("No offer accepted for this investor, \uD83D\uDE21 " +
+            logger.info("........ No offer accepted for this investor?  \uD83D\uDE21 " +
                     "defaultDiscount: ${prof?.defaultDiscount} \uD83C\uDF4E min: ${prof?.minimumInvoiceAmount} max: ${prof?.maximumInvoiceAmount}")
         }
     }
@@ -232,18 +251,21 @@ private class Client {
         var cnt = 0
         aList.forEach() {
             if (it.state.data.investor.name == "AnchorInvestor") {
+                val supplierProfile = getSupplierProfile(it.state.data.supplier.identifier.id.toString())
                 val params: MutableMap<String, String> = mutableMapOf()
-                params["offerId"] = it.state.data.offerId.toString()
+                params["offerId"] = it.state.data.offerId
                 val response = httpGet(
                         timeout = 990000000.0, params = params,
                         url = "$url/bfn/supplier/acceptOffer")
                 cnt++
                 if (response.statusCode == 200) {
                     if (response.text == "0") {
-                        logger.info("\uD83C\uDF4E  acceptOffers; \uD83C\uDF4F RESPONSE #$cnt: \uD83C\uDF4F statusCode: " +
-                                "\uD83C\uDF0D ${response.statusCode} \uD83C\uDF0D ${response.text}")
+                        logger.info("\uD83C\uDF4E anchor offer accepted; \uD83C\uDF4F Offer #$cnt: \uD83C\uDF4F statusCode: " +
+                                "\uD83C\uDF0D ${response.statusCode} \uD83C\uDF0D ${response.text}  " +
+                                "\uD83D\uDD35 supplier max discount: ${supplierProfile?.maximumDiscount}")
                     } else {
-                        logger.info("\uD83C\uDF1E acceptOffers; \uD83C\uDF4F this cookie already eaten, ")
+                        logger.info("....... \uD83C\uDF1E acceptOffers; \uD83C\uDF4F this cookie already eaten, "+
+                                "\uD83D\uDD35 supplier max discount: ${supplierProfile?.maximumDiscount}")
                     }
                 } else {
                     logger.error("this is fucked: \uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 ${response.text}")
@@ -758,7 +780,7 @@ private class Client {
             if (it.name == "AnchorInvestor" || it.name == "Customer001") {
                 logger.info("Ignore accounts: Anchor & Customer")
             } else {
-                val investorProfile = getProfile(it.identifier.id.toString())
+                val investorProfile = getInvestorProfile(it.identifier.id.toString())
                 val params: MutableMap<String, String> = mutableMapOf()
                 params["investorId"] = it.identifier.id.toString()
                 val response = httpGet(

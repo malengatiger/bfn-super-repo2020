@@ -23,6 +23,12 @@ fun todaysDate(): String {
             .format(Date().toInstant());
     return fmt;
 }
+fun thisDate(date: Date): String {
+    val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SS'Z'")
+            .withZone(ZoneId.systemDefault())
+            .format(date.toInstant());
+    return fmt;
+}
 fun convertLongToTime(time: Long): String {
     val date = Date(time)
     val format = SimpleDateFormat("yyyy.MM.dd HH:mm")
