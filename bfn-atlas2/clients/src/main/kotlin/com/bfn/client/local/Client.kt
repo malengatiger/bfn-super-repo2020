@@ -57,17 +57,18 @@ private class Client {
     fun main(args: Array<String>) {
 
         setupLocalNodes()
-//        createAnchor(localAnchorURL)
-//        createCustomer(localAnchorURL)
-//        startSupplierAccounts(
-//                numberOfAccounts = 20,
-//                url = localAnchorURL);
+        createAnchor(localAnchorURL)
+        createCustomer(localAnchorURL)
+        startSupplierAccounts(
+                numberOfAccounts = 10,
+                url = localAnchorURL);
 
         letsDance()
-//        logger.info("\n\n========================= \uD83C\uDF4E 2nd Set; letsDance! \uD83C\uDF4E =================================\n\n")
-//        letsDance()
+        logger.info("\n\n========================= \uD83C\uDF4E 2nd Set; letsDance! \uD83C\uDF4E =================================\n\n")
+        letsDance()
 //
-//        acceptOffers(localAnchorURL)
+//        acceptAnchorOffers(localAnchorURL)
+//        findAndAcceptBestOffers(localAnchorURL)
 //        getOffers().forEach() {
 //            logger.info("\uD83C\uDF00 \uD83D\uDC8A \uD83D\uDC8A InvoiceOffer: \uD83C\uDF21 \uD83C\uDF21 " +
 //                    "${GSON.toJson(WorkerBee.getDTO(it.state.data))} \uD83C\uDF00 \uD83C\uDF21 \uD83C\uDF21 ")
