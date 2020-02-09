@@ -3,8 +3,6 @@ import 'package:anchor/bloc/trader_bloc.dart';
 import 'package:anchor/ui/anchor_editor.dart';
 import 'package:anchor/ui/dashboard.dart';
 import 'package:bfnlibrary/data/anchor.dart';
-import 'package:bfnlibrary/net_util.dart';
-import 'package:bfnlibrary/util/functions.dart';
 import 'package:bfnlibrary/util/prefs.dart';
 import 'package:bfnlibrary/util/slide_right.dart';
 import 'package:bfnlibrary/util/theme_bloc.dart';
@@ -12,8 +10,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
+
 import 'ui/welcome.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 void main() async {
   await DotEnv().load('.env');
@@ -38,11 +36,13 @@ class _AnchorAppState extends State<AnchorApp> {
     themeIndex = await Prefs.getThemeIndex();
     setState(() {});
   }
+
   @override
   void initState() {
     super.initState();
     _getTheme();
   }
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -57,17 +57,16 @@ class _AnchorAppState extends State<AnchorApp> {
       child: StreamBuilder<int>(
           initialData: themeIndex == null ? 0 : themeIndex,
           stream: themeBloc.newThemeStream,
-        builder: (context, snapShot) {
-          return MaterialApp(
-            debugShowCheckedModeBanner: false,
-            title: 'Anchor',
-            theme: snapShot.data == null
-                ? ThemeUtil.getTheme(themeIndex: themeIndex)
-                : ThemeUtil.getTheme(themeIndex: snapShot.data),
-            home: LandingPage(),
-          );
-        }
-      ),
+          builder: (context, snapShot) {
+            return MaterialApp(
+              debugShowCheckedModeBanner: false,
+              title: 'Anchor',
+              theme: snapShot.data == null
+                  ? ThemeUtil.getTheme(themeIndex: themeIndex)
+                  : ThemeUtil.getTheme(themeIndex: snapShot.data),
+              home: LandingPage(),
+            );
+          }),
     );
   }
 }
@@ -92,7 +91,6 @@ class _LandingPageState extends State<LandingPage> {
     if (anchor == null) {
       debugPrint(
           '🥦  🥦 There is no anchor in prefs. 🍊 🍊 🍊 Create one, please! 🛎 ');
-
       isFirstTime = true;
       var res = await Navigator.push(
           context, SlideRightRoute(widget: AnchorEditor()));

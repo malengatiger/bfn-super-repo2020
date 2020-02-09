@@ -1,7 +1,7 @@
 import 'package:bfnlibrary/data/account.dart';
 
 class InvoiceOffer {
-  String invoiceId;
+  String invoiceId, offerId;
   AccountInfo owner;
   AccountInfo supplier, investor, customer;
   String offerDate;
@@ -18,10 +18,12 @@ class InvoiceOffer {
       this.discount,
       this.customer,
       this.originalAmount,
+      this.offerId,
       this.investorDate});
 
   InvoiceOffer.fromJson(Map data) {
     this.invoiceId = data['invoiceId'];
+    this.offerId = data['offerId'];
     if (data['owner'] != null) {
       this.owner = AccountInfo.fromJson(data['owner']);
     }
@@ -58,6 +60,7 @@ class InvoiceOffer {
 
   Map<String, dynamic> toJson() => <String, dynamic>{
         'invoiceId': invoiceId,
+        'offerId': offerId,
         'owner': owner.toJson(),
         'supplier': supplier.toJson(),
         'offerAmount': offerAmount,

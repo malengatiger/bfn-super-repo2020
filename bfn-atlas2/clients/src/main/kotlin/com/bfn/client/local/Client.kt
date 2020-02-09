@@ -8,8 +8,6 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
-import khttp.responses.Response
-
 import net.corda.client.rpc.CordaRPCClient
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
@@ -22,14 +20,7 @@ import net.corda.core.utilities.loggerFor
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.*
-import kotlin.collections.MutableList
-import kotlin.collections.MutableMap
-import kotlin.collections.first
-import kotlin.collections.forEach
-import kotlin.collections.mutableListOf
-import kotlin.collections.mutableMapOf
 import kotlin.collections.set
-import kotlin.collections.sortedBy
 import khttp.get as httpGet
 import khttp.post as httpPost
 
@@ -57,22 +48,22 @@ private class Client {
     fun main(args: Array<String>) {
 
         setupLocalNodes()
-        createAnchor(localAnchorURL)
-        createCustomer(localAnchorURL)
-        startSupplierAccounts(
-                numberOfAccounts = 10,
-                url = localAnchorURL);
-
-        letsDance()
-        logger.info("\n\n========================= \uD83C\uDF4E 2nd Set; letsDance! \uD83C\uDF4E =================================\n\n")
-        letsDance()
+//        createAnchor(localAnchorURL)
+//        createCustomer(localAnchorURL)
+//        startSupplierAccounts(
+//                numberOfAccounts = 20,
+//                url = localAnchorURL);
+//
+//        letsDance()
+//        logger.info("\n\n========================= \uD83C\uDF4E 2nd Set; letsDance! \uD83C\uDF4E =================================\n\n")
+//        letsDance()
 //
 //        acceptAnchorOffers(localAnchorURL)
-//        findAndAcceptBestOffers(localAnchorURL)
-//        getOffers().forEach() {
-//            logger.info("\uD83C\uDF00 \uD83D\uDC8A \uD83D\uDC8A InvoiceOffer: \uD83C\uDF21 \uD83C\uDF21 " +
-//                    "${GSON.toJson(WorkerBee.getDTO(it.state.data))} \uD83C\uDF00 \uD83C\uDF21 \uD83C\uDF21 ")
-//        }
+        findAndAcceptBestOffers(localAnchorURL)
+        getOffers().forEach() {
+            logger.info("\uD83C\uDF00 \uD83D\uDC8A \uD83D\uDC8A InvoiceOffer: \uD83C\uDF21 \uD83C\uDF21 " +
+                    "${GSON.toJson(WorkerBee.getDTO(it.state.data))} \uD83C\uDF00 \uD83C\uDF21 \uD83C\uDF21 ")
+        }
 //        makeProfilesForNode(proxyAnchorInvestor, localAnchorURL)
 //        generateInvoices(localAnchorURL, 40)
 //        generateCasualOffers()
@@ -294,7 +285,6 @@ private class Client {
                 "\uD83C\uDF4E ${mList.size} offers on Node \uD83C\uDF4E ")
         return mList
     }
-
 
     private fun printTotals() {
         getNodeTotals(proxyAnchorInvestor)
@@ -768,6 +758,7 @@ private class Client {
             if (it.name == "AnchorInvestor" || it.name == "Customer001") {
                 logger.info("Ignore accounts: Anchor & Customer")
             } else {
+                val investorProfile = getProfile(it.identifier.id.toString())
                 val params: MutableMap<String, String> = mutableMapOf()
                 params["investorId"] = it.identifier.id.toString()
                 val response = httpGet(
@@ -775,7 +766,8 @@ private class Client {
                         url = "http://localhost:10050/bfn/admin/makeInvoiceOffers")
                 if (response.statusCode == 200) {
                     val arr = JSONArray(response.text)
-                    logger.info("\uD83D\uDE3C Made \uD83D\uDD39 ${arr.length()} \uD83D\uDD39 offers based on profile for: ${it.name} \uD83C\uDF3A")
+                    logger.info("\uD83D\uDE3C Made \uD83D\uDD39 ${arr.length()} \uD83D\uDD39 offers based on profile for: " +
+                            "${it.name} \uD83C\uDF3A defaultDiscount: ${investorProfile?.defaultDiscount}")
                 } else {
                     logger.warn("\uD83C\uDF4E RESPONSE: statusCode: 🌍 ${response.statusCode} 🌍   ${response.text}")
                 }
