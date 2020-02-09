@@ -48,13 +48,13 @@ private class Client {
     fun main(args: Array<String>) {
 
         setupLocalNodes()
-//        createAnchor(localAnchorURL)
-//        createCustomer(localAnchorURL)
-//        startSupplierAccounts(
-//                numberOfAccounts = 10,
-//                url = localAnchorURL);
-//
-//        letsDance()
+        createAnchor(localAnchorURL)
+        createCustomer(localAnchorURL)
+        startSupplierAccounts(
+                numberOfAccounts = 10,
+                url = localAnchorURL);
+
+        letsDance()
 //        logger.info("\n\n========================= \uD83C\uDF4E 2nd Set; letsDance! \uD83C\uDF4E =================================\n\n")
         letsDance()
 //
