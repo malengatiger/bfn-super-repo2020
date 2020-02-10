@@ -56,7 +56,7 @@ private class Client {
 
         letsDance()
 //        logger.info("\n\n========================= \uD83C\uDF4E 2nd Set; letsDance! \uD83C\uDF4E =================================\n\n")
-        letsDance()
+//        letsDance()
 //
 //        acceptAnchorOffers(localAnchorURL)
 //        findAndAcceptBestOffers(localAnchorURL)
@@ -81,8 +81,8 @@ private class Client {
         generateCasualOffers()
         acceptAnchorOffers(localAnchorURL)
         findAndAcceptBestOffers(localAnchorURL)
-        makeMultipleAnchorPayments(localAnchorURL)
-        makeMultipleInvestorPayments(localAnchorURL)
+        makeMultipleAnchorPayments(localAnchorURL, delayMinutesUntilNextPaymentFlow = 1)
+        makeMultipleInvestorPayments(localAnchorURL, delayMinutesUntilNextPaymentFlow = 1)
         getOffers()
         logger.info("\n\n =========  \uD83C\uDF81 DATA GENERATION COMPLETE. Bravo!!  \uD83C\uDF81 ============= \n\n")
         //doNodesAndAggregates(proxyAnchorInvestor, proxyCustomer001, proxyRegulator)
@@ -90,19 +90,21 @@ private class Client {
                 "\uD83C\uDF4F Senor!  \uD83C\uDF81 ============= \n\n")
     }
 
-    private fun makeMultipleAnchorPayments(url: String) {
-        logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E" +
-                " makeMultiplePayments started ..... \uD83C\uDF4E")
+    private fun makeMultipleAnchorPayments(url: String, delayMinutesUntilNextPaymentFlow: Long) {
+        logger.info("\uD83C\uDF4E" +
+                " makeMultipleAnchorPayments started ..... delayMinutesUntilNextPaymentFlow: $delayMinutesUntilNextPaymentFlow \uD83C\uDF4E")
+        val params :MutableMap<String,String> = mutableMapOf()
+        params["delayMinutesUntilNextPaymentFlow"] = delayMinutesUntilNextPaymentFlow.toString()
         val response = httpGet(
-                timeout = 990000000.0,
+                timeout = 990000000.0, params = params,
                 url = "$url/bfn/admin/makeMultiplePayments")
-        logger.info("\uD83C\uDF4E  makeMultiplePayments; RESPONSE: statusCode: " +
+        logger.info("\uD83C\uDF4E  makeMultipleAnchorPayments; RESPONSE: statusCode: " +
                 "\uD83C\uDF0D ${response.statusCode} \uD83C\uDF0D ")
         if (response.statusCode == 200) {
             val arr = JSONArray(response.text)
-            logger.info("\uD83D\uDC7F payments created for Anchor: \uD83D\uDC9A \uD83D\uDC7F ${arr.length()} \uD83D\uDC7F \uD83D\uDC7F")
+            logger.info("\uD83C\uDF81 \uD83C\uDF81 payments created for AnchorInvestor: \uD83D\uDC9A ${arr.length()} \uD83D\uDC9A")
         } else {
-            logger.info("\uD83D\uDC7F \uD83D\uDC7F makeMultiplePayments ERROR: " +
+            logger.info("\uD83D\uDC7F \uD83D\uDC7F makeMultipleAnchorPayments ERROR: " +
                     "${response.statusCode} \uD83D\uDC7F ${response.text}")
         }
         reportPaymentsAftermath()
@@ -125,7 +127,7 @@ private class Client {
                 "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \n\n")
     }
 
-    private fun makeMultipleInvestorPayments(url: String) {
+    private fun makeMultipleInvestorPayments(url: String, delayMinutesUntilNextPaymentFlow: Long) {
         val accounts = getAccounts(proxyAnchorInvestor)
         accounts.forEach() {
             if (it.name == "AnchorInvestor" || it.name == "Customer001") {
@@ -135,16 +137,19 @@ private class Client {
                 val profile = getInvestorProfile(investorId)
                 val params: MutableMap<String, String> = mutableMapOf()
                 params["investorId"] = investorId
+                params["delayMinutesUntilNextPaymentFlow"] = delayMinutesUntilNextPaymentFlow.toString()
                 val response = httpGet(
                         timeout = 990000000.0, params = params,
                         url = "$url/bfn/supplier/createPayments")
 
                 if (response.statusCode == 200) {
                     val arr = JSONArray(response.text)
-                    logger.info("\uD83D\uDC7F ${arr.length()} payments created for: \uD83D\uDC9A ${it.name} : \uD83D\uDC7F " +
-                            " \uD83D\uDC7F \uD83D\uDC7F defaultDiscount: ${profile?.defaultDiscount} min: ${profile?.minimumInvoiceAmount} max: ${profile?.maximumInvoiceAmount}")
+                    logger.info("\uD83E\uDD50 ${arr.length()} payments created for: \uD83D\uDC9A ${it.name} " +
+                            " \uD83D\uDECE  investor defaultDiscount: ${profile?.defaultDiscount} " +
+                            "min: ${profile?.minimumInvoiceAmount} max: ${profile?.maximumInvoiceAmount}")
                 } else {
-                    logger.info("\uD83D\uDC7F \uD83D\uDC7F makeMultipleInvestorPayments ERROR: ${response.statusCode} \uD83D\uDC7F ${response.text}")
+                    logger.info("\uD83D\uDC7F makeMultipleInvestorPayments " +
+                            "ERROR: ${response.statusCode} \uD83D\uDC7F ${response.text}")
                 }
             }
         }
@@ -297,14 +302,8 @@ private class Client {
                 criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED),
                 paging = PageSpecification(1, 2000)
         ).states
-//        var cnt = 0
-//        mList.forEach() {
-//            cnt++
-//            logger.info("\uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A #$cnt : " +
-//                    "${GSON.toJson(getDTO(it.state.data))} \uD83D\uDC9A")
-//        }
-        logger.info("\uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A " +
-                "\uD83C\uDF4E ${mList.size} offers on Node \uD83C\uDF4E ")
+        logger.info("\uD83D\uDC9A " +
+                "\uD83C\uDF4E ${mList.size} unconsumed offers on Node \uD83C\uDF4E ")
         return mList
     }
 
@@ -604,15 +603,15 @@ private class Client {
 
     private fun generateInvoices(url: String) {
 
-        logger.info("\uD83D\uDE21 generateInvoices for CUSTOMER \uD83D\uDE21 \uD83D\uDE21 ")
+        logger.info("\uD83D\uDE21 generateInvoices for Customer001 \uD83D\uDE21 \uD83D\uDE21 ")
         if (customer == null) {
             logger.info("\uD83D\uDD06 \uD83D\uDD06 Finding customer on Anchor Node ...")
             val page = proxyAnchorInvestor.vaultQueryByWithPagingSpec(
                     contractStateType = AccountInfo::class.java,
                     criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED),
                     paging = PageSpecification(1, 2000)).states
-            logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
-                    "accounts found: ${page.size}")
+            logger.info("\uD83D\uDD35 \uD83D\uDD35 " +
+                    "Accounts on Anchor node: ${page.size}")
 
             page.forEach() {
                 if (it.state.data.name == "Customer001") {
@@ -622,9 +621,9 @@ private class Client {
 
         }
         if (customer == null) {
-            throw IllegalArgumentException("Customer001 not found")
+            throw IllegalArgumentException("Customer001 not found, cannot continue, Boss!")
         }
-        logger.info("CUSTOMER \uD83D\uDE0E \uD83D\uDE0E \uD83D\uDE0E " +
+        logger.info("CUSTOMER \uD83D\uDE0E " +
                 "to be used for invoice generation: \uD83D\uDE0E " +
                 "${GSON.toJson(customer!!)} \uD83D\uDE0E")
         val mGson = Gson()
@@ -634,7 +633,7 @@ private class Client {
         val response = httpGet(
                 timeout = 990000000.0, json = obj,
                 url = "$url/bfn/admin/generateInvoices")
-        logger.info("\uD83C\uDF4E  RESPONSE: statusCode: ${response.statusCode}  " +
+        logger.info("\uD83C\uDF4E generateInvoices RESPONSE: \uD83D\uDD39 statusCode: ${response.statusCode}  " +
                 response.text)
 
 
@@ -780,6 +779,7 @@ private class Client {
             if (it.name == "AnchorInvestor" || it.name == "Customer001") {
                 logger.info("Ignore accounts: Anchor & Customer")
             } else {
+                val supplierProfile = getSupplierProfile(it.identifier.id.toString())
                 val investorProfile = getInvestorProfile(it.identifier.id.toString())
                 val params: MutableMap<String, String> = mutableMapOf()
                 params["investorId"] = it.identifier.id.toString()
@@ -789,7 +789,8 @@ private class Client {
                 if (response.statusCode == 200) {
                     val arr = JSONArray(response.text)
                     logger.info("\uD83D\uDE3C Made \uD83D\uDD39 ${arr.length()} \uD83D\uDD39 offers based on profile for: " +
-                            "${it.name} \uD83C\uDF3A defaultDiscount: ${investorProfile?.defaultDiscount}")
+                            "${it.name} \uD83C\uDF3A investor defaultDiscount: ${investorProfile?.defaultDiscount} " +
+                            " \uD83C\uDF4F supplier max Discount: ${supplierProfile?.maximumDiscount}")
                 } else {
                     logger.warn("\uD83C\uDF4E RESPONSE: statusCode: 🌍 ${response.statusCode} 🌍   ${response.text}")
                 }
@@ -869,7 +870,7 @@ private class Client {
                 timeout = 8000000000.0
         )
         logger.info("\uD83D\uDE0E Create INVESTOR profile  \uD83C\uDF3A ${it.state.data.name} " +
-                "- RESPONSE: statusCode: \uD83C\uDF0D ${resp.statusCode} \uD83C\uDF0D ")
+                "- RESPONSE: statusCode: \uD83C\uDF0D ${resp.statusCode} \uD83C\uDF0D \n")
     }
 
     private fun addSupplierProfile(account: StateAndRef<AccountInfo>, url: String) {
@@ -895,21 +896,21 @@ private class Client {
                 timeout = 8000000000.0
         )
         logger.info("\uD83E\uDD8A Create SUPPLIER profile for \uD83C\uDF3A ${account.state.data.name} " +
-                "- RESPONSE: statusCode: \uD83C\uDF0D ${resp.statusCode} \uD83C\uDF0D \n")
+                "- RESPONSE: statusCode: \uD83C\uDF0D ${resp.statusCode} \uD83C\uDF0D")
     }
 
     private fun doNodesAndAggregates(proxyAnchor: CordaRPCOps, proxyCustomer: CordaRPCOps, proxyReg: CordaRPCOps) {
-        logger.info("\n++++++++++++++   NODES \uD83C\uDFC0 \uD83C\uDFC0 \uD83C\uDFC0 ++++++++++++++++++++++++\n")
+        logger.info("++++++++++++++  \uD83C\uDFC0 \uD83C\uDFC0 \uD83C\uDFC0 CORDA NODES \uD83C\uDFC0 \uD83C\uDFC0 \uD83C\uDFC0 ++++++++++++++++++++++++\n")
         getNodes(proxyAnchor)
         //
-        logger.info("\n++++++++++++++   Anchor \uD83C\uDF4A ${proxyAnchor.nodeInfo().addresses.first()} " +
+        logger.info("++++++++++++++   AnchorInvestor \uD83C\uDF4A ${proxyAnchor.nodeInfo().addresses.first()} " +
                 " \uD83E\uDD6C ${proxyAnchor.nodeInfo().legalIdentities.first().name} \uD83C\uDFC0 \uD83C\uDFC0 \uD83C\uDFC0 ++++++++++++++++++++++++\n")
         getAggregates(proxyAnchor)
-        logger.info("\n++++++++++++++   Customer \uD83C\uDF4A ${proxyCustomer.nodeInfo().addresses.first()}  " +
+        logger.info("++++++++++++++   Customer001 \uD83C\uDF4A ${proxyCustomer.nodeInfo().addresses.first()}  " +
                 " \uD83E\uDD6C ${proxyCustomer.nodeInfo().legalIdentities.first().name} \uD83C\uDFC0 \uD83C\uDFC0 \uD83C\uDFC0 ++++++++++++++++++++++++\n")
         getAggregates(proxyCustomer)
 
-        logger.info("\n++++++++++++++   REGULATOR \uD83C\uDF4A ${proxyReg.nodeInfo().addresses.first()} " +
+        logger.info("++++++++++++++   Regulator \uD83C\uDF4A ${proxyReg.nodeInfo().addresses.first()} " +
                 " \uD83E\uDD6C ${proxyReg.nodeInfo().legalIdentities.first().name} \uD83C\uDFC0 \uD83C\uDFC0 \uD83C\uDFC0 ++++++++++++++++++++++++\n")
         getAggregates(proxyReg)
 
@@ -929,17 +930,20 @@ private class Client {
 
     private fun getThisNode(proxy: CordaRPCOps) {
         val me = proxy.nodeInfo()
-        logger.info("\uD83E\uDD6C \uD83E\uDD6C I am connected to (p2pPort): \uD83E\uDD6C ${me.addresses.first()} - \uD83C\uDF4A - ${me.legalIdentities.first()}")
+        logger.info("\uD83E\uDD6C \uD83E\uDD6C I am connected to Corda node: " +
+                "\uD83E\uDD6C ${me.legalIdentities.first()}")
     }
 
     private fun getNodes(proxy: CordaRPCOps) {
         val nodes = proxy.networkMapSnapshot()
         nodes.forEach() {
-            logger.info("\uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C Node found: \uD83D\uDC9A ${it.addresses.first()}  \uD83C\uDF00 \uD83C\uDF00 ${it.legalIdentities.first()}")
+            logger.info("\uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C Corda Node present: " +
+                    "\uD83D\uDC9A ${it.addresses.first()} \uD83C\uDF00 \uD83C\uDF00 ${it.legalIdentities.first()}")
         }
-        logger.info("\uD83C\uDD7F️ \uD83C\uDD7F️ \uD83C\uDD7F️ Nodes: ${nodes.size}")
+        logger.info("️\uD83D\uDD34 \uD83D\uDD34 Total Corda Nodes: ${nodes.size}")
         val notary = proxy.notaryIdentities().first()
-        logger.info("\uD83D\uDD31 \uD83D\uDD31 Notary is \uD83D\uDD31 ${notary.name}")
+        logger.info("\uD83D\uDD31 \uD83D\uDD31 Notary is \uD83D\uDD31 ${notary.name} " +
+                "\uD83D\uDD38 public key: ${notary.owningKey}")
     }
 
     private fun getAggregates(proxy: CordaRPCOps) {
@@ -956,14 +960,14 @@ private class Client {
                 cnt2++
             }
         }
-        logger.info("\uD83D\uDC2C \uD83D\uDC2C Local Accounts on Node: \uD83C\uDF4A $cnt \uD83C\uDF4A")
-        logger.info("\uD83D\uDC2C \uD83D\uDC2C Remote Accounts on Node: 🍊 $cnt2 🍊")
+        logger.info("\uD83D\uDC2C Local Accounts on Node: \uD83C\uDF4A $cnt \uD83C\uDF4A")
+        logger.info("\uD83D\uDC2C Remote Accounts on Node: 🍊 $cnt2 🍊")
 
         val profiles = proxy.vaultQueryByWithPagingSpec(criteria = criteria,
                 contractStateType = InvestorProfileState::class.java,
                 paging = PageSpecification(pageNumber = 1, pageSize = 2000))
 
-        logger.info("\uD83D\uDE0E \uD83D\uDE0E Local Profiles on Node: 🍊 ${profiles.totalStatesAvailable} 🍊")
+        logger.info("\uD83D\uDE0E Local Profiles on Node: 🍊 ${profiles.totalStatesAvailable} 🍊")
         //
         val pageInvoices = proxy.vaultQueryByWithPagingSpec(criteria = criteria,
                 contractStateType = InvoiceState::class.java,
@@ -977,8 +981,8 @@ private class Client {
                 cnt2++
             }
         }
-        logger.info("\uD83C\uDF50 \uD83C\uDF50  Local Invoices on Node: 🍊 $cnt 🍊")
-        logger.info("\uD83C\uDF50 \uD83C\uDF50  Remote Invoices on Node: 🍊 $cnt2 🍊")
+        logger.info("\uD83C\uDF50 Local Invoices on Node: 🍊 $cnt 🍊")
+        logger.info("\uD83C\uDF50 Remote Invoices on Node: 🍊 $cnt2 🍊")
 
         val pageInvoiceOffers =
                 proxy.vaultQueryByWithPagingSpec(
@@ -997,8 +1001,8 @@ private class Client {
             }
         }
 
-        logger.info("\uD83E\uDDE1 \uD83D\uDC9B Local InvoiceOffers on Node: 🍊 $cnt 🍊")
-        logger.info("\uD83E\uDDE1 \uD83D\uDC9B Remote InvoiceOffers on Node: 🍊 $cnt2 🍊")
+        logger.info("\uD83E\uDDE1 Local InvoiceOffers on Node: 🍊 $cnt 🍊")
+        logger.info("\uD83E\uDDE1 Remote InvoiceOffers on Node: 🍊 $cnt2 🍊")
     }
 
     private fun getAccountDetails(proxy: CordaRPCOps) {

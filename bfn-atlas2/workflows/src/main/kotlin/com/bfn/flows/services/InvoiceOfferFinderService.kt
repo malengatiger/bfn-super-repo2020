@@ -72,8 +72,6 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
     @Suspendable
     @Throws(Exception::class)
     fun findInvestorOffer(offerId: String): StateAndRef<InvoiceOfferState>? {
-        logger.info(" \uD83D\uDC2C \uD83D\uDC2C findInvestorOffer: ... " +
-                "\uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C")
 
         val allOffers = getOffersOnNode()
         allOffers.forEach() {
@@ -87,8 +85,6 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
     @Suspendable
     @Throws(Exception::class)
     fun getInvestorOffersAccepted(investorId: String): List<StateAndRef<InvoiceOfferState>> {
-        logger.info(" \uD83D\uDC2C \uD83D\uDC2C getInvestorOffersAccepted: ... " +
-                "\uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C")
 
         val offers:MutableList<StateAndRef<InvoiceOfferState>> = mutableListOf()
         val allOffers = getOffersOnNode()
@@ -112,8 +108,7 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
     @Suspendable
     @Throws(Exception::class)
     fun getAnchorOffersAccepted(): List<StateAndRef<InvoiceOfferState>> {
-        logger.info(" \uD83D\uDC2C \uD83D\uDC2C findAnchorOffers: ... " +
-                "\uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C")
+
         val existingAnchor = serviceHub.vaultService.queryBy(AnchorState::class.java).states.singleOrNull()
                 ?: throw IllegalArgumentException("Anchor does not exist")
 
@@ -133,8 +128,6 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
     @Suspendable
     @Throws(Exception::class)
     fun findOffersByInvoice(invoiceId: String): List<StateAndRef<InvoiceOfferState>> {
-        logger.info(" \uD83D\uDC2C \uD83D\uDC2C findRegularOffer: ... " +
-                "\uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C")
 
         val allOffers = getOffersOnNode()
         val mList:MutableList<StateAndRef<InvoiceOfferState>> = mutableListOf()
@@ -150,8 +143,6 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
     @Throws(Exception::class)
     fun findBestOffer(supplierId: String,
                       invoiceId: String): InvoiceOfferState {
-        logger.info(" \uD83D\uDC2C \uD83D\uDC2C BestOfferFinderService:selectBestOffer ... " +
-                "\uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C")
 
         val allOffers = getOffersOnNode()
         val list: MutableList<InvoiceOfferState> = mutableListOf()
@@ -170,8 +161,6 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
             logger.info("\uD83C\uDF4A \uD83C\uDF4A Profile used to select best Offer $profile")
             bestOffer = selectOffer()
         }
-        //todo - use profile to filter offers
-        //todo - if ties found - take random offer
 
         return bestOffer
     }

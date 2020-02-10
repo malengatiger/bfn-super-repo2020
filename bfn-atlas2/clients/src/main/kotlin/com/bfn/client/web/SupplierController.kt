@@ -36,11 +36,12 @@ class SupplierController(rpc: NodeRPCConnection) {
 
         return offer
     }
+
     @GetMapping(value = ["/acceptOffer"], produces = ["application/json"])
     @Throws(Exception::class)
     private fun acceptOffer(@RequestParam offerId: String): Int {
 
-        val tx = SupplierBee.acceptOffer(proxy = proxy,offerId = offerId)
+        val tx = SupplierBee.acceptOffer(proxy = proxy, offerId = offerId)
         logger.info("\uD83C\uDF0E \uD83C\uDF0E Offer accepted, txId: \uD83C\uDF0E $tx")
 
         return tx
@@ -52,6 +53,7 @@ class SupplierController(rpc: NodeRPCConnection) {
             @RequestParam(value = "accountId", required = true) accountId: String): List<InvoiceDTO> {
         return WorkerBee.findInvoicesForSupplier(proxy, accountId)
     }
+
     @GetMapping(value = ["findOffersForSupplier"])
     @Throws(Exception::class)
     fun findOffersForSupplier(
@@ -62,16 +64,18 @@ class SupplierController(rpc: NodeRPCConnection) {
     @GetMapping(value = ["createPayments"])
     @Throws(Exception::class)
     fun createPayments(
-            @RequestParam(value = "investorId", required = true) investorId: String): List<SupplierPaymentDTO> {
-        return SupplierBee.createPayments(proxy,investorId)
+            @RequestParam(value = "investorId", required = true) investorId: String,
+            @RequestParam(value = "delayMinutesUntilNextPaymentFlow", required = true) delayMinutesUntilNextPaymentFlow: Long): List<SupplierPaymentDTO> {
+        return SupplierBee.createPayments(proxy,
+                investorId = investorId,
+                delayMinutesUntilNextPaymentFlow = delayMinutesUntilNextPaymentFlow)
     }
-
 
 
     @GetMapping(value = ["getSupplierProfile"])
     @Throws(Exception::class)
     fun getSupplierProfile(@RequestParam(value = "accountId") accountId: String?): SupplierProfileStateDTO? {
-        return WorkerBee.getSupplierProfile(proxy,accountId)
+        return WorkerBee.getSupplierProfile(proxy, accountId)
     }
 
     @PostMapping(value = ["createSupplierProfile"])
@@ -81,7 +85,7 @@ class SupplierController(rpc: NodeRPCConnection) {
     }
 
     @GetMapping(value = ["/ping"], produces = ["application/json"])
-     fun ping(): String {
+    fun ping(): String {
         val msg = ("\uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A SupplierController:BFN Web API pinged: " + Date().toString()
                 + " \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A")
         logger.info(msg)
@@ -104,6 +108,6 @@ class SupplierController(rpc: NodeRPCConnection) {
     init {
         logger.info("\uD83C\uDF3A \uD83C\uDF3A \uD83C\uDF3A SupplierController:" +
                 " NodeRPCConnection proxy has been injected: \uD83C\uDF3A "
-                + proxy.nodeInfo().toString() +  " \uD83C\uDF3A ")
+                + proxy.nodeInfo().toString() + " \uD83C\uDF3A ")
     }
 }

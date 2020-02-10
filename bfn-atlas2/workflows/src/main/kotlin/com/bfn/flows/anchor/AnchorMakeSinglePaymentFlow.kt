@@ -5,6 +5,7 @@ import com.bfn.contractstates.contracts.SupplierPaymentContract
 import com.bfn.contractstates.states.AnchorState
 import com.bfn.contractstates.states.SupplierPaymentState
 import com.bfn.flows.services.InvoiceOfferFinderService
+import com.bfn.flows.services.PaymentFinderService
 import com.bfn.flows.services.ProfileFinderService
 import com.bfn.flows.todaysDate
 import net.corda.core.flows.*
@@ -19,25 +20,22 @@ import java.security.PublicKey
 
 @InitiatingFlow
 @StartableByRPC
-class AnchorMakeSinglePaymentFlow(private val invoiceId: String) : FlowLogic<SupplierPaymentState>() {
+class AnchorMakeSinglePaymentFlow(private val invoiceId: String, val delayMinutesUntilNextPaymentFlow: Long) : FlowLogic<SupplierPaymentState>() {
 
     @Suspendable
     override fun call(): SupplierPaymentState {
         Companion.logger.info("$pp AnchorMakePaymentFlow started ... $pp")
-
         val existingAnchor = serviceHub.vaultService.queryBy(AnchorState::class.java).states.singleOrNull()
                 ?: throw IllegalArgumentException("Anchor does not exist")
+
         val service = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
         val acceptedOffer = service.findAnchorOffer(invoiceId) ?: throw IllegalArgumentException("Accepted offer not found")
         if (!acceptedOffer.state.data.accepted) {
             throw IllegalArgumentException("Offer not accepted by Supplier")
         }
         //todo - fix this query - find a way!!
-        val payments = serviceHub.vaultService.queryBy(
-                criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.ALL),
-                contractStateType = SupplierPaymentState::class.java,
-                paging = PageSpecification(1,6000)
-        ).states
+        val payments = serviceHub.cordaService(PaymentFinderService::class.java).getAllPaymentStateAndRefs()
+
         payments.forEach() {
             if (it.state.data.acceptedOffer.invoiceId.toString() == invoiceId) {
                 throw IllegalArgumentException("Payment already exists for this invoice: $invoiceId")
@@ -56,7 +54,8 @@ class AnchorMakeSinglePaymentFlow(private val invoiceId: String) : FlowLogic<Sup
         val payment = SupplierPaymentState(
                 acceptedOffer = acceptedOffer.state.data,
                 supplierProfile = supplierProfile.state.data,
-                date = todaysDate(), paid = false
+                date = todaysDate(), paid = false,
+                delayMinutesUntilNextPaymentFlow = delayMinutesUntilNextPaymentFlow
 
         )
         //todo - make EFT payment to supplier ... OR do this externally; kicked off in api?

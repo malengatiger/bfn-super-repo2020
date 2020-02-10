@@ -21,8 +21,8 @@ class RegulatorFinderService(private val serviceHub: AppServiceHub) : SingletonS
             }
         }
         if (regulator != null) {
-            Companion.logger.info("\uD83E\uDDE9 \uD83E\uDDE9 Regulator Node found: " +
-                    "\uD83D\uDE3C \uD83D\uDE3C ${regulator!!.legalIdentities.first()}")
+            logger.info("\uD83E\uDDE9 \uD83E\uDDE9 Regulator Node found: " +
+                    "${regulator!!.legalIdentities.first()}")
         }
         return regulator
     }

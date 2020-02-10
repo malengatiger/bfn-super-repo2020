@@ -5,11 +5,7 @@ import com.google.firebase.cloud.FirestoreClient
 import com.google.gson.GsonBuilder
 
 import com.bfn.contractstates.states.*
-import com.bfn.flows.AnchorCreationFlow
-import com.bfn.flows.anchor.AnchorMakeMultiplePaymentsFlow
-import com.bfn.flows.anchor.AnchorMakeOffersFlow
-import com.bfn.flows.anchor.AnchorMakeSinglePaymentFlow
-import com.bfn.flows.anchor.AnchorUpdateFlow
+import com.bfn.flows.anchor.*
 import com.google.cloud.firestore.Firestore
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import net.corda.core.messaging.CordaRPCOps
@@ -38,11 +34,11 @@ object AnchorBee {
     }
     @JvmStatic
     @Throws(Exception::class)
-    fun makeMultiplePayments(proxy: CordaRPCOps) : List<SupplierPaymentDTO> {
+    fun makeMultiplePayments(proxy: CordaRPCOps, delayMinutesUntilNextPaymentFlow: Long) : List<SupplierPaymentDTO> {
         logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to makeMultiplePayments ... ")
 
         val cordaFuture = proxy.startFlowDynamic(
-                AnchorMakeMultiplePaymentsFlow::class.java).returnValue
+                AnchorMakeMultiplePaymentsFlow::class.java, delayMinutesUntilNextPaymentFlow).returnValue
         val result = cordaFuture.get()
         val mList:MutableList<SupplierPaymentDTO> = mutableListOf()
         result.forEach() {

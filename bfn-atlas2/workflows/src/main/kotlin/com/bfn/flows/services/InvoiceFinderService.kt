@@ -34,12 +34,12 @@ class InvoiceFinderService(private val serviceHub: AppServiceHub) : SingletonSer
         }
         if (invoiceState == null) {
             logger.warn("findInvoiceStateAndRef :  " +
-                    "\uD83D\uDE3C  \uD83D\uDE3C  \uD83D\uDE3C unconsumed Invoice NOT FOUND: " +
+                    "\uD83D\uDE3C \uD83D\uDE3C  \uD83D\uDE3C unconsumed Invoice NOT FOUND: " +
                     "\uD83C\uDF4E $invoiceId \uD83C\uDF4E")
         } else {
             logger.warn("findInvoiceStateAndRef :  " +
-                    "\uD83D\uDE3C \uD83D\uDE3C  \uD83D\uDE3C  \uD83C\uDF4E " +
-                    "unconsumed Invoice FOUND:  \uD83C\uDF4E  \uD83C\uDF4E $invoiceId \uD83C\uDF4E")
+                    "\uD83D\uDE3C " +
+                    "unconsumed Invoice FOUND: \uD83C\uDF4E $invoiceId \uD83C\uDF4E")
         }
 
         return invoiceState
@@ -47,8 +47,6 @@ class InvoiceFinderService(private val serviceHub: AppServiceHub) : SingletonSer
     @Suspendable
     @Throws(Exception::class)
     fun findInvoicesForInvestor(investorId: String): List<InvoiceState> {
-        logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E InvoiceFinderService: findInvoices ... " +
-                "\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E ")
 
         val account = accountService.accountInfo(UUID.fromString(investorId)) ?: return listOf()
         logger.info("\uD83D\uDCA6 Finding invoices for investor: \uD83D\uDC7D \uD83D\uDC7D " +
@@ -73,8 +71,6 @@ class InvoiceFinderService(private val serviceHub: AppServiceHub) : SingletonSer
     }
     @Suspendable
     fun findInvoicesForSupplier(supplierId: String): List<InvoiceState> {
-        logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E InvoiceFinderService: findInvoices ... " +
-                "\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E ")
 
         val account = accountService.accountInfo(UUID.fromString(supplierId)) ?: return listOf()
 
@@ -109,12 +105,8 @@ class InvoiceFinderService(private val serviceHub: AppServiceHub) : SingletonSer
     }
     @Suspendable
     fun findInvoicesForCustomer(customerId: String): List<InvoiceState> {
-        logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E InvoiceFinderService: findInvoices ... " +
-                "\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E ")
 
         val account = accountService.accountInfo(UUID.fromString(customerId)) ?: return listOf()
-        logger.info("\uD83D\uDCA6 Finding invoices for customer: \uD83D\uDC7D \uD83D\uDC7D " +
-                " ${account.state.data.name} - ${account.state.data.host}")
         val sortedInvoices = getAllInvoices()
         val supplierInvoices: MutableList<InvoiceState>? = mutableListOf()
 
@@ -125,13 +117,7 @@ class InvoiceFinderService(private val serviceHub: AppServiceHub) : SingletonSer
         }
         return supplierInvoices!!
     }
-    @Suspendable
-    fun findInvoicesForNode(): List<InvoiceState> {
-        logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E InvoiceFinderService: findInvoices ... " +
-                "\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E ")
-        
-        return getAllInvoices()
-    }
+
     private val pageSize:Int = 5000
 
     @Suspendable
@@ -180,7 +166,7 @@ class InvoiceFinderService(private val serviceHub: AppServiceHub) : SingletonSer
         return sorted
     }
     @Suspendable
-    private fun getAllInvoiceStateAnRefs(): List<StateAndRef<InvoiceState>> {
+    fun getAllInvoiceStateAnRefs(): List<StateAndRef<InvoiceState>> {
         val list: MutableList<StateAndRef<InvoiceState>> = mutableListOf()
         //get first page
         var pageNumber = 1

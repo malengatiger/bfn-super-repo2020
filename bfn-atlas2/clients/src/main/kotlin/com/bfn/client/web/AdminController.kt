@@ -59,9 +59,9 @@ class AdminController(rpc: NodeRPCConnection) {
     }
     @GetMapping(value = ["/makeMultiplePayments"], produces = ["application/json"])
     @Throws(Exception::class)
-    private fun makeMultiplePayments(): List<SupplierPaymentDTO> {
+    private fun makeMultiplePayments(delayMinutesUntilNextPaymentFlow: Long): List<SupplierPaymentDTO> {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting makeMultiplePayments: ... \uD83C\uDF4F ")
-        return AnchorBee.makeMultiplePayments(proxy)
+        return AnchorBee.makeMultiplePayments(proxy, delayMinutesUntilNextPaymentFlow)
     }
 
     @GetMapping(value = ["/getInvoicesAcrossNodes"], produces = ["application/json"])

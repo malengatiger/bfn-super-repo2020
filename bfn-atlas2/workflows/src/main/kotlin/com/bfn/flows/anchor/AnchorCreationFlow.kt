@@ -1,9 +1,8 @@
-package com.bfn.flows
+package com.bfn.flows.anchor
 
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.contracts.AnchorContract
 import com.bfn.contractstates.states.AnchorState
-import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.ourIdentity
 import net.corda.core.flows.FinalityFlow
 import net.corda.core.flows.FlowLogic
@@ -13,7 +12,10 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import org.slf4j.LoggerFactory
 
-
+/**
+ * Create the AnchorInvestor. A node can have only one of these.
+ * This anchor investor owns and controls the node
+ */
 @InitiatingFlow
 @StartableByRPC
 class AnchorCreationFlow(private val anchor: AnchorState ) : FlowLogic<SignedTransaction>() {
@@ -24,7 +26,9 @@ class AnchorCreationFlow(private val anchor: AnchorState ) : FlowLogic<SignedTra
 
         val existingAnchor = serviceHub.vaultService.queryBy(AnchorState::class.java).states.singleOrNull()
         if (existingAnchor != null) {
-            throw IllegalArgumentException("Anchor already exists")
+            val msg = "\uD83C\uDFC0 There can be only one Kobe Bryant!! RIP \uD83C\uDFC0"
+            logger.warn(msg)
+            throw IllegalArgumentException("Anchor already exists: ${existingAnchor.state.data.account.name}")
         }
         val command = AnchorContract.Create()
 
@@ -35,8 +39,7 @@ class AnchorCreationFlow(private val anchor: AnchorState ) : FlowLogic<SignedTra
 
         val tx = serviceHub.signInitialTransaction(txBuilder)
         subFlow(FinalityFlow(tx, listOf()))
-        Companion.logger.info(pp + "Yebo Gogo! - Anchor has been created: " +
-                "${anchor.name} $pp")
+        Companion.logger.info("$pp Yebo Gogo!! - Anchor has been created: ${anchor.name} $pp")
         return tx
     }
 

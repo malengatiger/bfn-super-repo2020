@@ -35,10 +35,6 @@ class InvoiceRegistrationFlowResponder(private val counterPartySession: FlowSess
         Companion.logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D  " +
                 "InvoiceRegistrationFlowResponder Transaction finalized " +
                 "\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C \uD83E\uDD1F \uD83C\uDF4F \uD83C\uDF4E ${signedTransaction.id}")
-
-        val invoices = serviceHub.cordaService(InvoiceFinderService::class.java).findInvoicesForNode()
-        logger.info("\uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C " +
-                "Invoices on node after responder: \uD83D\uDC9C ${invoices.size}. \uD83D\uDE21 There should be AT LEAST ONE!")
         return signedTransaction
 
     }

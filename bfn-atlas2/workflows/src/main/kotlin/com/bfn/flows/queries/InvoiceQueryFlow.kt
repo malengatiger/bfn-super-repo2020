@@ -18,13 +18,22 @@ class InvoiceQueryFlow(
         val service = serviceHub.cordaService(InvoiceFinderService::class.java)
 
         when (action) {
-            FIND_FOR_NODE -> return service.findInvoicesForNode()
+            FIND_FOR_NODE -> return getNodeInvoices()
             FIND_FOR_INVESTOR -> return service.findInvoicesForInvestor(id!!)
             FIND_FOR_SUPPLIER -> return service.findInvoicesForSupplier(id!!)
             FIND_FOR_CUSTOMER -> return service.findInvoicesForCustomer(id!!)
         }
 
-        return service.findInvoicesForNode()
+        return getNodeInvoices()
+    }
+
+    private fun getNodeInvoices() : List<InvoiceState> {
+        val service = serviceHub.cordaService(InvoiceFinderService::class.java)
+        val mList: MutableList<InvoiceState> = mutableListOf()
+        service.getAllInvoiceStateAnRefs().forEach() {
+            mList.add(it.state.data)
+        }
+        return mList
     }
 
     companion object {

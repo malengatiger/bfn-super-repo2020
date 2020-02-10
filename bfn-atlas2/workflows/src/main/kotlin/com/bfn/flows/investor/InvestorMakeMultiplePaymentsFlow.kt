@@ -2,7 +2,6 @@ package com.bfn.flows.investor
 
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.contracts.SupplierPaymentContract
-import com.bfn.contractstates.states.AnchorState
 import com.bfn.contractstates.states.SupplierPaymentState
 import com.bfn.flows.regulator.ReportToRegulatorFlow
 import com.bfn.flows.services.InvoiceOfferFinderService
@@ -11,23 +10,24 @@ import com.bfn.flows.todaysDate
 import com.r3.corda.lib.accounts.workflows.accountService
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
-import net.corda.core.node.services.Vault
-import net.corda.core.node.services.vault.PageSpecification
-import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import org.slf4j.LoggerFactory
 import java.security.PublicKey
 import java.util.*
 
-
+/**
+ * A casual investor finds all her accepted offers and creates payments for each
+ * Returns a list of supplier payments created
+ * All offers should be consumed in the transaction
+ */
 @InitiatingFlow
 @StartableByRPC
-class InvestorMakeMultiplePaymentsFlow(private val investorId: String) : FlowLogic<List<SupplierPaymentState>>() {
+class InvestorMakeMultiplePaymentsFlow(private val investorId: String, val delayMinutesUntilNextPaymentFlow: Long) : FlowLogic<List<SupplierPaymentState>>() {
 
     @Suspendable
     override fun call(): List<SupplierPaymentState> {
-        Companion.logger.info("$pp InvestorMakeMultiplePaymentsFlow started ... $pp")
+        Companion.logger.info("$pp \uD83E\uDD50 InvestorMakeMultiplePaymentsFlow started ... \uD83E\uDD50 $pp")
 
         val service = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
         val acceptedOffers = service.getInvestorOffersAccepted(investorId = investorId)
@@ -36,11 +36,11 @@ class InvestorMakeMultiplePaymentsFlow(private val investorId: String) : FlowLog
         val account = accountService.accountInfo(UUID.fromString(investorId))
                 ?: throw java.lang.IllegalArgumentException("Investor account not found")
         if (acceptedOffers.isEmpty()) {
-            logger.info("\uD83D\uDC2C \uD83D\uDC2C No accepted offers exist for \uD83D\uDD35 " +
+            logger.info("\uD83D\uDC2C No accepted offers exist for \uD83D\uDD35 " +
                     "${account.state.data.name} \uD83D\uDD35 returning empty list")
             return paymentList
         } else {
-            logger.info("\uD83D\uDC9A \uD83D\uDC9A  ${acceptedOffers.size} accepted offers found for \uD83D\uDD35 " +
+            logger.info("\uD83D\uDC9A ${acceptedOffers.size} accepted offers found for \uD83D\uDD35 " +
                     "${account.state.data.name} \uD83D\uDD35 building payments ...")
         }
 
@@ -64,26 +64,34 @@ class InvestorMakeMultiplePaymentsFlow(private val investorId: String) : FlowLog
         val command = SupplierPaymentContract.Pay()
         val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
 
-        acceptedOffers.forEach() {
+        acceptedOffers.forEach() { acceptedOffer ->
             val supplierProfile = serviceHub.cordaService(ProfileFinderService::class.java)
-                    .findSupplierProfile(it.state.data.supplier.identifier.id.toString())
+                    .findSupplierProfile(acceptedOffer.state.data.supplier.identifier.id.toString())
             if (supplierProfile != null) {
                 val payment = SupplierPaymentState(
-                        acceptedOffer = it.state.data,
+                        acceptedOffer = acceptedOffer.state.data,
                         supplierProfile = supplierProfile.state.data,
-                        date = todaysDate(), paid = false
+                        date = todaysDate(), paid = false,
+                        delayMinutesUntilNextPaymentFlow = delayMinutesUntilNextPaymentFlow
                 )
-                txBuilder.addInputState(it)
+
+                //find ALL offers available, accepted or not and consume the suckers
+                val allOffers = service.findOffersByInvoice(acceptedOffer.state.data.invoiceId.toString())
+                logger.warn("⚱️ ⚱️ ⚱️ ${allOffers.size} all offers found for invoice; to be consumed")
+                allOffers.forEach() {
+                    txBuilder.addInputState(it)
+                }
                 txBuilder.addOutputState(payment)
                 paymentList.add(payment)
 
             } else {
-                logger.warn("Missing supplier profile - please CHECK!!")
-                throw java.lang.IllegalArgumentException("Supplier profile missing; payment cannot be created")
+                logger.warn("Missing supplier profile -  \uD83D\uDD10 \uD83D\uDD10 please CHECK!!")
+                throw IllegalArgumentException("Supplier profile missing; payment cannot be created")
             }
         }
         //todo - make EFT payments to suppliers ... OR do this externally; kicked off in api
-
+        logger.info("\uD83C\uDF4E payment transaction consuming \uD83C\uDF4E " +
+                "${txBuilder.inputStates().size} offers \uD83C\uDF4E")
         txBuilder.addCommand(command, keys)
         val tx = serviceHub.signInitialTransaction(txBuilder)
         val sessions: MutableList<FlowSession> = mutableListOf()
@@ -122,7 +130,7 @@ class InvestorMakeMultiplePaymentsFlow(private val investorId: String) : FlowLog
         }
     }
 
-    private val pp = "\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95";
+    private val pp = "\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95"
 
     companion object {
         private val logger = LoggerFactory.getLogger(InvestorMakeMultiplePaymentsFlow::class.java)

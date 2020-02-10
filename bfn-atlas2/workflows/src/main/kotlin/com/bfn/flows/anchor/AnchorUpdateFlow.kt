@@ -12,7 +12,9 @@ import net.corda.core.transactions.TransactionBuilder
 import org.slf4j.LoggerFactory
 import java.util.*
 
-
+/**
+ * Replace old anchor state with this new one.
+ */
 @InitiatingFlow
 @StartableByRPC
 class AnchorUpdateFlow(

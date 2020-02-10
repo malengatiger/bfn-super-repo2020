@@ -46,10 +46,10 @@ object SupplierBee {
     }
     @JvmStatic
     @Throws(Exception::class)
-    fun createPayments(proxy: CordaRPCOps, investorId: String): List<SupplierPaymentDTO> {
+    fun createPayments(proxy: CordaRPCOps, investorId: String, delayMinutesUntilNextPaymentFlow: Long): List<SupplierPaymentDTO> {
 
         val cordaFuture = proxy.startTrackedFlowDynamic(
-                InvestorMakeMultiplePaymentsFlow::class.java,  investorId)
+                InvestorMakeMultiplePaymentsFlow::class.java,  investorId, delayMinutesUntilNextPaymentFlow)
                 .returnValue
         val tx: List<SupplierPaymentState>? = cordaFuture.get()
         if (tx != null) {

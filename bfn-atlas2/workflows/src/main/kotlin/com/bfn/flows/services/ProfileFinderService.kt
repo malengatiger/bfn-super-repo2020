@@ -27,7 +27,6 @@ class ProfileFinderService(private val serviceHub: AppServiceHub) : SingletonSer
     fun findInvestorProfile(investorAccountId: String): StateAndRef<InvestorProfileState>? {
         val criteria = QueryCriteria.VaultQueryCriteria(
                 status = Vault.StateStatus.UNCONSUMED)
-        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 Find investor profile ... : $investorAccountId")
         val page = serviceHub.vaultService.queryBy(
                 contractStateType = InvestorProfileState::class.java,
                 paging = PageSpecification(pageNumber = 1, pageSize = 5000),
@@ -39,9 +38,10 @@ class ProfileFinderService(private val serviceHub: AppServiceHub) : SingletonSer
             }
         }
         if (investorProfile != null) {
-            logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 Found investor profile ...: ${investorProfile!!.state.data.accountId}")
+            logger.info("\uD83D\uDD35 Found investor profile ...: ${investorProfile!!.state.data.accountId}")
         } else {
-            logger.info("\uD83C\uDF61 \uD83C\uDF61 \uD83C\uDF61 \uD83C\uDF61 investor profile NOT FOUND: $investorAccountId \uD83C\uDFB2 returning null ...")
+            logger.info("\uD83C\uDF61 \uD83C\uDF61 \uD83C\uDF61 \uD83C\uDF61 " +
+                    "investor profile NOT FOUND: $investorAccountId \uD83C\uDFB2 returning null ...")
         }
         return investorProfile
     }
@@ -49,7 +49,6 @@ class ProfileFinderService(private val serviceHub: AppServiceHub) : SingletonSer
     fun findSupplierProfile(supplierAccountId: String): StateAndRef<SupplierProfileState>? {
         val criteria = QueryCriteria.VaultQueryCriteria(
                 status = Vault.StateStatus.UNCONSUMED)
-        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 Find supplier profile ...: \uD83C\uDFB2 $supplierAccountId")
         val page = serviceHub.vaultService.queryBy(
                 contractStateType = SupplierProfileState::class.java,
                 paging = PageSpecification(pageNumber = 1, pageSize = 5000),
@@ -61,7 +60,7 @@ class ProfileFinderService(private val serviceHub: AppServiceHub) : SingletonSer
             }
         }
         if (profile != null) {
-            logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 Found supplier profile ...: ${profile!!.state.data.accountId}")
+            logger.info("\uD83D\uDD35 Found supplier profile ...: ${profile!!.state.data.accountId}")
         } else {
             logger.info("\uD83C\uDF61 \uD83C\uDF61 \uD83C\uDF61 \uD83C\uDF61 supplier profile NOT FOUND: $supplierAccountId \uD83C\uDFB2 returning null ...")
         }
@@ -73,9 +72,4 @@ class ProfileFinderService(private val serviceHub: AppServiceHub) : SingletonSer
         private val logger = LoggerFactory.getLogger(ProfileFinderService::class.java)
     }
 
-    init {
-        logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E ProfileFinderService: " +
-                "Finder of Profiles \uD83C\uDF4E \uD83C\uDF4E ")
-
-    }
 }
