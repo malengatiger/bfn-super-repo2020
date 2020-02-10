@@ -48,13 +48,13 @@ private class Client {
     fun main(args: Array<String>) {
 
         setupLocalNodes()
-        createAnchor(localAnchorURL)
-        createCustomer(localAnchorURL)
-        startSupplierAccounts(
-                numberOfAccounts = 10,
-                url = localAnchorURL);
-
-        letsDance()
+//        createAnchor(localAnchorURL)
+//        createCustomer(localAnchorURL)
+//        startSupplierAccounts(
+//                numberOfAccounts = 10,
+//                url = localAnchorURL);
+//
+//        letsDance()
 //        logger.info("\n\n========================= \uD83C\uDF4E 2nd Set; letsDance! \uD83C\uDF4E =================================\n\n")
 //        letsDance()
 //
@@ -67,10 +67,12 @@ private class Client {
 //        makeProfilesForNode(proxyAnchorInvestor, localAnchorURL)
 //        generateInvoices(localAnchorURL, 40)
 //        generateCasualOffers()
-//        printInvoices(proxyPartyA, consumed = false)
+//        printOffers(proxyAnchorInvestor, consumed = false)
+//        printInvoices(proxyAnchorInvestor, consumed = false)
+        printOffers(proxyAnchorInvestor, consumed = false)
 //        printInvoices(proxyPartyB, consumed = false)
 //
-//        printProfiles(proxyPartyA)
+//        printProfiles(proxyAnchorInvestor)
 //        printProfiles(proxyPartyB)
 
     }
@@ -233,7 +235,7 @@ private class Client {
                     url = "$url/bfn/supplier/acceptOffer")
             if (response2.statusCode == 200) {
                 if (response2.text == "0") {
-                    logger.info("\uD83E\uDD6C \uD83E\uDD6C Offer accepted for this investor: ${obj.investor.name}  \uD83D\uDD35 defaultDiscount: " +
+                    logger.info("\uD83E\uDD6C \uD83E\uDD6C Offer accepted for this investor: ${obj.investor.name}  \uD83D\uDD35 investor defaultDiscount: " +
                             "${prof?.defaultDiscount} \uD83E\uDD6C min: ${prof?.minimumInvoiceAmount} max: ${prof?.maximumInvoiceAmount}  " +
                             "\uD83D\uDD35 supplier max discount: ${supplierProf?.maximumDiscount}")
                 } else {
@@ -407,24 +409,82 @@ private class Client {
     }
 
     fun printInvoices(proxy: CordaRPCOps, consumed: Boolean) {
-        logger.info("\uD83E\uDD6D \uD83E\uDD6D \uD83E\uDD6D \uD83E\uDD6D Print invoices for ${proxy.nodeInfo().legalIdentities.first()}")
+        logger.info("️\uD83C\uDFC0️ \uD83C\uDFC0️ \uD83C\uDFC0️ \uD83C\uDFC0️ \uD83C\uDFC0 Print invoices for ${proxy.nodeInfo().legalIdentities.first()}")
+        val criteriaUnConsumedx = QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.UNCONSUMED)
+        val profiles = proxy.vaultQueryByWithPagingSpec(
+                contractStateType = SupplierProfileState::class.java,
+                criteria = criteriaUnConsumedx,
+                paging = PageSpecification(1, 5000))
+
+
         val criteriaConsumed = QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.CONSUMED)
         val criteriaUnConsumed = QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.UNCONSUMED)
         val page: Vault.Page<InvoiceState>
-        if (consumed) {
-            page = proxy.vaultQueryByWithPagingSpec(
+        page = if (consumed) {
+            proxy.vaultQueryByWithPagingSpec(
                     contractStateType = InvoiceState::class.java,
                     criteria = criteriaConsumed,
                     paging = PageSpecification(1, 5000))
         } else {
-            page = proxy.vaultQueryByWithPagingSpec(
+            proxy.vaultQueryByWithPagingSpec(
                     contractStateType = InvoiceState::class.java,
                     criteria = criteriaUnConsumed,
                     paging = PageSpecification(1, 5000))
         }
-        page.states.forEach() {
-            logger.info("\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9 " +
-                    "${GSON.toJson(getDTO(it.state.data))} \uD83E\uDDE9\uD83E\uDDE9")
+        page.states.forEach() { invoice ->
+            logger.info("️\uD83C\uDFC0️ \uD83C\uDFC0 INVOICE: " +
+                    "${GSON.toJson(getDTO(invoice.state.data))} \uD83C\uDFC0️ \uD83C\uDFC0")
+            profiles.states.forEach() {
+                if (it.state.data.accountId == invoice.state.data.supplierInfo.identifier.id.toString()) {
+                    logger.info("\uD83E\uDD5D \uD83E\uDD5D  SUPPLIER PROFILE: " +
+                            "${GSON.toJson(getDTO(it.state.data))} \uD83E\uDD5D \uD83E\uDD5D \n")
+                }
+            }
+        }
+
+    }
+    fun printOffers(proxy: CordaRPCOps, consumed: Boolean) {
+        logger.info("\uD83E\uDD6D \uD83E\uDD6D \uD83E\uDD6D \uD83E\uDD6D Print offers for ${proxy.nodeInfo().legalIdentities.first()}")
+        val criteriaUnConsumedx = QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.UNCONSUMED)
+        val supplierProfiles = proxy.vaultQueryByWithPagingSpec(
+                contractStateType = SupplierProfileState::class.java,
+                criteria = criteriaUnConsumedx,
+                paging = PageSpecification(1, 5000))
+        val investorProfiles = proxy.vaultQueryByWithPagingSpec(
+                contractStateType = SupplierProfileState::class.java,
+                criteria = criteriaUnConsumedx,
+                paging = PageSpecification(1, 5000))
+        val criteriaConsumed = QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.CONSUMED)
+        val criteriaUnConsumed = QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.UNCONSUMED)
+        val page: Vault.Page<InvoiceOfferState>
+        page = if (consumed) {
+            proxy.vaultQueryByWithPagingSpec(
+                    contractStateType = InvoiceOfferState::class.java,
+                    criteria = criteriaConsumed,
+                    paging = PageSpecification(1, 5000))
+        } else {
+            proxy.vaultQueryByWithPagingSpec(
+                    contractStateType = InvoiceOfferState::class.java,
+                    criteria = criteriaUnConsumed,
+                    paging = PageSpecification(1, 5000))
+        }
+        var cnt = 0
+        page.states.forEach() { offer ->
+            cnt++
+            logger.info("\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9 INVOICE OFFER: #$cnt " +
+                    "${GSON.toJson(getDTO(offer.state.data))} \uD83E\uDDE9\uD83E\uDDE9")
+            supplierProfiles.states.forEach() {
+                if (it.state.data.accountId == offer.state.data.supplier.identifier.id.toString()) {
+                    logger.info("\uD83D\uDC8A \uD83D\uDC8A \uD83D\uDC8A  SUPPLIER PROFILE: " +
+                            "${GSON.toJson(getDTO(it.state.data))} \uD83D\uDC8A  \uD83D\uDC8A ")
+                }
+            }
+            investorProfiles.states.forEach() {
+                if (it.state.data.accountId == offer.state.data.investor.identifier.id.toString()) {
+                    logger.info("\uD83D\uDD31 \uD83D\uDD31 \uD83D\uDD31  INVESTOR PROFILE: " +
+                            "${GSON.toJson(getDTO(it.state.data))} \uD83D\uDD31 \uD83D\uDD31 \uD83D\uDD31 \n\n")
+                }
+            }
         }
 
     }
@@ -454,11 +514,12 @@ private class Client {
                 discount = state.discount,
                 supplier = getDTO(state.supplier),
                 investor = getDTO(state.investor),
-                offerDate = state.offerDate.toString(),
-                investorDate = state.acceptanceDate.toString(),
+                offerDate = state.offerDate,
+                investorDate = state.acceptanceDate,
                 accepted = state.accepted, externalId = state.externalId,
                 acceptanceDate = state.acceptanceDate,
-                offerId = state.offerId
+                offerId = state.offerId,
+                isAnchor = state.isAnchor
 
         )
     }

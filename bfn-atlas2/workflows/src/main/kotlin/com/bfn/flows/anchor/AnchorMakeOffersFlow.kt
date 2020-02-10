@@ -142,7 +142,7 @@ class AnchorMakeOffersFlow : FlowLogic<List<InvoiceOfferState>>() {
                 originalAmount = invoice.totalAmount,
                 acceptanceDate = todaysDate(), accepted = false,
                 offerId = UUID.randomUUID().toString(),
-                externalId = invoice.externalId
+                externalId = invoice.externalId, isAnchor = true
         )
     }
     @Suspendable

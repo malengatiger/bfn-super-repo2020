@@ -763,7 +763,7 @@ object WorkerBee {
                 investorDate = state.acceptanceDate,
                 accepted = state.accepted, externalId = state.externalId,
                 acceptanceDate = state.acceptanceDate,
-                offerId = state.offerId
+                offerId = state.offerId, isAnchor = state.isAnchor
 
         )
     }

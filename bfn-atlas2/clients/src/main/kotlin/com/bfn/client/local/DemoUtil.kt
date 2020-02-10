@@ -93,11 +93,15 @@ object DemoUtil {
                             }
                             logger.info("\uD83D\uDE21 Processing .... ${invoice.invoiceNumber} " +
                                     "\uD83C\uDF4F ${invoice.amount} for account:  \uD83D\uDC9C ${account.name}")
+                            var isAnchor = false
+                            if (account.name.contains("Anchor")) {
+                                isAnchor = true
+                            }
                             registerInvoiceOffer(
                                     supplier = invoice.supplier,
                                     investor = account,
                                     invoice = invoice,
-                                    discount = discount)
+                                    discount = discount, isAnchor = isAnchor)
                             logger.info("\uD83D\uDE21 registered InvoiceOffer for supplier: \uD83C\uDF4F " +
                                     "${invoice.supplier.name} ${invoice.supplier.host} " +
                                     "\uD83C\uDF4F \uD83D\uDCA6 investor: ${account.name} \uD83D\uDCA6 ${account.host} ")
@@ -294,7 +298,7 @@ object DemoUtil {
                     amount = num * 1200.0,
                     valueAddedTax = 15.0,
                     totalAmount = num * 1.15,
-                    description = "Demo Invoice at ${Date()}",
+                    description = "LARGE : Demo Invoice at ${Date()}",
                     dateRegistered = thisDate(cal.time),
                     invoiceId = UUID.randomUUID().toString(),
                     externalId = UUID.randomUUID().toString()
@@ -323,7 +327,7 @@ object DemoUtil {
                     amount = num * 500.0,
                     valueAddedTax = 15.0,
                     totalAmount = num * 1.15,
-                    description = "Demo Small Invoice at ${Date()}",
+                    description = "SMALL: Demo Invoice at ${Date()}",
                     dateRegistered = thisDate(cal.time),
                     invoiceId = UUID.randomUUID().toString(),
                     externalId = UUID.randomUUID().toString()
@@ -338,7 +342,7 @@ object DemoUtil {
     private val nodeInvoiceOffers: MutableList<InvoiceOfferDTO> = ArrayList()
     @Throws(Exception::class)
     private fun registerInvoiceOffer(invoice: InvoiceDTO, supplier: AccountInfoDTO,
-                                     investor: AccountInfoDTO, discount: Double) {
+                                     investor: AccountInfoDTO, discount: Double, isAnchor: Boolean = false) {
 
 
         val invoiceOffer = InvoiceOfferDTO(
@@ -352,7 +356,7 @@ object DemoUtil {
                 originalAmount = invoice.totalAmount,
                 externalId = invoice.externalId, invoiceNumber = invoice.invoiceNumber,
                 investorDate = todaysDate(), acceptanceDate = todaysDate(),
-                offerId = UUID.randomUUID().toString()
+                offerId = UUID.randomUUID().toString(), isAnchor = isAnchor
         )
         try {
             val offer = startInvoiceOfferFlow(proxy!!, invoiceOffer)
