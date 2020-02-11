@@ -1,9 +1,14 @@
+import 'package:bfnlibrary/data/anchor.dart';
 import 'package:bfnlibrary/util/functions.dart';
-import 'package:flutter/material.dart';
 import 'package:dots_indicator/dots_indicator.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class PageOne extends StatelessWidget {
+  final Anchor anchor;
+
+  PageOne(this.anchor);
+
   @override
   Widget build(BuildContext context) {
     return ListView(
@@ -12,7 +17,7 @@ class PageOne extends StatelessWidget {
           children: <Widget>[
             Container(
               color: Colors.blue,
-              height: 400,
+              height: 300,
               width: double.infinity,
               child: Opacity(
                 opacity: 0.7,
@@ -23,14 +28,22 @@ class PageOne extends StatelessWidget {
               ),
             ),
             SizedBox(
-              height: 8,
+              height: 28,
             ),
-            Text(
-              'Welcome Aboard',
-              style: TextStyle(
-                  fontFamily: GoogleFonts.acme().toString(),
-                  fontSize: 30,
-                  fontWeight: FontWeight.w900),
+            Column(
+              children: <Widget>[
+                Text(
+                  'Welcome Aboard',
+                  style: TextStyle(
+                      fontFamily: GoogleFonts.acme().toString(),
+                      fontSize: 30,
+                      fontWeight: FontWeight.w900),
+                ),
+                Text(
+                  anchor == null ? '' : anchor.name,
+                  style: Styles.greyLabelSmall,
+                ),
+              ],
             ),
             SizedBox(
               height: 8,
@@ -39,9 +52,12 @@ class PageOne extends StatelessWidget {
               padding: const EdgeInsets.all(20.0),
               child: Text(
                 'The Anchor App enables you to participate '
-                    'in the Business Finance Network where you can purchase invoices for a discount',
+                'in the Business Finance Network where you can purchase invoices for a discount',
                 style: Styles.blackBoldSmall,
               ),
+            ),
+            SizedBox(
+              height: 16,
             ),
             DotsIndicator(
               dotsCount: 5,
@@ -55,6 +71,10 @@ class PageOne extends StatelessWidget {
 }
 
 class PageTwo extends StatelessWidget {
+  final Anchor anchor;
+
+  PageTwo(this.anchor);
+
   @override
   Widget build(BuildContext context) {
     return ListView(
@@ -63,7 +83,7 @@ class PageTwo extends StatelessWidget {
           children: <Widget>[
             Container(
               color: Colors.blue,
-              height: 400,
+              height: 300,
               width: double.infinity,
               child: Opacity(
                 opacity: 0.7,
@@ -76,17 +96,28 @@ class PageTwo extends StatelessWidget {
             SizedBox(
               height: 8,
             ),
-            Text(
-              'Purchase Invoices',
-              style: TextStyle(
-                  fontFamily: GoogleFonts.acme().toString(),
-                  fontSize: 30,
-                  fontWeight: FontWeight.w900),
+            Column(
+              children: <Widget>[
+                Text(
+                  'Purchase Invoices',
+                  style: TextStyle(
+                      fontFamily: GoogleFonts.acme().toString(),
+                      fontSize: 30,
+                      fontWeight: FontWeight.w900),
+                ),
+                Text(
+                  anchor == null ? '' : anchor.name,
+                  style: Styles.greyLabelSmall,
+                ),
+              ],
             ),
             Padding(
               padding: const EdgeInsets.all(20.0),
               child: Text('The Anchor App enables you to participate '
                   'in the Business Finance Network where you can purchase invoices for a discount'),
+            ),
+            SizedBox(
+              height: 16,
             ),
             DotsIndicator(
               dotsCount: 5,
@@ -100,6 +131,10 @@ class PageTwo extends StatelessWidget {
 }
 
 class PageThree extends StatelessWidget {
+  final Anchor anchor;
+
+  PageThree(this.anchor);
+
   @override
   Widget build(BuildContext context) {
     return ListView(
@@ -108,7 +143,7 @@ class PageThree extends StatelessWidget {
           children: <Widget>[
             Container(
               color: Colors.blue,
-              height: 400,
+              height: 300,
               width: double.infinity,
               child: Opacity(
                 opacity: 0.6,
@@ -121,17 +156,28 @@ class PageThree extends StatelessWidget {
             SizedBox(
               height: 8,
             ),
-            Text(
-              'Get Paid',
-              style: TextStyle(
-                  fontFamily: GoogleFonts.acme().toString(),
-                  fontSize: 30,
-                  fontWeight: FontWeight.w900),
+            Column(
+              children: <Widget>[
+                Text(
+                  'Get Paid',
+                  style: TextStyle(
+                      fontFamily: GoogleFonts.acme().toString(),
+                      fontSize: 30,
+                      fontWeight: FontWeight.w900),
+                ),
+                Text(
+                  anchor == null ? '' : anchor.name,
+                  style: Styles.greyLabelSmall,
+                ),
+              ],
             ),
             Padding(
               padding: const EdgeInsets.all(20.0),
               child: Text('The Anchor App enables you to participate '
                   'in the Business Finance Network where you can purchase invoices for a discount'),
+            ),
+            SizedBox(
+              height: 16,
             ),
             DotsIndicator(
               dotsCount: 5,
@@ -145,6 +191,10 @@ class PageThree extends StatelessWidget {
 }
 
 class PageFour extends StatelessWidget {
+  final Anchor anchor;
+
+  PageFour(this.anchor);
+
   @override
   Widget build(BuildContext context) {
     return ListView(
@@ -153,7 +203,7 @@ class PageFour extends StatelessWidget {
           children: <Widget>[
             Container(
               color: Colors.blue,
-              height: 400,
+              height: 300,
               width: double.infinity,
               child: Opacity(
                 opacity: 0.6,
@@ -166,17 +216,28 @@ class PageFour extends StatelessWidget {
             SizedBox(
               height: 8,
             ),
-            Text(
-              'Be Happy!',
-              style: TextStyle(
-                  fontFamily: GoogleFonts.acme().toString(),
-                  fontSize: 30,
-                  fontWeight: FontWeight.w900),
+            Column(
+              children: <Widget>[
+                Text(
+                  'Be Happy!',
+                  style: TextStyle(
+                      fontFamily: GoogleFonts.acme().toString(),
+                      fontSize: 30,
+                      fontWeight: FontWeight.w900),
+                ),
+                Text(
+                  anchor == null ? '' : anchor.name,
+                  style: Styles.greyLabelSmall,
+                ),
+              ],
             ),
             Padding(
               padding: const EdgeInsets.all(20.0),
               child: Text('The Anchor App enables you to participate '
                   'in the Business Finance Network where you can purchase invoices for a discount'),
+            ),
+            SizedBox(
+              height: 16,
             ),
             DotsIndicator(
               dotsCount: 5,
@@ -190,6 +251,10 @@ class PageFour extends StatelessWidget {
 }
 
 class PageFive extends StatelessWidget {
+  final Anchor anchor;
+
+  PageFive(this.anchor);
+
   @override
   Widget build(BuildContext context) {
     return ListView(
@@ -198,7 +263,7 @@ class PageFive extends StatelessWidget {
           children: <Widget>[
             Container(
               color: Colors.blue,
-              height: 400,
+              height: 300,
               width: double.infinity,
               child: AnimatedOpacity(
                 opacity: 0.2,
@@ -212,12 +277,20 @@ class PageFive extends StatelessWidget {
             SizedBox(
               height: 8,
             ),
-            Text(
-              'Contact Us',
-              style: TextStyle(
-                  fontFamily: GoogleFonts.acme().toString(),
-                  fontSize: 30,
-                  fontWeight: FontWeight.w900),
+            Column(
+              children: <Widget>[
+                Text(
+                  'Contact Us',
+                  style: TextStyle(
+                      fontFamily: GoogleFonts.acme().toString(),
+                      fontSize: 30,
+                      fontWeight: FontWeight.w900),
+                ),
+                Text(
+                  anchor == null ? '' : anchor.name,
+                  style: Styles.greyLabelSmall,
+                ),
+              ],
             ),
             SizedBox(
               height: 8,

@@ -1,6 +1,5 @@
-import 'package:bfnlibrary/util/auth.dart';
+import 'package:anchor/bloc/anchor_bloc.dart';
 import 'package:bfnlibrary/util/functions.dart';
-import 'package:bfnlibrary/util/prefs.dart';
 import 'package:bfnlibrary/util/snack.dart';
 import 'package:flutter/material.dart';
 
@@ -9,19 +8,11 @@ class SignIn extends StatefulWidget {
   _SignInState createState() => _SignInState();
 }
 
-/*
-email = "anchor1@bfn.com",
-                cellphone = "+27710441887",
-                tradeFrequencyInMinutes = 240,
-                tradeMatrices = mx,
-                date = todaysDate(),
-                password = "bfnanchor33",
- */
 class _SignInState extends State<SignIn> {
   final _formKey = GlobalKey<FormState>();
   var emailEditor = TextEditingController();
   var passwordEditor = TextEditingController();
-
+  var bloc = AnchorBloc();
   @override
   @override
   initState() {
@@ -152,12 +143,7 @@ class _SignInState extends State<SignIn> {
       isBusy = true;
     });
     try {
-      var res =
-          await BFNAuth.anchorSignIn(emailEditor.text, passwordEditor.text);
-      await Prefs.saveAnchor(res);
-      setState(() {
-        isBusy = false;
-      });
+      var res = await bloc.anchorSignIn(emailEditor.text, passwordEditor.text);
       Navigator.pop(context, res);
     } catch (e) {
       debugPrint('👿 👿 👿 👿 Hey Jose, we gotta a problem: $e');
