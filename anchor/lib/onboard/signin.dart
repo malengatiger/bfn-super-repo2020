@@ -2,6 +2,8 @@ import 'package:anchor/bloc/anchor_bloc.dart';
 import 'package:bfnlibrary/util/functions.dart';
 import 'package:bfnlibrary/util/snack.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
 class SignIn extends StatefulWidget {
   @override
@@ -21,8 +23,11 @@ class _SignInState extends State<SignIn> {
     passwordEditor.text = "bfnanchor33";
   }
 
+  AnchorBloc _anchorBloc;
   var _key = GlobalKey<ScaffoldState>();
   Widget build(BuildContext context) {
+    final AnchorBloc bloc = Provider.of<AnchorBloc>(context);
+    _anchorBloc = bloc;
     return WillPopScope(
       onWillPop: () async {
         return Future.value(false);
@@ -31,8 +36,21 @@ class _SignInState extends State<SignIn> {
         key: _key,
         appBar: AppBar(
           leading: Container(),
-          title: Text('BFN Anchor Sign In'),
+          title: Text('BFN Anchor',
+              style: TextStyle(
+                  fontFamily: GoogleFonts.acme().toString(),
+                  fontSize: 30,
+                  fontWeight: FontWeight.w900)),
           backgroundColor: Colors.deepOrange[400],
+          actions: <Widget>[
+            IconButton(
+              icon: Icon(Icons.refresh),
+              onPressed: () {
+                debugPrint('Refresh nodes ...');
+                bloc.initialize();
+              },
+            )
+          ],
           bottom: PreferredSize(
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
@@ -55,11 +73,11 @@ class _SignInState extends State<SignIn> {
         body: isBusy
             ? Center(
                 child: Container(
-                  width: 200,
-                  height: 200,
+                  width: 80,
+                  height: 80,
                   child: CircularProgressIndicator(
                     strokeWidth: 16,
-                    backgroundColor: Colors.red,
+                    backgroundColor: Colors.indigo,
                   ),
                 ),
               )

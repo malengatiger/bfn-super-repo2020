@@ -8,8 +8,8 @@ import 'package:bfnlibrary/util/prefs.dart';
 import 'package:bfnlibrary/util/slide_right.dart';
 import 'package:bfnlibrary/util/theme_bloc.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
 class Dashboard extends StatefulWidget {
   @override
@@ -90,17 +90,27 @@ class _DashboardState extends State<Dashboard> {
     return Scaffold(
       key: _key,
       appBar: AppBar(
-        leading: Container(), elevation: 0,
-        title: Text('Business Finance Network', style: Styles.whiteSmall,),
+        leading: Container(),
+        elevation: 0,
+        title: Text(
+          'Business Finance Network',
+          style: Styles.whiteSmall,
+        ),
         centerTitle: false,
         backgroundColor: Colors.brown[100],
         actions: <Widget>[
           IconButton(
-            icon: Icon(Icons.settings, color: Colors.black,),
+            icon: Icon(
+              Icons.settings,
+              color: Colors.black,
+            ),
             onPressed: _updateAnchor,
           ),
           IconButton(
-            icon: Icon(Icons.info_outline, color: Colors.blue,),
+            icon: Icon(
+              Icons.info_outline,
+              color: Colors.blue,
+            ),
             onPressed: () {
               Navigator.push(context, SlideRightRoute(widget: Welcome(null)));
             },
@@ -116,7 +126,7 @@ class _DashboardState extends State<Dashboard> {
                   themeBloc.changeToRandomTheme();
                 },
                 child: Text(
-                  bloc.anchor == null ? '..... 🍊 🍊 🍊 ....' : bloc.anchor.name,
+                  anchor == null ? '..... 🍊 ....' : anchor.name,
                   style: TextStyle(
                       fontWeight: FontWeight.w900,
                       fontSize: 24,
@@ -137,15 +147,11 @@ class _DashboardState extends State<Dashboard> {
           crossAxisCount: 2,
           children: <Widget>[
             GestureDetector(
-                onTap: _navigateToOpenOffers,
-                child: OfferCard('open')),
+                onTap: _navigateToOpenOffers, child: OfferCard('open')),
             GestureDetector(
-                onTap: _navigateToAcceptedOffers,
-                child: OfferCard('accepted')),
+                onTap: _navigateToAcceptedOffers, child: OfferCard('accepted')),
             GestureDetector(
-                onTap: _navigateToClosedOffers,
-                child: OfferCard('closed')),
-
+                onTap: _navigateToClosedOffers, child: OfferCard('closed')),
           ],
         ),
       ),
@@ -172,9 +178,11 @@ class _DashboardState extends State<Dashboard> {
   void _navigateToOpenOffers() {
     debugPrint('🦠 🦠 🦠  _navigateToOpenOffers ....');
   }
+
   void _navigateToAcceptedOffers() {
     debugPrint('🌺 🌺 🌺  _navigateToAcceptedOffers ....');
   }
+
   void _navigateToClosedOffers() {
     debugPrint('😪 😪 😪  _navigateToClosedOffers ....');
   }
@@ -221,26 +229,34 @@ class OfferCard extends StatelessWidget {
     }
     return Container(
       width: 300,
-      height: 100, color: Colors.brown[100],
+      height: 100,
+      color: Colors.brown[100],
       child: Card(
-        elevation: 2, color: Colors.brown[50],
+        elevation: 2,
+        color: Colors.brown[50],
         child: Center(
           child: Container(
             child: Column(
               children: <Widget>[
-                SizedBox(height: 44,),
+                SizedBox(
+                  height: 44,
+                ),
                 Text(
                   '${getFormattedNumber(346500, context)}',
                   style: TextStyle(
                       fontFamily: GoogleFonts.raleway().toString(),
-                      fontWeight: FontWeight.w900, color: color,
+                      fontWeight: FontWeight.w900,
+                      color: color,
                       fontSize: 30),
                 ),
                 SizedBox(
                   height: 16,
                 ),
                 Text(label),
-                Text('03 Feb 2020 10:38', style: Styles.blueSmall,),
+                Text(
+                  '03 Feb 2020 10:38',
+                  style: Styles.blueSmall,
+                ),
               ],
             ),
           ),

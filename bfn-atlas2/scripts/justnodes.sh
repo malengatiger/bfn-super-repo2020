@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # ----------- DEPLOY CORDA NODES
 ./scripts/deploy.sh
-echo "🔆 Closing the Terminal App ...."
-osascript -e 'tell application "Terminal" to close first window' & exit
+
 echo "🍀 🍀 🍀 🍀 🍀 🍀 🍀 done deploying Corda nodes"
 # ------------ NOTARY NODE
 echo "🔆 Woke up, opening terminal for Notary Corda Node"

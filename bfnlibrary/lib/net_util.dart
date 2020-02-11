@@ -230,7 +230,7 @@ class Net {
       throw Exception('Account not found on Firestore');
     }
     var nodes = await Prefs.getNodes();
-    if (nodes.isEmpty) {
+    if (nodes == null || nodes.isEmpty) {
       throw Exception('Nodes not found in Prefs');
     }
     NodeInfo node;

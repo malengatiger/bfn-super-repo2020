@@ -27,9 +27,14 @@ class SupplierPaymentState(
 
         val requestTime: Instant = Date().toInstant()
         val responseTime = requestTime.plusSeconds(delayMinutesUntilNextPaymentFlow)
-        val flowRef = flowLogicRefFactory.create("com.bfn.flows.anchor.AnchorMakeMultiplePaymentsFlow", delayMinutesUntilNextPaymentFlow * 60)
-        logger.info("️\uD83C\uDFC0 \uD83C\uDFC0️ \uD83C\uDFC0 nextScheduledActivity: ⏳⏳⏳ this should schedule the ️ " +
-                "⚠️ AnchorMakeMultiplePaymentsFlow  ⚠️  : responseTime: $responseTime")
+        val flowRef = flowLogicRefFactory.create(
+                "com.bfn.flows.anchor.AnchorMakeMultiplePaymentsFlow",
+                delayMinutesUntilNextPaymentFlow)
+
+        logger.info("️\uD83C\uDFC0 \uD83C\uDFC0️ \uD83C\uDFC0 \uD83C\uDF4E " +
+                "nextScheduledActivity: \uD83C\uDF4E ⏳⏳⏳ this should schedule the ️ " +
+                "⚠️ AnchorMakeMultiplePaymentsFlow  ⚠️  : responseTime: $responseTime \uD83C\uDF4E")
+
         return ScheduledActivity(flowRef, responseTime)
     }
 
