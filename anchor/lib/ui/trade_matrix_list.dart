@@ -39,7 +39,7 @@ class _TradeMatrixListState extends State<TradeMatrixList> {
   }
 
   var _key = GlobalKey<ScaffoldState>();
- var random = Random(DateTime.now().millisecondsSinceEpoch);
+  var random = Random(DateTime.now().millisecondsSinceEpoch);
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -72,13 +72,17 @@ class _TradeMatrixListState extends State<TradeMatrixList> {
                     RaisedButton(
                       onPressed: _saveAnchor,
                       elevation: 8,
-                      color: widget.anchor.accountId == null? Colors.indigo : Colors.black,
+                      color: widget.anchor.accountId == "TBD"
+                          ? Colors.indigo
+                          : Colors.black,
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Text(
-                            widget.anchor.accountId == null? 'Save Anchor': 'Update Anchor',
+                            widget.anchor.accountId == "TBD"
+                                ? 'Submit Anchor'
+                                : 'Update Anchor',
                             style: Styles.whiteSmall,
                           ),
                         ),
@@ -109,9 +113,20 @@ class _TradeMatrixListState extends State<TradeMatrixList> {
       body: widget.anchor.tradeMatrices.isEmpty
           ? Center(
               child: Container(
-                child: Text(
-                  'No matrices yet\nPress + to add one',
-                  style: Styles.blackBoldMedium,
+                child: Column(
+                  children: <Widget>[
+                    SizedBox(
+                      height: 100,
+                    ),
+                    Text(
+                      'No matrices defined yet',
+                      style: Styles.blackBoldMedium,
+                    ),
+                    Text(
+                      'Press + at top right to add one',
+                      style: Styles.blackSmall,
+                    ),
+                  ],
                 ),
               ),
             )
@@ -205,19 +220,20 @@ class _TradeMatrixListState extends State<TradeMatrixList> {
               }),
     );
   }
+
   _saveAnchor() async {
     debugPrint(
         '... 🥨  🥨 about to save/update the Anchor! ....  🧀  🧀 ${widget.anchor.toJson()}  🧀  🧀 ');
     try {
-      if (widget.anchor.accountId == null) {
+      if (widget.anchor.accountId == "TBD") {
         var res = await Net.createAnchor(widget.anchor);
         await Prefs.saveAnchor(res);
+
         debugPrint('☘️ ☘️ ☘️ Looks like we good with 🌼 Anchor 🌼 creation');
         debugPrint('Anchor Result : 🌼 🌼 🌼 ${res.toJson()} 🌼 🌼 🌼');
+
         Navigator.pop(context, res);
-        Navigator.push(context, SlideRightRoute(
-          widget: Welcome(res)
-        ));
+        Navigator.push(context, SlideRightRoute(widget: Welcome(res)));
       } else {
         var res = await Net.updateAnchor(widget.anchor);
         await Prefs.saveAnchor(res);

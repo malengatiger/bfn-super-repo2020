@@ -1,6 +1,6 @@
 import 'package:anchor/bloc/anchor_bloc.dart';
 import 'package:anchor/bloc/trader_bloc.dart';
-import 'package:anchor/ui/anchor_editor.dart';
+import 'package:anchor/onboard/signin.dart';
 import 'package:anchor/ui/dashboard.dart';
 import 'package:bfnlibrary/data/anchor.dart';
 import 'package:bfnlibrary/util/prefs.dart';
@@ -25,7 +25,6 @@ void main() async {
 }
 
 class AnchorApp extends StatefulWidget {
-  // This widget is the root of your application.
   @override
   _AnchorAppState createState() => _AnchorAppState();
 }
@@ -92,20 +91,16 @@ class _LandingPageState extends State<LandingPage> {
       debugPrint(
           '🥦  🥦 There is no anchor in prefs. 🍊 🍊 🍊 Create one, please! 🛎 ');
       isFirstTime = true;
-      var res = await Navigator.push(
-          context, SlideRightRoute(widget: AnchorEditor()));
+      var res =
+          await Navigator.push(context, SlideRightRoute(widget: SignIn()));
       if (res != null && res is Anchor) {
         Navigator.push(context, SlideRightRoute(widget: Welcome(res)));
       }
     } else {
-      if (anchor.accountId == null) {
+      if (anchor.accountId == "TBD") {
         isFirstTime = true;
-        var res = await Navigator.push(
-            context,
-            SlideRightRoute(
-                widget: AnchorEditor(
-              anchor: anchor,
-            )));
+        var res =
+            await Navigator.push(context, SlideRightRoute(widget: SignIn()));
         if (res != null && res is Anchor) {
           Navigator.push(context, SlideRightRoute(widget: Welcome(res)));
         }

@@ -9,6 +9,7 @@ import 'package:bfnlibrary/data/invoice_offer.dart';
 import 'package:bfnlibrary/data/node_info.dart';
 import 'package:bfnlibrary/data/profile.dart';
 import 'package:bfnlibrary/data/user.dart';
+import 'package:bfnlibrary/util/functions.dart';
 import 'package:bfnlibrary/util/prefs.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -169,15 +170,14 @@ class Net {
   }
 
   static Future<Anchor> updateAnchor(Anchor anchor) async {
-      String mx = await buildUrl();
-      debugPrint('🌸 CONCATENATED URL: 🌸 $mx' + 'bfn/admin/updateAnchor');
-      final response =
-      await post(mx + 'bfn/admin/updateAnchor', anchor.toJson());
-      var m = json.decode(response);
-      var acct = Anchor.fromJson(m);
-      return acct;
-
+    String mx = await buildUrl();
+    debugPrint('🌸 CONCATENATED URL: 🌸 $mx' + 'bfn/admin/updateAnchor');
+    final response = await post(mx + 'bfn/admin/updateAnchor', anchor.toJson());
+    var m = json.decode(response);
+    var acct = Anchor.fromJson(m);
+    return acct;
   }
+
   static Future<Anchor> createAnchor(Anchor anchor) async {
     debugPrint('🍊🍊🍊🍊🍊 createAnchor starting the call ...');
     var nodes = await Prefs.getNodes();
@@ -196,8 +196,7 @@ class Net {
     await Prefs.saveNode(node);
     String mx = await buildUrl();
     debugPrint('🌸 CONCATENATED URL: 🌸 $mx' + 'bfn/admin/createAnchor');
-    final response =
-        await post(mx + 'bfn/admin/createAnchor', anchor.toJson());
+    final response = await post(mx + 'bfn/admin/createAnchor', anchor.toJson());
     var m = json.decode(response);
     var acct = Anchor.fromJson(m);
     return acct;
@@ -211,11 +210,49 @@ class Net {
     var mx = '${node.webServerAddress}';
     debugPrint("🍊 🍊 🍊  🌸 🌸 🌸 ${node.toJson()}  🌸 🌸 🌸  🍊 🍊 🍊 ");
     if (node.webServerPort != null || node.webServerPort > 0) {
-       mx += ':${node.webServerPort}/';
+      mx += ':${node.webServerPort}/';
     } else {
       mx += '/';
     }
     return mx;
+  }
+
+  static Future<Anchor> getAnchor(String identifier) async {
+    var qs = await db
+        .collection("accounts")
+        .where("identifier", isEqualTo: identifier)
+        .getDocuments();
+    AccountInfo acct;
+    qs.documents.forEach((doc) {
+      acct = AccountInfo.fromJson(doc.data);
+    });
+    if (acct == null) {
+      throw Exception('Account not found on Firestore');
+    }
+    var nodes = await Prefs.getNodes();
+    if (nodes.isEmpty) {
+      throw Exception('Nodes not found in Prefs');
+    }
+    NodeInfo node;
+    nodes.forEach((n) {
+      if (n.addresses.first.contains(acct.name)) {
+        node = n;
+      }
+    });
+    if (node == null) {
+      throw Exception('Node cannot be determined from list of ${nodes.length}');
+    }
+    await Prefs.saveNode(node);
+    var bag = {
+      "identifier": identifier,
+    };
+    debugPrint('🍊🍊🍊🍊🍊 getAnchor starting the call ...');
+    var url = await buildUrl();
+    final response = await get(url + '${BFN}getAnchor?identifier=$identifier');
+    var m = json.decode(response);
+    var anchor = Anchor.fromJson(m);
+    prettyPrint(anchor.toJson(), "🥏 🥏 🥏 🥏 ANCHOR RECEIVED 🍎 ");
+    return anchor;
   }
 
   static Future<AccountInfo> startAccountRegistrationFlow(

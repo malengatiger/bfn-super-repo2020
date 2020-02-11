@@ -22,6 +22,20 @@ object AnchorBee {
 
     @JvmStatic
     @Throws(Exception::class)
+    fun getAnchor(proxy: CordaRPCOps, identifier: String) : AnchorDTO {
+        logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to getAnchor ... $identifier")
+
+        val anchor = proxy.vaultQuery(AnchorState::class.java).states.singleOrNull() ?: throw Exception("Missing anchor")
+        if (anchor.state.data.account.identifier.id.toString() != identifier) {
+            throw Exception("Invalid anchor identifier")
+        }
+        val dto = getDTO(anchor.state.data)
+        logger.info("\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C " +
+                "Anchor: ${GSON.toJson(dto)} \uD83D\uDC4C ")
+        return dto
+    }
+    @JvmStatic
+    @Throws(Exception::class)
     fun makeSinglePayment(proxy: CordaRPCOps, invoiceId: String) : SupplierPaymentDTO {
         logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to makeSinglePayment ... ")
 

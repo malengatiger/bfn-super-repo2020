@@ -30,6 +30,7 @@ object FirebaseUtil {
     private val messaging: FirebaseMessaging = FirebaseMessaging.getInstance()
 
 
+
     @JvmStatic
     @Throws(ExecutionException::class, InterruptedException::class)
     fun sendInvoiceOfferMessage(offer: InvoiceOfferDTO?) {

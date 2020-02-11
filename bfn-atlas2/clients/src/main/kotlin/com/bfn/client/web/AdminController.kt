@@ -88,6 +88,13 @@ class AdminController(rpc: NodeRPCConnection) {
         return result
     }
 
+    @GetMapping(value = ["/getAnchor"], produces = ["application/json"])
+    @Throws(Exception::class)
+    private fun getAnchor(@RequestParam identifier: String): AnchorDTO {
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting getAnchor signIn ... \uD83C\uDF4F ")
+        return AnchorBee.getAnchor(proxy,identifier);
+    }
+
     @PostMapping(value = ["/generateInvoices"], produces = ["application/json"])
     @Throws(Exception::class)
     private fun generateInvoices(@RequestBody customer:AccountInfoDTO): String {

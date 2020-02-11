@@ -48,15 +48,14 @@ private class Client {
     fun main(args: Array<String>) {
 
         setupLocalNodes()
-//        createAnchor(localAnchorURL)
-//        createCustomer(localAnchorURL)
-//        startSupplierAccounts(
-//                numberOfAccounts = 10,
-//                url = localAnchorURL);
-//
-//        letsDance()
-//        logger.info("\n\n========================= \uD83C\uDF4E 2nd Set; letsDance! \uD83C\uDF4E =================================\n\n")
-//        letsDance()
+        createAnchor(localAnchorURL)
+        createCustomer(localAnchorURL)
+        startSupplierAccounts(
+                numberOfAccounts = 10,
+                url = localAnchorURL);
+        letsDance()
+        logger.info("\n\n========================= \uD83C\uDF4E 2nd Set; letsDance! \uD83C\uDF4E =================================\n\n")
+        letsDance()
 //
 //        acceptAnchorOffers(localAnchorURL)
 //        findAndAcceptBestOffers(localAnchorURL)
@@ -69,7 +68,7 @@ private class Client {
 //        generateCasualOffers()
 //        printOffers(proxyAnchorInvestor, consumed = false)
 //        printInvoices(proxyAnchorInvestor, consumed = false)
-        printOffers(proxyAnchorInvestor, consumed = false)
+//        printOffers(proxyAnchorInvestor, consumed = false)
 //        printInvoices(proxyPartyB, consumed = false)
 //
 //        printProfiles(proxyAnchorInvestor)
@@ -779,26 +778,6 @@ private class Client {
 
     var customer: AccountInfoDTO? = null
     val random = Random(Date().time)
-
-    private fun createAnchorAccount(url: String) {
-        val user = UserDTO(name = "AnchorInvestor",
-                password = "anchor#001$",
-                cellphone = "+27710441887",
-                email = "anchor001@bfn.com")
-
-        val mGson = Gson()
-        val jsonObject = JSONObject(mGson.toJson(user))
-        val response = httpPost(
-                json = jsonObject,
-                timeout = 990000000.0,
-                url = "$url/bfn/admin/startAccountRegistrationFlow")
-
-        customer = GSON.fromJson(response.text, AccountInfoDTO::class.java)
-        logger.info("\uD83C\uDF4E  create Anchor account; RESPONSE: " +
-                "statusCode: 🌍 ${response.statusCode} 🌍   " +
-                response.text)
-
-    }
 
     private fun createCustomer(url: String) {
         val user = UserDTO(name = "Customer001",

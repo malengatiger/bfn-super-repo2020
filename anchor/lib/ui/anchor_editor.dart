@@ -294,7 +294,7 @@ class _AnchorEditorState extends State<AnchorEditor> {
                             child: Padding(
                               padding: const EdgeInsets.all(20.0),
                               child: Text(
-                                'Submit Anchor',
+                                'Continue',
                                 style: Styles.whiteSmall,
                               ),
                             ),
@@ -312,23 +312,27 @@ class _AnchorEditorState extends State<AnchorEditor> {
   void _checkIfMatricesNeeded() async {
     debugPrint('🥏 🥏 🥏 Creating anchor ...');
     var mAnchor = Anchor(
-      name: nameEditor.text,
-      email: emailEditor.text,
-      cellphone: cellphoneEditor.text,
-      password: passwordEditor.text,
-      minimumInvoiceAmount: double.parse(minInvoiceEditor.text),
-      maximumInvoiceAmount: double.parse(maxInvoiceEditor.text),
-      maximumInvestment: double.parse(maxInvestmentEditor.text),
-      tradeFrequencyInMinutes: int.parse(tradeFreqEditor.text),
-      defaultOfferDiscount: double.parse(defaultDiscEditor.text),
-      tradeMatrices: anchor == null ? List() : anchor.tradeMatrices,
-    );
+        issuedBy: "TBD",
+        date: DateTime.now().toUtc().toIso8601String(),
+        name: nameEditor.text,
+        email: emailEditor.text,
+        cellphone: cellphoneEditor.text,
+        password: passwordEditor.text,
+        minimumInvoiceAmount: double.parse(minInvoiceEditor.text),
+        maximumInvoiceAmount: double.parse(maxInvoiceEditor.text),
+        maximumInvestment: double.parse(maxInvestmentEditor.text),
+        tradeFrequencyInMinutes: int.parse(tradeFreqEditor.text),
+        defaultOfferDiscount: double.parse(defaultDiscEditor.text),
+        tradeMatrices: anchor == null ? List() : anchor.tradeMatrices,
+        accountId: "TBD");
     if (anchor != null) {
       mAnchor.accountId = anchor.accountId;
     }
     anchor = mAnchor;
     await Prefs.saveAnchor(mAnchor);
-    _displayDialog(mAnchor);
+    await Navigator.push(
+        context, SlideRightRoute(widget: TradeMatrixList(anchor)));
+    Navigator.pop(context);
 //
   }
 
@@ -352,6 +356,11 @@ class _AnchorEditorState extends State<AnchorEditor> {
   _submit(Anchor anchor) async {
     try {
       if (anchor.accountId == null) {
+        anchor.issuedBy = "TBD";
+        anchor.accountId = "TBD";
+        anchor.date = DateTime.now().toUtc().toIso8601String();
+        anchor.tradeMatrices = [];
+
         var res = await Net.createAnchor(anchor);
         await Prefs.saveAnchor(res);
         debugPrint('☘️ ☘️ ☘️ Looks like we good with 🌼 Anchor 🌼 creation');
