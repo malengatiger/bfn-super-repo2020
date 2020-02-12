@@ -67,12 +67,13 @@ private class Client {
 //        generateInvoices(localAnchorURL, 40)
 //        generateCasualOffers()
 //        printOffers(proxyAnchorInvestor, consumed = false)
-        printInvoices(proxyAnchorInvestor, consumed = false)
+//        printInvoices(proxyAnchorInvestor, consumed = false)
 //        printOffers(proxyAnchorInvestor, consumed = false)
 //        printInvoices(proxyPartyB, consumed = false)
 //
 //        printProfiles(proxyAnchorInvestor)
 //        printProfiles(proxyPartyB)
+        generateInvoices(localAnchorURL)
 
     }
 

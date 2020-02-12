@@ -50,6 +50,7 @@ class _DashboardState extends State<Dashboard> {
   }
 
   var _items = List<BottomNavigationBarItem>();
+  bool isBusy = false;
   _buildItems() {
     debugPrint('🔹 🔹 🔹 building items ....');
 //    _items.add(BottomNavigationBarItem(
@@ -114,7 +115,19 @@ class _DashboardState extends State<Dashboard> {
             onPressed: () {
               Navigator.push(context, SlideRightRoute(widget: Welcome(null)));
             },
-          )
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.refresh,
+              color: Colors.black,
+            ),
+            onPressed: () {
+              setState(() {
+                isBusy = true;
+              });
+              bloc.initialize();
+            },
+          ),
         ],
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(80),
@@ -136,6 +149,38 @@ class _DashboardState extends State<Dashboard> {
               SizedBox(
                 height: 20,
               ),
+              Padding(
+                padding: const EdgeInsets.only(left: 20.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: <Widget>[
+                    Text('Last Update:'),
+                    SizedBox(
+                      width: 12,
+                    ),
+                    Text(
+                      '${getFormattedDateHourMinSec(DateTime.now().toIso8601String())}',
+                      style: Styles.greyLabelSmall,
+                    ),
+                    SizedBox(
+                      width: 12,
+                    ),
+                    isBusy
+                        ? Container(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 4,
+                              backgroundColor: Colors.pink,
+                            ),
+                          )
+                        : Container(),
+                    SizedBox(
+                      width: 20,
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -152,6 +197,8 @@ class _DashboardState extends State<Dashboard> {
                 onTap: _navigateToAcceptedOffers, child: OfferCard('accepted')),
             GestureDetector(
                 onTap: _navigateToClosedOffers, child: OfferCard('closed')),
+            GestureDetector(onTap: _navigateToInvoices, child: InvoiceCard()),
+            GestureDetector(onTap: _navigateToAccounts, child: AccountCard()),
           ],
         ),
       ),
@@ -186,6 +233,14 @@ class _DashboardState extends State<Dashboard> {
   void _navigateToClosedOffers() {
     debugPrint('😪 😪 😪  _navigateToClosedOffers ....');
   }
+
+  void _navigateToInvoices() {
+    debugPrint('🧩 🧩 🧩  _navigateToInvoices ....');
+  }
+
+  void _navigateToAccounts() {
+    debugPrint('🛎 🛎 🛎  _navigateToAccounts ....');
+  }
 }
 
 class Content {
@@ -208,7 +263,7 @@ class OfferCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AnchorBloc bloc = Provider.of<AnchorBloc>(context);
-    List<InvoiceOffer> offers = List();
+    List<InvoiceOffer> offers;
     String label = '';
     Color color = Colors.black;
     switch (type) {
@@ -242,7 +297,7 @@ class OfferCard extends StatelessWidget {
                   height: 44,
                 ),
                 Text(
-                  '${getFormattedNumber(346500, context)}',
+                  '${getFormattedNumber(offers.length, context)}',
                   style: TextStyle(
                       fontFamily: GoogleFonts.raleway().toString(),
                       fontWeight: FontWeight.w900,
@@ -253,10 +308,84 @@ class OfferCard extends StatelessWidget {
                   height: 16,
                 ),
                 Text(label),
-                Text(
-                  '03 Feb 2020 10:38',
-                  style: Styles.blueSmall,
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class InvoiceCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final AnchorBloc bloc = Provider.of<AnchorBloc>(context);
+    return Container(
+      width: 300,
+      height: 100,
+      color: Colors.brown[100],
+      child: Card(
+        elevation: 2,
+        color: Colors.brown[50],
+        child: Center(
+          child: Container(
+            child: Column(
+              children: <Widget>[
+                SizedBox(
+                  height: 44,
                 ),
+                Text(
+                  '${getFormattedNumber(bloc.invoices.length, context)}',
+                  style: TextStyle(
+                      fontFamily: GoogleFonts.raleway().toString(),
+                      fontWeight: FontWeight.w900,
+                      color: Colors.black,
+                      fontSize: 30),
+                ),
+                SizedBox(
+                  height: 16,
+                ),
+                Text("Open Invoices"),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class AccountCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final AnchorBloc bloc = Provider.of<AnchorBloc>(context);
+    return Container(
+      width: 300,
+      height: 100,
+      color: Colors.brown[100],
+      child: Card(
+        elevation: 2,
+        color: Colors.brown[50],
+        child: Center(
+          child: Container(
+            child: Column(
+              children: <Widget>[
+                SizedBox(
+                  height: 44,
+                ),
+                Text(
+                  '${getFormattedNumber(bloc.accounts.length, context)}',
+                  style: TextStyle(
+                      fontFamily: GoogleFonts.raleway().toString(),
+                      fontWeight: FontWeight.w900,
+                      color: Colors.indigo,
+                      fontSize: 30),
+                ),
+                SizedBox(
+                  height: 16,
+                ),
+                Text("Accounts"),
               ],
             ),
           ),

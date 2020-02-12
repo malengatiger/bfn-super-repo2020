@@ -12,7 +12,8 @@ data class NodeInfoDTO (
         var username: String? = null,
         var password: String? = null,
         var firebaseProjectId: String? = null,
-        var firebaseUrl: String? = null
+        var firebaseUrl: String? = null,
+        var date: Long? = null
 
 
 )

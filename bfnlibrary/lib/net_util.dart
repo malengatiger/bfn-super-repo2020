@@ -33,7 +33,8 @@ class Net {
   static const String BFN = 'bfn/admin/';
   static Future<List<NodeInfo>> getNodesFromFirestore() async {
     var list = List<NodeInfo>();
-    print('🍎 🍎 🍎 🍎 🍎 🍎 about to call auth.currentUser ... ');
+    print(
+        '🍎 🍎 🍎 🍎 🍎 🍎 getNodesFromFirestore: about to call auth.currentUser ... ');
     var result = await auth.currentUser();
     if (result == null) {
       print(
@@ -51,39 +52,14 @@ class Net {
       await auth.signOut();
       print('🍊 🍊 🍊 Logged OUT of Firebase  ${userResult.user.uid} ... ');
     } else {
-      print('🍎 🍎 🍎 🍎 about to get nodes from firestore  🍎 🍎');
+      print(
+          '🍎 🍎 🍎 🍎 getNodesFromFirestore: about to get nodes from firestore  🍎 🍎');
       list = await _readCurrentNodes(list);
     }
     if (list.isNotEmpty) {
       await Prefs.saveNodes(list);
     }
     return list;
-  }
-
-  static Future<String> getNodeUrl() async {
-    var m = await _getCachedURL();
-    if (m != null) {
-      return m;
-    }
-    var acct = await Prefs.getAccount();
-    if (acct == null) {
-      throw Exception("Account not available yet");
-    }
-    var list = await getNodesFromFirestore();
-    String url;
-    print('  🔆  🔆  🔆 local account:  💚 ${acct.toJson()}');
-    list.forEach((node) {
-      var host = node.addresses.elementAt(0);
-      print('  🔆  🔆  🔆 host of node:  💚 $host');
-      if (host == acct.host) {
-        url = node.webAPIUrl;
-      }
-    });
-    if (url == null) {
-      throw Exception("Url not found");
-    }
-    Prefs.setUrl(url);
-    return url;
   }
 
   static Future _readCurrentNodes(List<NodeInfo> list) async {
@@ -301,15 +277,17 @@ class Net {
   }
 
   static Future<List<AccountInfo>> getAccounts() async {
-    var prefix = await getNodeUrl();
-    final response = await get(prefix + '${BFN}getAccounts');
+    var prefix = await buildUrl();
+    debugPrint("🔱 getAccounts url = $prefix${BFN}getAccounts");
+    final response = await get('$prefix${BFN}getAccounts');
 
     List<AccountInfo> list = List();
     List m = json.decode(response);
     m.forEach((f) {
       list.add(AccountInfo.fromJson(f));
     });
-    debugPrint('🍎 🍊 Net: getAccounts: found ${list.length}');
+    debugPrint(
+        '🍊 Net: ..................................... getAccounts: found ${list.length}');
     return list;
   }
 
@@ -412,14 +390,14 @@ class Net {
   static Future<List<Invoice>> getInvoices(
       {String accountId, bool consumed = false}) async {
     var node = await Prefs.getNode();
-    String url;
+    String url = await buildUrl();
     if (accountId == null) {
-      url = node.webAPIUrl + '${BFN}getInvoiceStates?consumed=$consumed';
+      url += '${BFN}findInvoicesForNode?consumed=$consumed';
     } else {
-      url = node.webAPIUrl +
-          '${BFN}findInvoicesForSupplier?accountId=$accountId&consumed=$consumed';
+      url +=
+          '${BFN}findInvoicesForNode?accountId=$accountId&consumed=$consumed';
     }
-    debugPrint(url);
+    debugPrint('sending  🔵  🔵  🔵 ... $url');
     final response = await get(url);
 
     List<Invoice> list = List();
@@ -459,14 +437,14 @@ class Net {
       {String accountId, bool consumed}) async {
     var node = await Prefs.getNode();
     if (consumed == null) consumed = false;
-    String url;
+    String url = await buildUrl();
     if (accountId == null) {
-      url = node.webAPIUrl + '${BFN}findOffersForInvestor?consumed=$consumed';
+      url += '${BFN}findOffersForInvestor?consumed=$consumed';
     } else {
-      url = node.webAPIUrl +
+      url +=
           '${BFN}findOffersForInvestor?accountId=$accountId&consumed=$consumed';
     }
-    debugPrint(url);
+    debugPrint('sending  🔵  🔵  🔵 ... $url');
     final response = await get(url);
 
     List<InvoiceOffer> list = List();

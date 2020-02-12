@@ -58,17 +58,34 @@ class FirebaseScaffold {
             logger.info("\uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C Nodes JSON File Found :  " +
                     "\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21  " + file.exists())
             val nodes: List<NodeInfoDTO> = buildFirebase(file, stringIndex.toInt())
+            logger.info("\uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C Nodes from JSON File: ${nodes.size}" )
             val db: Firestore = FirestoreClient.getFirestore()
-            db.collection("nodes").whereEqualTo("springBootProfile", profile).get().get().documents.forEach {
-                logger.info("\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9 Firestore Node: " +
-                        "${it.data["addresses"]}")
+            val nodesFromFB = db.collection("nodes").whereEqualTo(
+                    "springBootProfile", profile).get().get().documents
+            if (nodesFromFB.isEmpty()) {
+                nodes.forEach {
+                    it.date = Date().time
+                    db.collection("nodes").add(it)
+                    logger.info("⚽ ⚽ ⚽ ⚽ ⚽ ⚽ ⚽ Node added to Firestore: \uD83D\uDD35 \uD83D\uDD35 " +
+                            "${gson.toJson(it)} \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83C\uDF4E ")
+                }
+            } else {
+                val node = nodesFromFB[0];
+                if (Date().time.minus(node.data["date"] as Long) > (1000 * 60 * 5) ) {
+                    FirebaseUtil.deleteNodes(profile)
+                    nodes.forEach {
+                        it.date = Date().time
+                        db.collection("nodes").add(it)
+                        logger.info("⚽ ⚽ ⚽ ⚽ ⚽ ⚽ ⚽ Node added to Firestore: \uD83D\uDD35 \uD83D\uDD35 " +
+                                "${gson.toJson(it)} \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83C\uDF4E ")
+                    }
+                } else {
+                    logger.info("Nodes on Firestore don't need to be refreshed, " +
+                            "\uD83D\uDC8A \uD83D\uDC8A \uD83D\uDC8A booted within last 5 minutes")
+                }
             }
-            FirebaseUtil.deleteNodes(profile)
-            nodes.forEach {
-                db.collection("nodes").add(it)
-                logger.info("⚽ ⚽ ⚽ ⚽ ⚽ ⚽ ⚽ Node added to Firestore: \uD83D\uDD35 \uD83D\uDD35 " +
-                        "${gson.toJson(it)} \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83C\uDF4E ")
-            }
+
+
             try {
                 val start = WebServerStart(date = Date(), profile = profile, numberOfNodes = nodes.size)
                 db.collection("webServerStarts").add(start)

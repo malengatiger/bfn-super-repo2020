@@ -14,7 +14,6 @@ class _SignInState extends State<SignIn> {
   final _formKey = GlobalKey<FormState>();
   var emailEditor = TextEditingController();
   var passwordEditor = TextEditingController();
-  var bloc = AnchorBloc();
   @override
   @override
   initState() {
@@ -161,7 +160,8 @@ class _SignInState extends State<SignIn> {
       isBusy = true;
     });
     try {
-      var res = await bloc.anchorSignIn(emailEditor.text, passwordEditor.text);
+      var res =
+          await _anchorBloc.anchorSignIn(emailEditor.text, passwordEditor.text);
       Navigator.pop(context, res);
     } catch (e) {
       debugPrint('👿 👿 👿 👿 Hey Jose, we gotta a problem: $e');

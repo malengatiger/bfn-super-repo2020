@@ -6,6 +6,7 @@ import 'package:bfnlibrary/data/anchor.dart';
 import 'package:bfnlibrary/data/invoice.dart';
 import 'package:bfnlibrary/data/invoice_offer.dart';
 import 'package:bfnlibrary/data/node_info.dart';
+import 'package:bfnlibrary/data/supplier_payment.dart';
 import 'package:bfnlibrary/net_util.dart';
 import 'package:bfnlibrary/util/auth.dart';
 import 'package:bfnlibrary/util/prefs.dart';
@@ -22,12 +23,14 @@ class AnchorBloc extends ChangeNotifier {
   List<InvoiceOffer> _closedOffers = List();
   List<Invoice> _invoices = List();
   List<AccountInfo> _accounts = List();
+  List<SupplierPayment> _supplierPayments = List();
   String _url;
 
   List<InvoiceOffer> get openOffers => _openOffers;
   List<InvoiceOffer> get acceptedOffers => _acceptedOffers;
   List<InvoiceOffer> get closedOffers => _closedOffers;
   List<AccountInfo> get accounts => _accounts;
+  List<SupplierPayment> get supplierPayments => _supplierPayments;
 
   Anchor get anchor => _anchor;
   NodeInfo get node => _node;
@@ -54,6 +57,11 @@ class AnchorBloc extends ChangeNotifier {
     debugPrint(
         '🌸 🌸 🌸 AnchorBloc Constructor 🔱 about to notifyListeners  🍎 ...');
     notifyListeners();
+    if (_anchor != null) {
+      getOpenOffers();
+      getInvoices();
+      getAccounts();
+    }
   }
 
   void _firebaseCloudMessagingInitialization() {
@@ -149,8 +157,13 @@ class AnchorBloc extends ChangeNotifier {
     return mx;
   }
 
-  Future getOpenOffers() async {
-    notifyListeners();
+  void getOpenOffers() async {
+    if (_anchor != null) {
+      debugPrint('🔵 🔵 🔵 🔵 Loading open offers ... 🍎 ');
+      _openOffers = await Net.getInvestorInvoiceOffers(
+          accountId: _anchor.accountId, consumed: false);
+      notifyListeners();
+    }
   }
 
   Future getAcceptedOffers() async {
@@ -159,6 +172,24 @@ class AnchorBloc extends ChangeNotifier {
 
   Future getClosedOffers() async {
     notifyListeners();
+  }
+
+  Future getSupplierPayments() async {
+    notifyListeners();
+  }
+
+  Future getAccounts() async {
+    debugPrint('🔵 🔵 🔵 🔵 Loading accounts ... 🍎 ');
+    _accounts = await Net.getAccounts();
+    notifyListeners();
+  }
+
+  Future getInvoices() async {
+    if (_anchor != null) {
+      debugPrint('🔵 🔵 🔵 🔵 Loading invoices ... 🍎 ');
+      _invoices = await Net.getInvoices(consumed: false);
+      notifyListeners();
+    }
   }
 
   Future refreshDashboardData() async {

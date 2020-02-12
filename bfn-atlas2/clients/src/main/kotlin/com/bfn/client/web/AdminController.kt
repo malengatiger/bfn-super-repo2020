@@ -94,6 +94,12 @@ class AdminController(rpc: NodeRPCConnection) {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting getAnchor signIn ... \uD83C\uDF4F ")
         return AnchorBee.getAnchor(proxy,identifier);
     }
+    @GetMapping(value = ["/getAccounts"], produces = ["application/json"])
+    @Throws(Exception::class)
+    private fun getAccounts(): List<AccountInfoDTO> {
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting getAccounts signIn ... \uD83C\uDF4F ")
+        return WorkerBee.getNodeAccounts(proxy)
+    }
 
     @PostMapping(value = ["/generateInvoices"], produces = ["application/json"])
     @Throws(Exception::class)

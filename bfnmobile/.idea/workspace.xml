@@ -2,28 +2,18 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="f4ca2db2-8548-43f0-b0d0-f09a516c1fc6" name="Default Changelist" comment="cleaned up!">
-      <change afterPath="$PROJECT_DIR$/../bfn-atlas2/scripts/q.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../bfnlibrary/lib/data/supplier_payment.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../bfn-atlas2/logs/archive/node-Aubreys-iMac.local.2020-02-07-1.log.gz" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../anchor/lib/bloc/anchor_bloc.dart" beforeDir="false" afterPath="$PROJECT_DIR$/../anchor/lib/bloc/anchor_bloc.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../anchor/lib/onboard/signin.dart" beforeDir="false" afterPath="$PROJECT_DIR$/../anchor/lib/onboard/signin.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../anchor/lib/ui/dashboard.dart" beforeDir="false" afterPath="$PROJECT_DIR$/../anchor/lib/ui/dashboard.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../bfn-atlas2/.gradle/5.4.1/fileHashes/fileHashes.lock" beforeDir="false" afterPath="$PROJECT_DIR$/../bfn-atlas2/.gradle/5.4.1/fileHashes/fileHashes.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../bfn-atlas2/.gradle/buildOutputCleanup/buildOutputCleanup.lock" beforeDir="false" afterPath="$PROJECT_DIR$/../bfn-atlas2/.gradle/buildOutputCleanup/buildOutputCleanup.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../bfn-atlas2/clients/src/main/kotlin/com/bfn/client/dto/NodeInfoDTO.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../bfn-atlas2/clients/src/main/kotlin/com/bfn/client/dto/NodeInfoDTO.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../bfn-atlas2/clients/src/main/kotlin/com/bfn/client/local/Client.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../bfn-atlas2/clients/src/main/kotlin/com/bfn/client/local/Client.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../bfn-atlas2/contracts/src/main/kotlin/com/bfn/contractstates/states/SupplierPaymentState.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../bfn-atlas2/contracts/src/main/kotlin/com/bfn/contractstates/states/SupplierPaymentState.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../bfn-atlas2/scripts/justnodes.sh" beforeDir="false" afterPath="$PROJECT_DIR$/../bfn-atlas2/scripts/justnodes.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../bfn-atlas2/clients/src/main/kotlin/com/bfn/client/web/AdminController.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../bfn-atlas2/clients/src/main/kotlin/com/bfn/client/web/AdminController.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../bfn-atlas2/clients/src/main/kotlin/com/bfn/client/web/FirebaseScaffold.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../bfn-atlas2/clients/src/main/kotlin/com/bfn/client/web/FirebaseScaffold.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../bfnlibrary/lib/net_util.dart" beforeDir="false" afterPath="$PROJECT_DIR$/../bfnlibrary/lib/net_util.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.dart_tool/package_config.json" beforeDir="false" afterPath="$PROJECT_DIR$/.dart_tool/package_config.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.flutter-plugins" beforeDir="false" afterPath="$PROJECT_DIR$/.flutter-plugins" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.flutter-plugins-dependencies" beforeDir="false" afterPath="$PROJECT_DIR$/.flutter-plugins-dependencies" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Flutter_Plugins.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.packages" beforeDir="false" afterPath="$PROJECT_DIR$/.packages" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java" beforeDir="false" afterPath="$PROJECT_DIR$/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ios/Runner/GeneratedPluginRegistrant.m" beforeDir="false" afterPath="$PROJECT_DIR$/ios/Runner/GeneratedPluginRegistrant.m" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/generated_plugin_registrant.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/generated_plugin_registrant.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.lock" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
