@@ -53,7 +53,7 @@ private class Client {
 //        startSupplierAccounts(
 //                numberOfAccounts = 23,
 //                url = localAnchorURL);
-//        letsDance()
+        letsDance()
 //        logger.info("\n\n========================= \uD83C\uDF4E 2nd Set; letsDance! \uD83C\uDF4E =================================\n\n")
 //        letsDance()
 //
@@ -73,7 +73,7 @@ private class Client {
 //
 //        printProfiles(proxyAnchorInvestor)
 //        printProfiles(proxyPartyB)
-        generateInvoices(localAnchorURL)
+//        generateInvoices(localAnchorURL)
 
     }
 
@@ -81,11 +81,11 @@ private class Client {
         generateInvoices(localAnchorURL)
         generateAnchorOffers(localAnchorURL)
         generateCasualOffers()
-        acceptAnchorOffers(localAnchorURL)
-        findAndAcceptBestOffers(localAnchorURL)
-        makeMultipleAnchorPayments(localAnchorURL, delayMinutesUntilNextPaymentFlow = 120)
-        makeMultipleInvestorPayments(localAnchorURL, delayMinutesUntilNextPaymentFlow = 120)
-        getOffers()
+//        acceptAnchorOffers(localAnchorURL)
+//        findAndAcceptBestOffers(localAnchorURL)
+//        makeMultipleAnchorPayments(localAnchorURL, delayMinutesUntilNextPaymentFlow = 120)
+//        makeMultipleInvestorPayments(localAnchorURL, delayMinutesUntilNextPaymentFlow = 120)
+//        getOffers()
         logger.info("\n\n =========  \uD83C\uDF81 DATA GENERATION COMPLETE. Bravo!!  \uD83C\uDF81 ============= \n\n")
         //doNodesAndAggregates(proxyAnchorInvestor, proxyCustomer001, proxyRegulator)
         logger.info("\n\n =========  \uD83C\uDF81 Ready to check that the whole business process happened, " +

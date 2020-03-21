@@ -94,7 +94,7 @@ class _DashboardState extends State<Dashboard> {
         leading: Container(),
         elevation: 0,
         title: Text(
-          'Business Finance Network',
+          'BFN',
           style: Styles.whiteSmall,
         ),
         centerTitle: false,
@@ -113,7 +113,8 @@ class _DashboardState extends State<Dashboard> {
               color: Colors.blue,
             ),
             onPressed: () {
-              Navigator.push(context, SlideRightRoute(widget: Welcome(null)));
+              Navigator.push(
+                  context, SlideRightRoute(widget: Welcome(bloc.anchor)));
             },
           ),
           IconButton(
@@ -122,9 +123,6 @@ class _DashboardState extends State<Dashboard> {
               color: Colors.black,
             ),
             onPressed: () {
-              setState(() {
-                isBusy = true;
-              });
               bloc.initialize();
             },
           ),
@@ -338,7 +336,7 @@ class InvoiceCard extends StatelessWidget {
                 Text(
                   '${getFormattedNumber(bloc.invoices.length, context)}',
                   style: TextStyle(
-                      fontFamily: GoogleFonts.raleway().toString(),
+                      fontFamily: GoogleFonts.calligraffitti().toString(),
                       fontWeight: FontWeight.w900,
                       color: Colors.black,
                       fontSize: 30),

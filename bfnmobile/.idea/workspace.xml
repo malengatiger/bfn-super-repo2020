@@ -2,17 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="f4ca2db2-8548-43f0-b0d0-f09a516c1fc6" name="Default Changelist" comment="cleaned up!">
-      <change afterPath="$PROJECT_DIR$/../bfn-atlas2/logs/archive/node-Aubreys-iMac.local.2020-02-07-1.log.gz" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../anchor/lib/bloc/anchor_bloc.dart" beforeDir="false" afterPath="$PROJECT_DIR$/../anchor/lib/bloc/anchor_bloc.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../anchor/lib/onboard/signin.dart" beforeDir="false" afterPath="$PROJECT_DIR$/../anchor/lib/onboard/signin.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../anchor/lib/bloc/trader_bloc.dart" beforeDir="false" afterPath="$PROJECT_DIR$/../anchor/lib/bloc/trader_bloc.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../anchor/lib/ui/dashboard.dart" beforeDir="false" afterPath="$PROJECT_DIR$/../anchor/lib/ui/dashboard.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../bfn-atlas2/.gradle/5.4.1/fileHashes/fileHashes.lock" beforeDir="false" afterPath="$PROJECT_DIR$/../bfn-atlas2/.gradle/5.4.1/fileHashes/fileHashes.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../bfn-atlas2/.gradle/buildOutputCleanup/buildOutputCleanup.lock" beforeDir="false" afterPath="$PROJECT_DIR$/../bfn-atlas2/.gradle/buildOutputCleanup/buildOutputCleanup.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../bfn-atlas2/clients/src/main/kotlin/com/bfn/client/dto/NodeInfoDTO.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../bfn-atlas2/clients/src/main/kotlin/com/bfn/client/dto/NodeInfoDTO.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../bfn-atlas2/clients/src/main/kotlin/com/bfn/client/local/Client.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../bfn-atlas2/clients/src/main/kotlin/com/bfn/client/local/Client.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../bfn-atlas2/clients/src/main/kotlin/com/bfn/client/web/AdminController.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../bfn-atlas2/clients/src/main/kotlin/com/bfn/client/web/AdminController.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../bfn-atlas2/clients/src/main/kotlin/com/bfn/client/web/FirebaseScaffold.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../bfn-atlas2/clients/src/main/kotlin/com/bfn/client/web/FirebaseScaffold.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../bfnlibrary/lib/net_util.dart" beforeDir="false" afterPath="$PROJECT_DIR$/../bfnlibrary/lib/net_util.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
