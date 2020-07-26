@@ -1,6 +1,5 @@
 package com.bfn.contractstates.states
 
-import com.google.common.collect.ImmutableList
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.template.InvoiceOfferContract
 import net.corda.core.contracts.BelongsToContract
@@ -27,7 +26,7 @@ class InvoiceOfferState(val invoiceId: UUID,
                         val customer: AccountInfo) : ContractState {
 
     override val participants: List<AbstractParty>
-        get() = ImmutableList.of<AbstractParty>(supplier.host,
+        get() = listOf(supplier.host,
                 investor.host, customer.host)
 
 }

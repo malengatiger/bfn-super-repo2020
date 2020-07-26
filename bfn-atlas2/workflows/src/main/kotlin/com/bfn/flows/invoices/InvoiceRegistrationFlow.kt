@@ -6,7 +6,6 @@ import com.bfn.contractstates.states.InvoiceState
 import com.bfn.flows.regulator.BroadcastTransactionFlow
 import com.bfn.flows.regulator.ReportToRegulatorFlow
 import com.bfn.flows.services.RegulatorFinderService
-import com.google.common.collect.ImmutableList
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
 import net.corda.core.node.ServiceHub
@@ -123,17 +122,17 @@ class InvoiceRegistrationFlow(private val invoiceState: InvoiceState) : FlowLogi
         var signedTransaction: SignedTransaction? = null
         if (supplierStatus == LOCAL_SUPPLIER && customerStatus == LOCAL_CUSTOMER) {
             Companion.logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 LOCAL_SUPPLIER and LOCAL_CUSTOMER \uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21")
-            signedTransaction = getSignedTransaction(signedTx, ImmutableList.of(regulatorSession))
+            signedTransaction = getSignedTransaction(signedTx, listOf(regulatorSession))
         }
         if (supplierStatus == LOCAL_SUPPLIER && customerStatus == REMOTE_CUSTOMER) {
             Companion.logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 LOCAL_SUPPLIER and REMOTE_CUSTOMER \uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21")
             customerSession = initiateFlow(customerParty)
-            signedTransaction = getSignedTransaction(signedTx, ImmutableList.of(customerSession, regulatorSession))
+            signedTransaction = getSignedTransaction(signedTx, listOf(customerSession, regulatorSession))
         }
         if (supplierStatus == REMOTE_SUPPLIER && customerStatus == LOCAL_CUSTOMER) {
             Companion.logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 REMOTE_SUPPLIER and LOCAL_CUSTOMER \uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21")
             supplierSession = initiateFlow(supplierParty)
-            signedTransaction = getSignedTransaction(signedTx, ImmutableList.of(supplierSession, regulatorSession))
+            signedTransaction = getSignedTransaction(signedTx, listOf(supplierSession, regulatorSession))
         }
 
         if (supplierStatus == REMOTE_SUPPLIER && customerStatus == REMOTE_CUSTOMER) {
@@ -142,9 +141,9 @@ class InvoiceRegistrationFlow(private val invoiceState: InvoiceState) : FlowLogi
             if (invoiceState.supplierInfo.host.name != invoiceState.customerInfo.host.name) {
                 customerSession = initiateFlow(customerParty)
                 signedTransaction = getSignedTransaction(signedTx,
-                        ImmutableList.of(supplierSession, customerSession, regulatorSession))
+                        listOf(supplierSession, customerSession, regulatorSession))
             } else {
-                signedTransaction = getSignedTransaction(signedTx, ImmutableList.of(supplierSession, regulatorSession))
+                signedTransaction = getSignedTransaction(signedTx, listOf(supplierSession, regulatorSession))
             }
         }
 

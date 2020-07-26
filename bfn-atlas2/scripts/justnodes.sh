@@ -37,8 +37,8 @@ sleep 15s
 echo "🔵 🍎 🍎 🍎 🍎 🍎 🍎 🍎 🍎 corda nodes and web servers should all be booted up by now! 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵"
 
 # ------------ API Web Servers
-echo "🦕🦕🦕🦕🦕🦕 starting the Client to perform data generation using 🥬 CordaRPCClient and 🍔 basic http 🦕🦕🦕🦕🦕🦕 ..."
-./scripts/client.sh
+#echo "🦕🦕🦕🦕🦕🦕 starting the Client to perform data generation using 🥬 CordaRPCClient and 🍔 basic http 🦕🦕🦕🦕🦕🦕 ..."
+#./scripts/client.sh
 
 
 

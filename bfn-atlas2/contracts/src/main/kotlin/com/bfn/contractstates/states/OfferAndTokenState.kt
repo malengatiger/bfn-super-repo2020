@@ -1,7 +1,6 @@
 package com.bfn.contractstates.states
 
 import com.bfn.contractstates.contracts.OfferAndTokenStateContract
-import com.google.common.collect.ImmutableList
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import net.corda.core.contracts.*
 import net.corda.core.flows.FlowLogicRefFactory
@@ -16,7 +15,7 @@ class OfferAndTokenState(val invoiceOffer: InvoiceOfferState,
                          val token: FungibleToken, private val issuer: Party) : ContractState, SchedulableState {
 
     override val participants: List<AbstractParty>
-        get() = ImmutableList.of<AbstractParty>(issuer)
+        get() = listOf(issuer)
 
     override fun nextScheduledActivity(thisStateRef: StateRef, flowLogicRefFactory: FlowLogicRefFactory): ScheduledActivity? {
         logger.info("OfferAndTokenState: \uD83D\uDE3C \uD83D\uDE3C \uD83D\uDE3C nextScheduledActivity: ${thisStateRef.txhash}")

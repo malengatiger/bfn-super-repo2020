@@ -4,7 +4,6 @@ import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.states.InvoiceOfferState
 import com.bfn.flows.regulator.ReportToRegulatorFlow
 import com.bfn.flows.services.InvoiceOfferFinderService
-import com.google.common.collect.ImmutableList
 import com.template.InvoiceOfferContract
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
@@ -95,7 +94,7 @@ class InvoiceOfferFlow(private val invoiceOfferState: InvoiceOfferState) : FlowL
             Companion.logger.info(" \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 " +
                     "All participants are LOCAL ... \uD83D\uDD06")
             val mSignedTransactionDone = subFlow(
-                    FinalityFlow(signedTx, ImmutableList.of<FlowSession>()))
+                    FinalityFlow(signedTx, listOf()))
             Companion.logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D  SINGLE NODE ==> " +
                     " \uD83E\uDD66 \uD83E\uDD66  \uD83E\uDD66 \uD83E\uDD66 FinalityFlow has been executed " +
                     "...\uD83E\uDD66 \uD83E\uDD66")
