@@ -1,0 +1,36 @@
+[
+  {
+    "addresses": [
+      "O\u003dAnchorInvestor, L\u003dLondon, C\u003dGB"
+    ],
+    "platformVersion": 5,
+    "webServerAddress": "https://bfnwebinvestor-hkn7vsuxdq-ew.a.run.app",
+    "host": "nd-601-154-124.rg-788-479.p2pify.com",
+    "port": 10201,
+    "springBootProfile": "prod",
+    "webServerPort": 8080,
+    "name": "AnchorInvestor",
+    "username": "mystifying_cray",
+    "password" : "device-grimy-herbs-kelp-cramp-sprout",
+    "firebaseProjectId": "bfn-mobile-backend",
+    "firebaseUrl": "https://bfn-mobile-backend.firebaseio.com"
+
+  },
+  {
+    "addresses": [
+      "O\u003dCustomer001, L\u003dLondon, C\u003dGB"
+    ],
+    "platformVersion": 5,
+    "webServerAddress": "https://bfnwebcustomer-hkn7vsuxdq-ew.a.run.app",
+    "host": "nd-601-154-124.rg-788-479.p2pify.com",
+    "port": 10201,
+    "springBootProfile": "prod",
+    "webServerPort": 8080,
+    "name": "Customer001",
+    "username": "mystifying_cray",
+    "password" : "device-grimy-herbs-kelp-cramp-sprout",
+    "firebaseProjectId": "bfn-mobile-backend",
+    "firebaseUrl": "https://bfn-mobile-backend.firebaseio.com"
+  }
+
+]

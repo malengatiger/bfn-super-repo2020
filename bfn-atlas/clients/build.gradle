@@ -1,0 +1,74 @@
+apply plugin: 'org.springframework.boot'
+
+sourceSets {
+    main {
+        resources {
+            srcDir rootProject.file("config/dev")
+        }
+    }
+}
+
+dependencies {
+    // Corda dependencies.
+    compile "$corda_release_group:corda-rpc:$corda_release_version"
+
+    // CorDapp dependencies.
+    compile project(":contracts")
+    compile project(":workflows")
+
+    compile("org.springframework.boot:spring-boot-starter-websocket:$spring_boot_version") {
+        exclude group: "org.springframework.boot", module: "spring-boot-starter-logging"
+    }
+
+    compile "org.apache.logging.log4j:log4j-slf4j-impl:${log4j_version}"
+    compile "org.apache.logging.log4j:log4j-web:${log4j_version}"
+    compile "org.slf4j:jul-to-slf4j:$slf4j_version"
+
+    compile group: 'com.fasterxml.jackson.module', name: 'jackson-module-kotlin', version: '2.10.1'
+    compile group: 'com.google.code.gson', name: 'gson', version: '2.8.5'
+    compile group: 'com.google.firebase', name: 'firebase-admin', version: '6.11.0'
+    compile group: 'khttp', name: 'khttp', version: '1.0.0'
+}
+
+
+springBoot {
+    mainClassName = "com.template.webserver.ServerKt"
+}
+
+springBoot {
+    mainClassName = "com.bfn.client.web.ServerKt"
+}
+
+task runClient(type: JavaExec, dependsOn: assemble) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'com.bfn.client.ClientKt'
+}
+
+task runPartyA(type: JavaExec, dependsOn: assemble) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'com.bfn.client.web.ServerKt'
+    args '--server.port=10050', '--config.rpc.host=localhost', '--config.rpc.port=10006', '--config.rpc.username=user1', '--config.rpc.password=test'
+}
+
+task runPartyB(type: JavaExec, dependsOn: assemble) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'com.bfn.client.web.ServerKt'
+    args '--server.port=10053', '--config.rpc.host=localhost', '--config.rpc.port=10009', '--config.rpc.username=user1', '--config.rpc.password=test'
+}
+
+task runPartyC(type: JavaExec, dependsOn: assemble) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'com.bfn.client.web.ServerKt'
+    args '--server.port=10056', '--config.rpc.host=localhost', '--config.rpc.port=10012', '--config.rpc.username=user1', '--config.rpc.password=test'
+}
+
+task runRegulator(type: JavaExec, dependsOn: assemble) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'com.bfn.client.web.ServerKt'
+    args '--server.port=10059', '--config.rpc.host=localhost', '--config.rpc.port=10017', '--config.rpc.username=user1', '--config.rpc.password=test'
+}
+
+task runRemoteBFN1(type: JavaExec, dependsOn: assemble) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'com.bfn.client.web.ServerKt'
+}
