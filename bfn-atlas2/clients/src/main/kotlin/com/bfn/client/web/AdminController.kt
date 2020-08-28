@@ -2,6 +2,7 @@ package com.bfn.client.web
 
 import com.bfn.client.dto.*
 import com.bfn.client.local.DemoUtil
+import com.bfn.client.utils.FirebaseUtil
 import com.bfn.client.web.WorkerBee.getAccount
 import com.bfn.client.web.WorkerBee.getDashboardData
 import com.bfn.client.web.WorkerBee.getStates
@@ -27,6 +28,7 @@ class AdminController(rpc: NodeRPCConnection) {
     @Value("\${spring.profiles.active}")
     private lateinit var profile: String
     @GetMapping(value = ["/demo"], produces = ["application/json"])
+
     @Throws(Exception::class)
     private fun buildDemo(@RequestParam numberOfAccounts: Int = 9): DemoSummary {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting DemoUtil: buildDemo ... \uD83C\uDF4F ")

@@ -1,4 +1,4 @@
-package com.bfn.client.web
+package com.bfn.client.utils
 
 import com.bfn.client.dto.*
 import com.google.api.core.ApiFuture
@@ -29,6 +29,15 @@ object FirebaseUtil {
     private val db: Firestore = FirestoreClient.getFirestore()
     private val messaging: FirebaseMessaging = FirebaseMessaging.getInstance()
 
+
+    @JvmStatic
+    @Throws(ExecutionException::class, InterruptedException::class)
+    fun initialize() {
+
+        // Response is a message ID string.
+        logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 "
+                + "Successfully initialized Firebase \uD83D\uDE21 \uD83E\uDD6C \uD83E\uDD6C  \uD83E\uDD6C \uD83E\uDD6C");
+    }
 
 
     @JvmStatic
@@ -177,6 +186,7 @@ object FirebaseUtil {
     @JvmStatic
     @Throws(FirebaseAuthException::class)
     fun getUser(email: String?): UserRecord? {
+
         var record: UserRecord? = null
         try {
             record = auth.getUserByEmail(email)

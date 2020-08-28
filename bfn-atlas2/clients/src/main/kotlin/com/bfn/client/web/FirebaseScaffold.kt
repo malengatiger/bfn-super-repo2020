@@ -1,25 +1,18 @@
 package com.bfn.client.web
 
 import com.bfn.client.dto.NodeInfoDTO
-import com.google.auth.oauth2.GoogleCredentials
+import com.bfn.client.utils.FirebaseUtil
 import com.google.cloud.firestore.Firestore
-import com.google.firebase.FirebaseApp
-import com.google.firebase.FirebaseOptions
 import com.google.firebase.cloud.FirestoreClient
 import com.google.gson.GsonBuilder
-import com.google.gson.reflect.TypeToken
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.ApplicationContext
 import org.springframework.core.env.Environment
-import org.springframework.core.env.get
 import org.springframework.core.io.Resource
 import org.springframework.stereotype.Component
-import org.springframework.util.ResourceUtils
 import java.io.File
-import java.io.FileInputStream
-import java.nio.file.Files
 import java.util.*
 import javax.annotation.PostConstruct
 

@@ -12,8 +12,8 @@
     "name": "AnchorInvestor",
     "username": "user1",
     "password" : "test",
-    "firebaseProjectId": "bfn-mobile-backend",
-    "firebaseUrl": "https://bfn-mobile-backend.firebaseio.com"
+    "firebaseProjectId": "stellar-anchor-333",
+    "firebaseUrl": "https://stellar-anchor-333.firebaseio.com"
   },
   {
     "addresses": [
@@ -28,8 +28,8 @@
     "name": "Customer001",
     "username": "user1",
     "password" : "test",
-    "firebaseProjectId": "bfn-mobile-backend",
-    "firebaseUrl": "https://bfn-mobile-backend.firebaseio.com"
+    "firebaseProjectId": "stellar-anchor-333",
+    "firebaseUrl": "https://stellar-anchor-333.firebaseio.com"
   },
   {
     "addresses": [
@@ -44,8 +44,8 @@
     "name": "Regulator",
     "username": "user1",
     "password" : "test",
-    "firebaseProjectId": "bfn-mobile-backend",
-    "firebaseUrl": "https://bfn-mobile-backend.firebaseio.com"
+    "firebaseProjectId": "stellar-anchor-333",
+    "firebaseUrl": "https://stellar-anchor-333.firebaseio.com"
   }
 
 ]

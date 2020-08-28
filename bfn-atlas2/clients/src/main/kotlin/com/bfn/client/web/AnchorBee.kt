@@ -1,6 +1,7 @@
 package com.bfn.client.web
 
 import com.bfn.client.dto.*
+import com.bfn.client.utils.FirebaseUtil
 import com.google.firebase.cloud.FirestoreClient
 import com.google.gson.GsonBuilder
 
@@ -162,7 +163,7 @@ object AnchorBee {
                     maximumInvestment = anchor.maximumInvestment,
                     defaultOfferDiscount = anchor.defaultOfferDiscount,
                     tradeFrequencyInMinutes = anchor.tradeFrequencyInMinutes,
-                    tradeMatrices = anchor.tradeMatrices,
+                    tradeMatrixItems = anchor.tradeMatrixItems,
                     name = anchor.name, email = anchor.email,
                     cellphone = anchor.cellphone, date = Date())
 
@@ -197,7 +198,7 @@ object AnchorBee {
                 maximumInvestment = a.maximumInvestment,
                 defaultOfferDiscount = a.defaultOfferDiscount,
                 tradeFrequencyInMinutes = a.tradeFrequencyInMinutes,
-                tradeMatrices = a.tradeMatrices,
+                tradeMatrixItems = a.tradeMatrixItems,
                 date = a.date.toString(),
                 name = a.name,
                 email = a.email,

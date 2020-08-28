@@ -2,7 +2,7 @@ package com.bfn.client.local
 
 import com.google.gson.GsonBuilder
 import com.bfn.client.dto.*
-import com.bfn.client.web.FirebaseUtil
+import com.bfn.client.utils.FirebaseUtil
 import com.bfn.client.web.WorkerBee
 import com.bfn.client.web.WorkerBee.getNodeAccounts
 import com.bfn.client.web.WorkerBee.startAccountRegistrationFlow
@@ -28,6 +28,7 @@ object DemoUtil {
     private var investors: MutableList<AccountInfoDTO>? = null
     private val demoSummary = DemoSummary()
     private var myNode: NodeInfo? = null
+
     @Throws(Exception::class)
     fun generateLocalNodeAccounts(mProxy: CordaRPCOps?, numberOfAccounts: Int = 1): DemoSummary {
         proxy = mProxy

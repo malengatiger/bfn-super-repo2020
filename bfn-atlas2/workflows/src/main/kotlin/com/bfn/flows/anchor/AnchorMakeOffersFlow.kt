@@ -118,7 +118,7 @@ class AnchorMakeOffersFlow : FlowLogic<List<InvoiceOfferState>>() {
         if (invoice.totalAmount > anchor.maximumInvoiceAmount) {
             return null
         }
-        val disc = if (anchor.tradeMatrices.isEmpty()) {
+        val disc = if (anchor.tradeMatrixItems.isEmpty()) {
             anchor.defaultOfferDiscount
         } else {
             getValidDiscount(invoice, anchor)
@@ -148,8 +148,8 @@ class AnchorMakeOffersFlow : FlowLogic<List<InvoiceOfferState>>() {
     @Suspendable
     private fun getValidDiscount(invoice:InvoiceState, anchor: AnchorState): Double {
         var discount = 0.0
-        logger.info("\uD83E\uDD8A \uD83E\uDD8A Validating against trade matrices ... ${anchor.tradeMatrices.size}")
-        anchor.tradeMatrices.forEach() {
+        logger.info("\uD83E\uDD8A \uD83E\uDD8A Validating against trade matrices ... ${anchor.tradeMatrixItems.size}")
+        anchor.tradeMatrixItems.forEach() {
             logger.info("\uD83D\uDD35  startInvoiceAmount : ${it.startInvoiceAmount} " +
                     "endInvoiceAmount: ${it.endInvoiceAmount} " +
                     "\uD83D\uDD35 \uD83D\uDD35  compare against invoice totalAmount: \uD83D\uDD35 ${invoice.totalAmount}")

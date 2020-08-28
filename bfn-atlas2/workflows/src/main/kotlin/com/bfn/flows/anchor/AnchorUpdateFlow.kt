@@ -33,7 +33,7 @@ class AnchorUpdateFlow(
                 account = existingAnchor.state.data.account, minimumInvoiceAmount = anchor.minimumInvoiceAmount,
                 maximumInvoiceAmount = anchor.maximumInvoiceAmount, maximumInvestment = anchor.maximumInvestment,
                 defaultOfferDiscount = anchor.defaultOfferDiscount, tradeFrequencyInMinutes = anchor.tradeFrequencyInMinutes,
-                tradeMatrices = anchor.tradeMatrices, date = Date(), name = existingAnchor.state.data.name,
+                tradeMatrixItems = anchor.tradeMatrixItems, date = Date(), name = existingAnchor.state.data.name,
                     email = anchor.email, cellphone = anchor.cellphone)
 
         val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())

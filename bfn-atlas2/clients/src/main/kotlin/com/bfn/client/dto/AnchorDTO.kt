@@ -1,7 +1,6 @@
 package com.bfn.client.dto
 
-import com.bfn.contractstates.states.TradeMatrix
-import java.util.*
+import com.bfn.contractstates.states.TradeMatrixItem
 
 data class AnchorDTO(
         var issuedBy: String,
@@ -11,7 +10,7 @@ data class AnchorDTO(
         var maximumInvestment: Double,
         var tradeFrequencyInMinutes: Int,
         var defaultOfferDiscount: Double,
-        var tradeMatrices: MutableList<TradeMatrix>,
+        var tradeMatrixItems: MutableList<TradeMatrixItem>,
         var date: String,
         var name: String,
         var email: String,

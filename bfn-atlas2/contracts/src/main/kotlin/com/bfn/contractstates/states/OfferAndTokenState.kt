@@ -12,7 +12,8 @@ import org.slf4j.LoggerFactory
 @CordaSerializable
 @BelongsToContract(OfferAndTokenStateContract::class)
 class OfferAndTokenState(val invoiceOffer: InvoiceOfferState,
-                         val token: FungibleToken, private val issuer: Party) : ContractState, SchedulableState {
+                         val token: FungibleToken,
+                         private val issuer: Party) : ContractState, SchedulableState {
 
     override val participants: List<AbstractParty>
         get() = listOf(issuer)

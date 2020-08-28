@@ -1,6 +1,10 @@
 package com.bfn.client.web
 
 import com.bfn.client.dto.*
+import com.bfn.client.utils.FirebaseUtil.createUser
+import com.bfn.client.utils.FirebaseUtil.sendAccountMessage
+import com.bfn.client.utils.FirebaseUtil.sendInvoiceMessage
+import com.bfn.client.utils.FirebaseUtil.sendInvoiceOfferMessage
 import com.bfn.flows.CreateAccountFlow
 import com.bfn.flows.InvestorProfileFlow
 import com.bfn.flows.invoices.InvoiceOfferFlow
@@ -14,10 +18,6 @@ import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 
-import com.bfn.client.web.FirebaseUtil.createUser
-import com.bfn.client.web.FirebaseUtil.sendAccountMessage
-import com.bfn.client.web.FirebaseUtil.sendInvoiceMessage
-import com.bfn.client.web.FirebaseUtil.sendInvoiceOfferMessage
 import com.bfn.contractstates.states.*
 import com.bfn.flows.SupplierProfileFlow
 import com.bfn.flows.todaysDate

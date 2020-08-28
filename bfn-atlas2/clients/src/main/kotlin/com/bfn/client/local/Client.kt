@@ -700,7 +700,7 @@ private class Client {
 
     private fun createAnchor(url: String) {
 
-        val mx: MutableList<TradeMatrix> = mutableListOf()
+        val mxes: MutableList<TradeMatrixItem> = mutableListOf()
         logger.info("\uD83D\uDE21 createAnchor for Node \uD83D\uDE21 \uD83D\uDE21 ")
         logger.info("\uD83D\uDE21 deleting Firebase auth users and collections \uD83D\uDE21 \uD83D\uDE21 ")
         val response0 = httpGet(
@@ -718,7 +718,7 @@ private class Client {
                 email = "anchor1@bfn.com",
                 cellphone = "+27710441887",
                 tradeFrequencyInMinutes = 240,
-                tradeMatrices = mx,
+                tradeMatrixItems = mxes,
                 date = todaysDate(),
                 password = "bfnanchor33",
                 uid = UUID.randomUUID().toString(),
@@ -726,41 +726,41 @@ private class Client {
 
         )
 
-        val m2 = TradeMatrix(
+        val m2 = TradeMatrixItem(
                 startInvoiceAmount = 2000001.00,
                 endInvoiceAmount = 300000.00,
                 offerDiscount = 8.3,
                 date = todaysDate()
         )
-        val m3 = TradeMatrix(
+        val m3 = TradeMatrixItem(
                 startInvoiceAmount = 300001.00,
                 endInvoiceAmount = 400000.00,
                 offerDiscount = 7.9,
                 date = todaysDate()
         )
-        val m4 = TradeMatrix(
+        val m4 = TradeMatrixItem(
                 startInvoiceAmount = 400001.00,
                 endInvoiceAmount = 500000.00,
                 offerDiscount = 7.4,
                 date = todaysDate()
         )
-        val m5 = TradeMatrix(
+        val m5 = TradeMatrixItem(
                 startInvoiceAmount = 500001.00,
                 endInvoiceAmount = 1000000.00,
                 offerDiscount = 5.5,
                 date = todaysDate())
-        val m6 = TradeMatrix(
+        val m6 = TradeMatrixItem(
                 startInvoiceAmount = 1000001.00,
                 endInvoiceAmount = 10000000.00,
                 offerDiscount = 4.2,
                 date = todaysDate())
-        val m7 = TradeMatrix(
+        val m7 = TradeMatrixItem(
                 startInvoiceAmount = 10000001.00,
                 endInvoiceAmount = 100000000.00,
                 offerDiscount = 3.1,
                 date = todaysDate())
 
-        a.tradeMatrices = mutableListOf(m2, m3, m4, m5, m6, m7)
+        a.tradeMatrixItems = mutableListOf(m2, m3, m4, m5, m6, m7)
         val mGson = Gson()
         val json = mGson.toJson(a)
         val jsonObject = JSONObject(json)

@@ -11,8 +11,8 @@
     "name": "AnchorInvestor",
     "username": "mystifying_cray",
     "password" : "device-grimy-herbs-kelp-cramp-sprout",
-    "firebaseProjectId": "bfn-mobile-backend",
-    "firebaseUrl": "https://bfn-mobile-backend.firebaseio.com"
+    "firebaseProjectId": "stellar-anchor-333",
+    "firebaseUrl": "https://stellar-anchor-333.firebaseio.com"
 
   },
   {
@@ -27,8 +27,8 @@
     "name": "Customer001",
     "username": "mystifying_cray",
     "password" : "device-grimy-herbs-kelp-cramp-sprout",
-    "firebaseProjectId": "bfn-mobile-backend",
-    "firebaseUrl": "https://bfn-mobile-backend.firebaseio.com"
+    "firebaseProjectId": "stellar-anchor-333",
+    "firebaseUrl": "https://stellar-anchor-333.firebaseio.com"
   }
 
 ]

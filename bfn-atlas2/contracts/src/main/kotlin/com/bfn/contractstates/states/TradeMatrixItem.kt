@@ -4,7 +4,7 @@ import net.corda.core.serialization.CordaSerializable
 import java.util.*
 
 @CordaSerializable
-data class TradeMatrix (
+data class TradeMatrixItem (
         val startInvoiceAmount: Double,
         val endInvoiceAmount: Double,
         val offerDiscount: Double,
