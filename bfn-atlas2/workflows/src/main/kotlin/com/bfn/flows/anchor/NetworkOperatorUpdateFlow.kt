@@ -1,8 +1,8 @@
 package com.bfn.flows.anchor
 
 import co.paralleluniverse.fibers.Suspendable
-import com.bfn.contractstates.contracts.AnchorContract
-import com.bfn.contractstates.states.AnchorState
+import com.bfn.contractstates.contracts.NetworkOperatorContract
+import com.bfn.contractstates.states.NetworkOperatorState
 import com.r3.corda.lib.accounts.workflows.ourIdentity
 import net.corda.core.flows.FinalityFlow
 import net.corda.core.flows.FlowLogic
@@ -17,19 +17,19 @@ import java.util.*
  */
 @InitiatingFlow
 @StartableByRPC
-class AnchorUpdateFlow(
-        private val anchor: AnchorState ) : FlowLogic<AnchorState>() {
+class NetworkOperatorUpdateFlow(
+        private val anchor: NetworkOperatorState) : FlowLogic<NetworkOperatorState>() {
 
     @Suspendable
-    override fun call(): AnchorState {
+    override fun call(): NetworkOperatorState {
         Companion.logger.info("$pp AnchorUpdateFlow started ...")
 
-        val existingAnchor = serviceHub.vaultService.queryBy(AnchorState::class.java).states.singleOrNull()
+        val existingAnchor = serviceHub.vaultService.queryBy(NetworkOperatorState::class.java).states.singleOrNull()
                 ?: throw IllegalArgumentException("Anchor does not exist")
 
-        val command = AnchorContract.Update()
+        val command = NetworkOperatorContract.Update()
         val newAnchor =
-            AnchorState(issuedBy = serviceHub.myInfo.legalIdentities.first(),
+            NetworkOperatorState(issuedBy = serviceHub.myInfo.legalIdentities.first(),
                 account = existingAnchor.state.data.account, minimumInvoiceAmount = anchor.minimumInvoiceAmount,
                 maximumInvoiceAmount = anchor.maximumInvoiceAmount, maximumInvestment = anchor.maximumInvestment,
                 defaultOfferDiscount = anchor.defaultOfferDiscount, tradeFrequencyInMinutes = anchor.tradeFrequencyInMinutes,
@@ -50,7 +50,7 @@ class AnchorUpdateFlow(
 
     private val pp = "\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95";
     companion object {
-        private val logger = LoggerFactory.getLogger(AnchorUpdateFlow::class.java)
+        private val logger = LoggerFactory.getLogger(NetworkOperatorUpdateFlow::class.java)
     }
 
 }

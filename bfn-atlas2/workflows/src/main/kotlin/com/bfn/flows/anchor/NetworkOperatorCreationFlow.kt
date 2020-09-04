@@ -1,8 +1,8 @@
 package com.bfn.flows.anchor
 
 import co.paralleluniverse.fibers.Suspendable
-import com.bfn.contractstates.contracts.AnchorContract
-import com.bfn.contractstates.states.AnchorState
+import com.bfn.contractstates.contracts.NetworkOperatorContract
+import com.bfn.contractstates.states.NetworkOperatorState
 import com.r3.corda.lib.accounts.workflows.ourIdentity
 import net.corda.core.flows.FinalityFlow
 import net.corda.core.flows.FlowLogic
@@ -18,19 +18,19 @@ import org.slf4j.LoggerFactory
  */
 @InitiatingFlow
 @StartableByRPC
-class AnchorCreationFlow(private val anchor: AnchorState ) : FlowLogic<SignedTransaction>() {
+class NetworkOperatorCreationFlow(private val anchor: NetworkOperatorState ) : FlowLogic<SignedTransaction>() {
 
     @Suspendable
     override fun call(): SignedTransaction {
-        Companion.logger.info(pp + "AnchorCreationFlow started, name: ${anchor.name}" )
+        Companion.logger.info(pp + "NetworkOperatorCreationFlow started, name: ${anchor.name}" )
 
-        val existingAnchor = serviceHub.vaultService.queryBy(AnchorState::class.java).states.singleOrNull()
+        val existingAnchor = serviceHub.vaultService.queryBy(NetworkOperatorState::class.java).states.singleOrNull()
         if (existingAnchor != null) {
             val msg = "\uD83C\uDFC0 There can be only one Kobe Bryant!! RIP \uD83C\uDFC0"
             logger.warn(msg)
-            throw IllegalArgumentException("Anchor already exists: ${existingAnchor.state.data.account.name}")
+            throw IllegalArgumentException("NetworkOperator already exists: ${existingAnchor.state.data.account.name}")
         }
-        val command = AnchorContract.Create()
+        val command = NetworkOperatorContract.Create()
 
         val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
         txBuilder.addCommand(command, serviceHub.ourIdentity.owningKey)
@@ -45,7 +45,7 @@ class AnchorCreationFlow(private val anchor: AnchorState ) : FlowLogic<SignedTra
 
     private val pp = "\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95";
     companion object {
-        private val logger = LoggerFactory.getLogger(AnchorCreationFlow::class.java)
+        private val logger = LoggerFactory.getLogger(NetworkOperatorCreationFlow::class.java)
     }
 
 }

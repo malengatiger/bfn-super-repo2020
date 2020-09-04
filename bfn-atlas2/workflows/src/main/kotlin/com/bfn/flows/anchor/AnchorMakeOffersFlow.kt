@@ -1,9 +1,9 @@
 package com.bfn.flows.anchor
 
 import co.paralleluniverse.fibers.Suspendable
-import com.bfn.contractstates.states.AnchorState
 import com.bfn.contractstates.states.InvoiceOfferState
 import com.bfn.contractstates.states.InvoiceState
+import com.bfn.contractstates.states.NetworkOperatorState
 import com.bfn.flows.services.InvoiceFinderService
 import com.bfn.flows.todaysDate
 import com.template.InvoiceOfferContract
@@ -27,7 +27,7 @@ class AnchorMakeOffersFlow : FlowLogic<List<InvoiceOfferState>>() {
     override fun call(): List<InvoiceOfferState> {
         Companion.logger.info("$pp AnchorMakeOffersFlow started ... $pp")
 
-        val existingAnchor = serviceHub.vaultService.queryBy(AnchorState::class.java).states.singleOrNull()
+        val existingAnchor = serviceHub.vaultService.queryBy( NetworkOperatorState::class.java).states.singleOrNull()
                 ?: throw IllegalArgumentException("Anchor does not exist")
 
         val unconsumedInvoices = serviceHub.cordaService(InvoiceFinderService::class.java)
@@ -50,7 +50,7 @@ class AnchorMakeOffersFlow : FlowLogic<List<InvoiceOfferState>>() {
     }
 
     private fun buildTransaction(states: List<StateAndRef<InvoiceState>>,
-                                 existingAnchor: StateAndRef<AnchorState>,
+                                 existingAnchor: StateAndRef< NetworkOperatorState>,
                                  offerList: MutableList<InvoiceOfferState>,
                                  keys: MutableMap<String, PublicKey>,
                                  anchorParty: Party, sessions: MutableList<FlowSession>): TransactionBuilder {
@@ -109,7 +109,7 @@ class AnchorMakeOffersFlow : FlowLogic<List<InvoiceOfferState>>() {
      * Create InvoiceOffer where invoice meets ALL requirements
      */
     @Suspendable
-    private fun attemptToCreateOffer(state: StateAndRef<InvoiceState>, anchor: AnchorState): InvoiceOfferState? {
+    private fun attemptToCreateOffer(state: StateAndRef<InvoiceState>, anchor:  NetworkOperatorState): InvoiceOfferState? {
         logger.info("\uD83D\uDE0E attemptToCreateOffer invoice ... \uD83D\uDE0E \uD83D\uDE0E validating against anchor profile")
         val invoice = state.state.data
         if (invoice.totalAmount < anchor.minimumInvoiceAmount) {
@@ -146,7 +146,7 @@ class AnchorMakeOffersFlow : FlowLogic<List<InvoiceOfferState>>() {
         )
     }
     @Suspendable
-    private fun getValidDiscount(invoice:InvoiceState, anchor: AnchorState): Double {
+    private fun getValidDiscount(invoice:InvoiceState, anchor:  NetworkOperatorState): Double {
         var discount = 0.0
         logger.info("\uD83E\uDD8A \uD83E\uDD8A Validating against trade matrices ... ${anchor.tradeMatrixItems.size}")
         anchor.tradeMatrixItems.forEach() {

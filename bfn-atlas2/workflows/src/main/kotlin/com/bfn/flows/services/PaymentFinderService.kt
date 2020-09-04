@@ -1,8 +1,7 @@
 package com.bfn.flows.services
 
 import co.paralleluniverse.fibers.Suspendable
-import com.bfn.contractstates.states.AnchorState
-import com.bfn.contractstates.states.InvoiceState
+import com.bfn.contractstates.states.NetworkOperatorState
 import com.bfn.contractstates.states.SupplierPaymentState
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.contracts.StateAndRef
@@ -14,7 +13,6 @@ import net.corda.core.node.services.vault.PageSpecification
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.serialization.SingletonSerializeAsToken
 import org.slf4j.LoggerFactory
-import java.lang.IllegalArgumentException
 import java.security.PublicKey
 import java.util.*
 
@@ -156,7 +154,7 @@ class PaymentFinderService(private val serviceHub: AppServiceHub) : SingletonSer
     }
     @Suspendable
     fun getAnchorPaymentStateAndRefs(): List<StateAndRef<SupplierPaymentState>> {
-        val existingAnchor = serviceHub.vaultService.queryBy(AnchorState::class.java).states.singleOrNull()
+        val existingAnchor = serviceHub.vaultService.queryBy( NetworkOperatorState::class.java).states.singleOrNull()
                 ?: throw IllegalArgumentException("Anchor does not exist")
         val list: MutableList<StateAndRef<SupplierPaymentState>> = mutableListOf()
         //get first page

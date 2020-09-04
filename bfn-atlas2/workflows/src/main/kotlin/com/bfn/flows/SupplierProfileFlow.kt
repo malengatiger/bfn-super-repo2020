@@ -25,12 +25,12 @@ class SupplierProfileFlow(private val supplierProfileState: SupplierProfileState
     @Suspendable
     override fun call(): SignedTransaction {
         Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95  \uD83C\uDFC8 \uD83C\uDFC8 \uD83C\uDFC8 \uD83C\uDFC8 \uD83C\uDFC8 \uD83C\uDFC8 " +
-                "SupplierProfileFlow started, accountId: ${supplierProfileState.accountId} " )
-        val account = serviceHub.accountService.accountInfo(UUID.fromString(supplierProfileState.accountId))
-                ?: throw IllegalArgumentException("SupplierProfileFlow: \uD83D\uDC4E\uD83C\uDFFD Account not found: ${supplierProfileState.accountId}")
+                "SupplierProfileFlow started, accountId: ${supplierProfileState.account.identifier} " )
+        val account = serviceHub.accountService.accountInfo(UUID.fromString(supplierProfileState.account.identifier.toString()))
+                ?: throw IllegalArgumentException("SupplierProfileFlow: \uD83D\uDC4E\uD83C\uDFFD Account not found: ${supplierProfileState.account.identifier.toString()}")
 
         val profile = serviceHub.cordaService(ProfileFinderService::class.java)
-                .findSupplierProfile(supplierProfileState.accountId)
+                .findSupplierProfile(supplierProfileState.account.identifier.toString())
         if (profile == null) {
             Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 will create new profile ... ")
         } else {

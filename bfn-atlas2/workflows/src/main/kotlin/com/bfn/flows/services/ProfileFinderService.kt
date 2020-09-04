@@ -33,12 +33,12 @@ class ProfileFinderService(private val serviceHub: AppServiceHub) : SingletonSer
                 criteria = criteria)
         var investorProfile: StateAndRef<InvestorProfileState>? = null
         page.states.forEach() {
-            if (it.state.data.accountId == investorAccountId) {
+            if (it.state.data.account.identifier.toString() == investorAccountId) {
                 investorProfile = it
             }
         }
         if (investorProfile != null) {
-            logger.info("\uD83D\uDD35 Found investor profile ...: ${investorProfile!!.state.data.accountId}")
+            logger.info("\uD83D\uDD35 Found investor profile ...: ${investorProfile!!.state.data.account.identifier}")
         } else {
             logger.info("\uD83C\uDF61 \uD83C\uDF61 \uD83C\uDF61 \uD83C\uDF61 " +
                     "investor profile NOT FOUND: $investorAccountId \uD83C\uDFB2 returning null ...")
@@ -55,12 +55,12 @@ class ProfileFinderService(private val serviceHub: AppServiceHub) : SingletonSer
                 criteria = criteria)
         var profile: StateAndRef<SupplierProfileState>? = null
         page.states.forEach() {
-            if (it.state.data.accountId == supplierAccountId) {
+            if (it.state.data.account.identifier.toString() == supplierAccountId) {
                 profile = it
             }
         }
         if (profile != null) {
-            logger.info("\uD83D\uDD35 Found supplier profile ...: ${profile!!.state.data.accountId}")
+            logger.info("\uD83D\uDD35 Found supplier profile ...: ${profile!!.state.data.account.identifier}")
         } else {
             logger.info("\uD83C\uDF61 \uD83C\uDF61 \uD83C\uDF61 \uD83C\uDF61 supplier profile NOT FOUND: $supplierAccountId \uD83C\uDFB2 returning null ...")
         }

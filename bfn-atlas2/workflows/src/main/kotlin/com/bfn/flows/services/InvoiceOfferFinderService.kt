@@ -1,9 +1,9 @@
 package com.bfn.flows.services
 
 import co.paralleluniverse.fibers.Suspendable
-import com.bfn.contractstates.states.AnchorState
 import com.bfn.contractstates.states.InvoiceOfferState
 import com.bfn.contractstates.states.InvestorProfileState
+import com.bfn.contractstates.states.NetworkOperatorState
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.node.AppServiceHub
@@ -55,7 +55,7 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
     fun findAnchorOffer(invoiceId: String): StateAndRef<InvoiceOfferState>? {
         logger.info(" \uD83D\uDC2C \uD83D\uDC2C findAnchorOffer: ... " +
                 "\uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C")
-        val existingAnchor = serviceHub.vaultService.queryBy(AnchorState::class.java).states.singleOrNull()
+        val existingAnchor = serviceHub.vaultService.queryBy( NetworkOperatorState::class.java).states.singleOrNull()
                 ?: throw IllegalArgumentException("Anchor does not exist")
 
         val allOffers = getOffersOnNode()
@@ -109,7 +109,7 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
     @Throws(Exception::class)
     fun getAnchorOffersAccepted(): List<StateAndRef<InvoiceOfferState>> {
 
-        val existingAnchor = serviceHub.vaultService.queryBy(AnchorState::class.java).states.singleOrNull()
+        val existingAnchor = serviceHub.vaultService.queryBy( NetworkOperatorState::class.java).states.singleOrNull()
                 ?: throw IllegalArgumentException("Anchor does not exist")
 
         val offers:MutableList<StateAndRef<InvoiceOfferState>> = mutableListOf()
@@ -183,7 +183,7 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
                 criteria = criteria)
         var investorProfile: InvestorProfileState? = null
         page.states.forEach() {
-            if (it.state.data.accountId == investorId) {
+            if (it.state.data.account.identifier.toString() == investorId) {
                 investorProfile = it.state.data
             }
         }

@@ -82,8 +82,9 @@ class SupplierController(rpc: NodeRPCConnection) {
 
     @PostMapping(value = ["createSupplierProfile"])
     @Throws(Exception::class)
-    fun createSupplierProfile(@RequestBody profile: SupplierProfileStateDTO): String {
-        return WorkerBee.createSupplierProfile(proxy, profile)
+    fun createSupplierProfile(@RequestBody profile: SupplierProfileStateDTO): String? {
+        val acct = WorkerBee.getNodeAccount(proxy, identifier = profile.account.identifier)
+        return acct?.let { WorkerBee.createSupplierProfile(proxy, profile, it) }
     }
 
     @GetMapping(value = ["/ping"], produces = ["application/json"])

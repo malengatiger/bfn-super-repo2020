@@ -90,6 +90,36 @@ object WorkerBee {
         logger.info(msg)
         return list
     }
+    @JvmStatic
+    fun getNodeAccount(proxy: CordaRPCOps, identifier: String): AccountInfo? {
+        val start = Date()
+        val accounts = proxy.vaultQuery(AccountInfo::class.java).states
+        logger.info("\uD83C\uDF3A Total Accounts in Node: ${accounts.size} \uD83C\uDF3A ")
+        var end = Date()
+        val ms1 = (end.time - start.time)
+        logger.info("\uD83D\uDD37 vault query: $ms1 milliseconds elapsed, ${accounts.size} accounts gotten \uD83D\uDD37 ")
+        var cnt = 0
+        var account: AccountInfo? = null
+
+        val node = proxy.nodeInfo().legalIdentities.first().toString()
+        val start2 = Date()
+        for ((state) in accounts) {
+            cnt++
+            val acct = state.data
+            logger.info("\uD83C\uDF50️ \uD83C\uDF50 ️Processing account  \uD83C\uDF50️ " +
+                    "#$cnt \uD83C\uDF3A ${state.data.name} \uD83C\uDF50️ ")
+            if (acct.identifier.toString() == identifier) {
+                account = acct
+            }
+        }
+        end = Date()
+        val ms = (end.time - start2.time)
+        val msg = "\uD83C\uDF3A \uD83C\uDF3A done  \uD83D\uDC9A " +
+                "\uD83D\uDC9A account on Node: \uD83C\uDF3A : \uD83D\uDD37 $ms milliseconds elapsed \uD83D\uDD37 " +
+                proxy.nodeInfo().legalIdentities.first().toString()
+        logger.info(msg)
+        return account
+    }
 
     @JvmStatic
     fun getNetworkAccounts(proxy: CordaRPCOps): List<AccountInfoDTO> {

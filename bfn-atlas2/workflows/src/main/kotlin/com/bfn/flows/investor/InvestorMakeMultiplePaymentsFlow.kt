@@ -23,7 +23,7 @@ import java.util.*
  */
 @InitiatingFlow
 @StartableByRPC
-class InvestorMakeMultiplePaymentsFlow(private val investorId: String, val delayMinutesUntilNextPaymentFlow: Long) : FlowLogic<List<SupplierPaymentState>>() {
+class InvestorMakeMultiplePaymentsFlow(private val investorId: String, private val delayMinutesUntilNextPaymentFlow: Long) : FlowLogic<List<SupplierPaymentState>>() {
 
     @Suspendable
     override fun call(): List<SupplierPaymentState> {

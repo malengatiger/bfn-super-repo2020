@@ -2,7 +2,7 @@ package com.bfn.flows.anchor
 
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.contracts.SupplierPaymentContract
-import com.bfn.contractstates.states.AnchorState
+import com.bfn.contractstates.states.NetworkOperatorState
 import com.bfn.contractstates.states.SupplierPaymentState
 import com.bfn.flows.services.InvoiceOfferFinderService
 import com.bfn.flows.services.PaymentFinderService
@@ -10,9 +10,6 @@ import com.bfn.flows.services.ProfileFinderService
 import com.bfn.flows.todaysDate
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
-import net.corda.core.node.services.Vault
-import net.corda.core.node.services.vault.PageSpecification
-import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.transactions.TransactionBuilder
 import org.slf4j.LoggerFactory
 import java.security.PublicKey
@@ -20,12 +17,12 @@ import java.security.PublicKey
 
 @InitiatingFlow
 @StartableByRPC
-class AnchorMakeSinglePaymentFlow(private val invoiceId: String, val delayMinutesUntilNextPaymentFlow: Long) : FlowLogic<SupplierPaymentState>() {
+class AnchorMakeSinglePaymentFlow(private val invoiceId: String, private val delayMinutesUntilNextPaymentFlow: Long) : FlowLogic<SupplierPaymentState>() {
 
     @Suspendable
     override fun call(): SupplierPaymentState {
         Companion.logger.info("$pp AnchorMakePaymentFlow started ... $pp")
-        val existingAnchor = serviceHub.vaultService.queryBy(AnchorState::class.java).states.singleOrNull()
+        val existingAnchor = serviceHub.vaultService.queryBy( NetworkOperatorState::class.java).states.singleOrNull()
                 ?: throw IllegalArgumentException("Anchor does not exist")
 
         val service = serviceHub.cordaService(InvoiceOfferFinderService::class.java)

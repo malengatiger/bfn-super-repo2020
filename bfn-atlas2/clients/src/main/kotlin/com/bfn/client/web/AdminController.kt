@@ -147,13 +147,15 @@ class AdminController(rpc: NodeRPCConnection) {
 
     @PostMapping(value = ["/addSupplierProfile"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
-    private fun addSupplierProfile(@RequestBody profile: SupplierProfileStateDTO): String {
-       return WorkerBee.createSupplierProfile(proxy, profile)
+    private fun addSupplierProfile(@RequestBody profile: SupplierProfileStateDTO): String? {
+        val acct = WorkerBee.getNodeAccount(proxy, identifier = profile.account.identifier)
+       return acct?.let { WorkerBee.createSupplierProfile(proxy, profile, it) }
     }
     @PostMapping(value = ["/addInvestorProfile"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
-    private fun addInvestorProfile(@RequestBody profile: InvestorProfileStateDTO): String {
-        return WorkerBee.createInvestorProfile(proxy, profile)
+    private fun addInvestorProfile(@RequestBody profile: InvestorProfileStateDTO): String? {
+        val acct = WorkerBee.getNodeAccount(proxy, identifier = profile.account.identifier)
+        return acct?.let { WorkerBee.createInvestorProfile(proxy, profile, it) }
     }
 
     @get:GetMapping(value = ["/getStates"], produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -213,8 +215,9 @@ class AdminController(rpc: NodeRPCConnection) {
     }
     @PostMapping(value = ["/createInvestorProfile"])
     @Throws(Exception::class)
-    fun createInvestorProfile(@RequestBody profile: InvestorProfileStateDTO): String {
-        return WorkerBee.createInvestorProfile(proxy, profile)
+    fun createInvestorProfile(@RequestBody profile: InvestorProfileStateDTO): String? {
+        val acct = WorkerBee.getNodeAccount(proxy, identifier = profile.account.identifier)
+        return acct?.let { WorkerBee.createInvestorProfile(proxy, profile, it) }
     }
     @GetMapping(value = ["/getSupplierProfile"])
     @Throws(Exception::class)
@@ -228,8 +231,9 @@ class AdminController(rpc: NodeRPCConnection) {
     }
     @PostMapping(value = ["/createSupplierProfile"])
     @Throws(Exception::class)
-    fun createSupplierProfile(@RequestBody profile: SupplierProfileStateDTO): String {
-        return WorkerBee.createSupplierProfile(proxy, profile)
+    fun createSupplierProfile(@RequestBody profile: SupplierProfileStateDTO): String? {
+        val acct = WorkerBee.getNodeAccount(proxy, identifier = profile.account.identifier)
+        return acct?.let { WorkerBee.createSupplierProfile(proxy, profile, it) }
     }
 
     @GetMapping(value = ["/getUser"])

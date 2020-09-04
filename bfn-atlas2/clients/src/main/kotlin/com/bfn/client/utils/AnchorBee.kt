@@ -83,7 +83,7 @@ object AnchorBee {
             throw Exception("\uD83D\uDC7F Anchor does not exist on the Corda node")
         }
         val cordaFuture = proxy.startFlowDynamic(
-                AnchorUpdateFlow::class.java,oldState!!).returnValue
+                NetworkOperatorUpdateFlow::class.java,oldState!!).returnValue
         val result = cordaFuture.get()
         val dto = getDTO(result)
         logger.info("\uD83C\uDF53 createAnchor: Anchor updated: \uD83C\uDF53 ${dto.name}")
@@ -168,7 +168,7 @@ object AnchorBee {
                     cellphone = anchor.cellphone, date = Date())
 
             val fut = proxy.startTrackedFlowDynamic(
-                    AnchorCreationFlow::class.java, anc).returnValue
+                    NetworkOperatorCreationFlow::class.java, anc).returnValue
             val tx = fut.get()
             anchor.accountId = account!!.identifier.id.toString()
             anchor.issuedBy = proxy.nodeInfo().legalIdentities.first().toString()

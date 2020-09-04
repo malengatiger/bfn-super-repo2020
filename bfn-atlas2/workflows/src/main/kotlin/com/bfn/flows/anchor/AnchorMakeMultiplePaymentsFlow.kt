@@ -2,8 +2,8 @@ package com.bfn.flows.anchor
 
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.contracts.SupplierPaymentContract
-import com.bfn.contractstates.states.AnchorState
 import com.bfn.contractstates.states.InvoiceOfferState
+import com.bfn.contractstates.states.NetworkOperatorState
 import com.bfn.contractstates.states.SupplierPaymentState
 import com.bfn.flows.regulator.ReportToRegulatorFlow
 import com.bfn.flows.services.InvoiceOfferFinderService
@@ -31,7 +31,7 @@ class AnchorMakeMultiplePaymentsFlow(private val delayMinutesUntilNextPaymentFlo
     @Suspendable
     override fun call(): List<SupplierPaymentState> {
         Companion.logger.info("$pp \uD83E\uDD50 AnchorMakeMultiplePaymentsFlow started ... \uD83E\uDD50 $pp")
-        val existingAnchor = serviceHub.vaultService.queryBy(AnchorState::class.java).states.singleOrNull()
+        val existingAnchor = serviceHub.vaultService.queryBy( NetworkOperatorState::class.java).states.singleOrNull()
                 ?: throw IllegalArgumentException("Anchor does not exist")
 
         val offerFinderService = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
