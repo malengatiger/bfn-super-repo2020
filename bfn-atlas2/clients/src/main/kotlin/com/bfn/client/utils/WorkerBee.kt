@@ -1,26 +1,24 @@
-package com.bfn.client.web
+package com.bfn.client.utils
 
-import com.bfn.client.dto.*
+import com.bfn.client.data.*
 import com.bfn.client.utils.FirebaseUtil.createUser
 import com.bfn.client.utils.FirebaseUtil.sendAccountMessage
 import com.bfn.client.utils.FirebaseUtil.sendInvoiceMessage
 import com.bfn.client.utils.FirebaseUtil.sendInvoiceOfferMessage
+import com.bfn.contractstates.states.*
 import com.bfn.flows.CreateAccountFlow
 import com.bfn.flows.InvestorProfileFlow
+import com.bfn.flows.SupplierProfileFlow
 import com.bfn.flows.invoices.InvoiceOfferFlow
 import com.bfn.flows.invoices.InvoiceRegistrationFlow
 import com.bfn.flows.queries.InvoiceOfferQueryFlow
 import com.bfn.flows.queries.InvoiceQueryFlow
-import com.bfn.flows.queries.TokenQueryFlow
 import com.bfn.flows.scheduled.CreateInvoiceOffersFlow
+import com.bfn.flows.todaysDate
 import com.google.firebase.cloud.FirestoreClient
 import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
-
-import com.bfn.contractstates.states.*
-import com.bfn.flows.SupplierProfileFlow
-import com.bfn.flows.todaysDate
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.messaging.CordaRPCOps
@@ -31,6 +29,7 @@ import net.corda.core.node.services.vault.QueryCriteria.VaultQueryCriteria
 import net.corda.core.utilities.getOrThrow
 import org.slf4j.LoggerFactory
 import java.util.*
+
 
 object WorkerBee {
     private val logger = LoggerFactory.getLogger(WorkerBee::class.java)
@@ -143,7 +142,7 @@ object WorkerBee {
         ).states
         var dto: SupplierProfileStateDTO? = null
         for (profile in list) {
-            if (profile.state.data.accountId.equals(accountId, ignoreCase = true)) {
+            if (profile.state.data.account.identifier.equals(accountId)) {
                 dto = getDTO(profile.state.data)
                 break
             }
@@ -167,7 +166,7 @@ object WorkerBee {
         ).states
         var dto: InvestorProfileStateDTO? = null
         for (profile in list) {
-            if (profile.state.data.accountId.equals(accountId, ignoreCase = true)) {
+            if (profile.state.data.account.identifier.equals(accountId)) {
                 dto = getDTO(profile.state.data)
                 break
             }
@@ -258,11 +257,12 @@ object WorkerBee {
 
     @JvmStatic
     @Throws(Exception::class)
-    fun createInvestorProfile(proxy: CordaRPCOps, profile: InvestorProfileStateDTO): String {
+    fun createInvestorProfile(proxy: CordaRPCOps, profile: InvestorProfileStateDTO, account: AccountInfo): String {
+
 
         val state = InvestorProfileState(
                 issuedBy = proxy.nodeInfo().legalIdentities.first(),
-                accountId = profile.accountId,
+                account = account,
                 defaultDiscount = profile.defaultDiscount,
                 maximumInvoiceAmount = profile.maximumInvoiceAmount,
                 totalInvestment = profile.totalInvestment,
@@ -279,11 +279,11 @@ object WorkerBee {
 
     @JvmStatic
     @Throws(Exception::class)
-    fun createSupplierProfile(proxy: CordaRPCOps, profile: SupplierProfileStateDTO): String {
+    fun createSupplierProfile(proxy: CordaRPCOps, profile: SupplierProfileStateDTO, account: AccountInfo): String {
 
         val state = SupplierProfileState(
                 issuedBy = proxy.nodeInfo().legalIdentities.first(),
-                accountId = profile.accountId,
+                account = account,
                 maximumDiscount = profile.maximumDiscount,
                 bank = profile.bank,
                 bankAccount = profile.bankAccount,
@@ -771,16 +771,16 @@ object WorkerBee {
     @JvmStatic
     fun getDTO(a: AccountInfo): AccountInfoDTO {
         return AccountInfoDTO(
-        host = a.host.toString(),
-        identifier = a.identifier.id.toString(),
-        name = a.name, status = "")
+                host = a.host.toString(),
+                identifier = a.identifier.id.toString(),
+                name = a.name, status = "")
     }
 
     @JvmStatic
     fun getDTO(a: InvestorProfileState): InvestorProfileStateDTO {
         return InvestorProfileStateDTO(
                 issuedBy = a.issuedBy.toString(),
-                accountId = a.accountId, date = a.date.toString(),
+                account = getDTO(a.account), date = a.date.toString(),
                 defaultDiscount = a.defaultDiscount,
                 maximumInvoiceAmount = a.maximumInvoiceAmount,
                 totalInvestment = a.totalInvestment,
@@ -802,7 +802,7 @@ object WorkerBee {
     fun getDTO(a: SupplierProfileState): SupplierProfileStateDTO {
         return SupplierProfileStateDTO(
                 issuedBy = a.issuedBy.toString(),
-                accountId = a.accountId, date = a.date.toString(),
+                account = getDTO(a.account), date = a.date.toString(),
                 maximumDiscount = a.maximumDiscount,
                 bank = a.bank,
                 bankAccount = a.bankAccount

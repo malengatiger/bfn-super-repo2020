@@ -2,6 +2,7 @@ package com.bfn.contractstates.states
 
 import com.bfn.contractstates.contracts.InvestorProfileContract
 import com.bfn.contractstates.contracts.SupplierProfileContract
+import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import net.corda.core.contracts.BelongsToContract
 import net.corda.core.contracts.ContractState
 import net.corda.core.identity.AbstractParty
@@ -12,7 +13,7 @@ import java.util.*
 @CordaSerializable
 @BelongsToContract(SupplierProfileContract::class)
 class SupplierProfileState(val issuedBy: Party,
-                           val accountId: String,
+                           val account: AccountInfo,
                            val maximumDiscount: Double,
                            val bank: String,
                            val bankAccount: String,

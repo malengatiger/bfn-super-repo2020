@@ -1,4 +1,4 @@
-package com.bfn.client.dto
+package com.bfn.client.data
 
 class DemoSummary {
     var numberOfAccounts = 0

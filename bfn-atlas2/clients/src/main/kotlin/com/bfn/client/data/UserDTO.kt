@@ -1,4 +1,4 @@
-package com.bfn.client.dto
+package com.bfn.client.data
 
 data class UserDTO (
     var name: String,

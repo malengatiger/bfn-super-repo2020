@@ -1,8 +1,8 @@
 package com.bfn.client.web
 
 import com.google.gson.GsonBuilder
-import com.bfn.client.dto.InvoiceDTO
-import com.bfn.client.dto.NodeInfoDTO
+import com.bfn.client.data.InvoiceDTO
+import com.bfn.client.data.NodeInfoDTO
 import com.bfn.client.utils.FirebaseUtil
 import khttp.get
 import net.corda.core.messaging.CordaRPCOps

@@ -1,4 +1,4 @@
-package com.bfn.client.dto
+package com.bfn.client.data
 
 class InvoiceOfferAllDTO {
     var invoiceId: String? = null

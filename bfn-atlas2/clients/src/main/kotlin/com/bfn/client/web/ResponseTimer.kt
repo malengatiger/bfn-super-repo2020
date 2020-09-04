@@ -1,6 +1,8 @@
 package com.bfn.client.web
 
-import com.bfn.client.dto.NodeInfoDTO
+import com.bfn.client.data.NodeInfoDTO
+import com.bfn.client.utils.buildFirebase
+import com.bfn.client.utils.getThisNode
 import com.google.firebase.cloud.FirestoreClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory

@@ -1,7 +1,8 @@
 package com.bfn.client.local
 
-import com.bfn.client.dto.*
-import com.bfn.client.web.WorkerBee
+import com.bfn.client.data.*
+import com.bfn.client.utils.FirebaseUtil
+import com.bfn.client.utils.WorkerBee
 import com.bfn.contractstates.states.*
 import com.bfn.flows.todaysDate
 import com.google.gson.Gson
@@ -19,6 +20,7 @@ import net.corda.core.utilities.NetworkHostAndPort
 import net.corda.core.utilities.loggerFor
 import org.json.JSONArray
 import org.json.JSONObject
+import org.springframework.stereotype.Service
 import java.util.*
 import kotlin.collections.set
 import khttp.get as httpGet
@@ -32,50 +34,43 @@ import khttp.post as httpPost
  */
 fun main(args: Array<String>) = Client().main(args)
 
-private class Client {
+@Service
+public class Client {
     companion object {
         val logger = loggerFor<Client>()
         private val GSON = GsonBuilder().setPrettyPrinting().create()
 
     }
 
-    lateinit var proxyAnchorInvestor: CordaRPCOps
-    lateinit var proxyCustomer001: CordaRPCOps
+    lateinit var proxyNetworkAnchorNode: CordaRPCOps
+    lateinit var proxyCustomerNode1: CordaRPCOps
     lateinit var proxyNotary: CordaRPCOps
     lateinit var proxyRegulator: CordaRPCOps
+    private val mGson = Gson()
 
-    private val localAnchorURL = "http://localhost:10050"
+//    private val localAnchorURL = "http://localhost:10050"
     fun main(args: Array<String>) {
-
         setupLocalNodes()
-        createAnchor(localAnchorURL)
+
+        startTheWork( "http://localhost:10050", false);
+
+    }
+
+    fun startTheWork(localAnchorURL: String, delete: Boolean) {
+        if (delete) {
+            FirebaseUtil.deleteBFNAnchor();
+            FirebaseUtil.deleteCustomers();
+        }
+        createNetworkOperator(localAnchorURL, false)
+
         createCustomer(localAnchorURL)
         startSupplierAccounts(
                 numberOfAccounts = 12,
                 url = localAnchorURL);
-        letsDance()
-
-//        acceptAnchorOffers(localAnchorURL)
-//        findAndAcceptBestOffers(localAnchorURL)
-//        getOffers().forEach() {
-//            logger.info("\uD83C\uDF00 \uD83D\uDC8A \uD83D\uDC8A InvoiceOffer: \uD83C\uDF21 \uD83C\uDF21 " +
-//                    "${GSON.toJson(WorkerBee.getDTO(it.state.data))} \uD83C\uDF00 \uD83C\uDF21 \uD83C\uDF21 ")
-//        }
-//        makeProfilesForNode(proxyAnchorInvestor, localAnchorURL)
-//        generateInvoices(localAnchorURL, 40)
-//        generateCasualOffers()
-//        printOffers(proxyAnchorInvestor, consumed = false)
-//        printInvoices(proxyAnchorInvestor, consumed = false)
-//        printOffers(proxyAnchorInvestor, consumed = false)
-//        printInvoices(proxyPartyB, consumed = false)
-//
-//        printProfiles(proxyAnchorInvestor)
-//        printProfiles(proxyPartyB)
-//        generateInvoices(localAnchorURL)
-
+        letsDance(localAnchorURL)
     }
 
-    private fun letsDance() {
+    private fun letsDance(localAnchorURL: String) {
         generateInvoices(localAnchorURL)
         generateAnchorOffers(localAnchorURL)
         generateCasualOffers()
@@ -85,7 +80,7 @@ private class Client {
 //        makeMultipleInvestorPayments(localAnchorURL, delayMinutesUntilNextPaymentFlow = 120)
 //        getOffers()
         logger.info("\n\n =========  \uD83C\uDF81 DATA GENERATION COMPLETE. Bravo!!  \uD83C\uDF81 ============= \n\n")
-        //doNodesAndAggregates(proxyAnchorInvestor, proxyCustomer001, proxyRegulator)
+        //doNodesAndAggregates(proxyNetworkAnchorNode, proxyCustomerNode1, proxyRegulator)
         logger.info("\n\n =========  \uD83C\uDF81 Ready to check that the whole business process happened, " +
                 "\uD83C\uDF4F Senor!  \uD83C\uDF81 ============= \n\n")
     }
@@ -102,7 +97,7 @@ private class Client {
                 "\uD83C\uDF0D ${response.statusCode} \uD83C\uDF0D ")
         if (response.statusCode == 200) {
             val arr = JSONArray(response.text)
-            logger.info("\uD83C\uDF81 \uD83C\uDF81 payments created for AnchorInvestor: \uD83D\uDC9A ${arr.length()} \uD83D\uDC9A")
+            logger.info("\uD83C\uDF81 \uD83C\uDF81 payments created for NetworkAnchorNode: \uD83D\uDC9A ${arr.length()} \uD83D\uDC9A")
         } else {
             logger.info("\uD83D\uDC7F \uD83D\uDC7F makeMultipleAnchorPayments ERROR: " +
                     "${response.statusCode} \uD83D\uDC7F ${response.text}")
@@ -111,13 +106,13 @@ private class Client {
     }
 
     private fun reportPaymentsAftermath() {
-        val mList = proxyAnchorInvestor.vaultQueryByWithPagingSpec(
+        val mList = proxyNetworkAnchorNode.vaultQueryByWithPagingSpec(
                 criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED),
                 contractStateType = SupplierPaymentState::class.java,
                 paging = PageSpecification(1, 6000)
         ).states
         logger.info("\n\nSupplier Payments on node: \uD83C\uDF4E ${mList.size} \uD83C\uDF4E")
-        val mList1 = proxyAnchorInvestor.vaultQueryByWithPagingSpec(
+        val mList1 = proxyNetworkAnchorNode.vaultQueryByWithPagingSpec(
                 criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED),
                 contractStateType = InvoiceState::class.java,
                 paging = PageSpecification(1, 6000)
@@ -128,9 +123,9 @@ private class Client {
     }
 
     private fun makeMultipleInvestorPayments(url: String, delayMinutesUntilNextPaymentFlow: Long) {
-        val accounts = getAccounts(proxyAnchorInvestor)
+        val accounts = getAccounts(proxyNetworkAnchorNode)
         accounts.forEach() {
-            if (it.name == "AnchorInvestor" || it.name == "Customer001") {
+            if (it.name == "NetworkAnchorNode" || it.name == "CustomerNode1") {
                 logger.info("Ignore anchor or customer")
             } else {
                 val investorId = it.identifier.id.toString()
@@ -159,13 +154,13 @@ private class Client {
 
     private fun getInvestorProfile(accountId: String): InvestorProfileStateDTO? {
 
-        val states = proxyAnchorInvestor.vaultQueryByWithPagingSpec(
+        val states = proxyNetworkAnchorNode.vaultQueryByWithPagingSpec(
                 contractStateType = InvestorProfileState::class.java,
                 criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED),
                 paging = PageSpecification(1, 2000)
         ).states
         states.forEach() {
-            if (it.state.data.accountId == accountId) {
+            if (it.state.data.account.identifier.toString() == accountId) {
                 return WorkerBee.getDTO(it.state.data)
             }
         }
@@ -174,13 +169,13 @@ private class Client {
     }
     private fun getSupplierProfile(accountId: String): SupplierProfileStateDTO? {
 
-        val states = proxyAnchorInvestor.vaultQueryByWithPagingSpec(
+        val states = proxyNetworkAnchorNode.vaultQueryByWithPagingSpec(
                 contractStateType = SupplierProfileState::class.java,
                 criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED),
                 paging = PageSpecification(1, 2000)
         ).states
         states.forEach() {
-            if (it.state.data.accountId == accountId) {
+            if (it.state.data.account.identifier.toString() == accountId) {
                 return WorkerBee.getDTO(it.state.data)
             }
         }
@@ -188,11 +183,10 @@ private class Client {
         return null
     }
 
-
     private fun findAndAcceptBestOffers(url: String) {
         logger.info("\uD83C\uDF4E .............findAndAcceptBestOffers \uD83C\uDF4E")
 
-        val invoiceStates = proxyAnchorInvestor.vaultQueryByWithPagingSpec(
+        val invoiceStates = proxyNetworkAnchorNode.vaultQueryByWithPagingSpec(
                 contractStateType = InvoiceState::class.java,
                 criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED),
                 paging = PageSpecification(1, 2000)
@@ -218,8 +212,6 @@ private class Client {
         }
 
     }
-
-    private val mGson = Gson()
 
     private fun takeBestOffer(json: String, url: String, prof: InvestorProfileStateDTO?) {
 
@@ -255,7 +247,7 @@ private class Client {
         val aList = getOffers()
         var cnt = 0
         aList.forEach() {
-            if (it.state.data.investor.name == "AnchorInvestor") {
+            if (it.state.data.investor.name == "NetworkAnchorNode") {
                 val supplierProfile = getSupplierProfile(it.state.data.supplier.identifier.id.toString())
                 val params: MutableMap<String, String> = mutableMapOf()
                 params["offerId"] = it.state.data.offerId
@@ -297,7 +289,7 @@ private class Client {
     }
 
     private fun getOffers(): List<StateAndRef<InvoiceOfferState>> {
-        val mList = proxyAnchorInvestor.vaultQueryByWithPagingSpec(
+        val mList = proxyNetworkAnchorNode.vaultQueryByWithPagingSpec(
                 contractStateType = InvoiceOfferState::class.java,
                 criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED),
                 paging = PageSpecification(1, 2000)
@@ -308,14 +300,14 @@ private class Client {
     }
 
     private fun printTotals() {
-        getNodeTotals(proxyAnchorInvestor)
-        getNodeTotals(proxyCustomer001)
+        getNodeTotals(proxyNetworkAnchorNode)
+        getNodeTotals(proxyCustomerNode1)
         getNodeTotals(proxyNotary)
         getNodeTotals(proxyRegulator)
 
-        getOfferAndTokens(proxyAnchorInvestor)
+        getOfferAndTokens(proxyNetworkAnchorNode)
         logger.info("\n \uD83C\uDF38  \uD83C\uDF38  \uD83C\uDF38  \uD83C\uDF38  \uD83C\uDF38 ")
-        getOfferAndTokens(proxyCustomer001)
+        getOfferAndTokens(proxyCustomerNode1)
         logger.info("\n \uD83C\uDF38  \uD83C\uDF38  \uD83C\uDF38  \uD83C\uDF38  \uD83C\uDF38 ")
         getOfferAndTokens(proxyNotary)
         logger.info("\n \uD83C\uDF38  \uD83C\uDF38  \uD83C\uDF38  \uD83C\uDF38  \uD83C\uDF38 ")
@@ -335,18 +327,18 @@ private class Client {
         getThisNode(proxyNotary)
 
         val clientA = CordaRPCClient(nodeAddressPartyA)
-        proxyAnchorInvestor = clientA.start(rpcUsername, rpcPassword).proxy
-        getThisNode(proxyAnchorInvestor)
+        proxyNetworkAnchorNode = clientA.start(rpcUsername, rpcPassword).proxy
+        getThisNode(proxyNetworkAnchorNode)
 
         val clientB = CordaRPCClient(nodeAddressPartyB)
-        proxyCustomer001 = clientB.start(rpcUsername, rpcPassword).proxy
-        getThisNode(proxyCustomer001)
+        proxyCustomerNode1 = clientB.start(rpcUsername, rpcPassword).proxy
+        getThisNode(proxyCustomerNode1)
 
         val clientReg = CordaRPCClient(nodeAddressRegulator)
         proxyRegulator = clientReg.start(rpcUsername, rpcPassword).proxy
 
         getThisNode(proxyRegulator)
-        doNodesAndAggregates(proxyAnchorInvestor, proxyCustomer001, proxyRegulator)
+        doNodesAndAggregates(proxyNetworkAnchorNode, proxyCustomerNode1, proxyRegulator)
     }
 
     private fun setupLocalNodes() {
@@ -362,18 +354,18 @@ private class Client {
         getThisNode(proxyNotary)
 
         val clientA = CordaRPCClient(nodeAddressAnchor)
-        proxyAnchorInvestor = clientA.start(rpcUsername, rpcPassword).proxy
-        getThisNode(proxyAnchorInvestor)
+        proxyNetworkAnchorNode = clientA.start(rpcUsername, rpcPassword).proxy
+        getThisNode(proxyNetworkAnchorNode)
 
         val clientB = CordaRPCClient(nodeAddressCustomer)
-        proxyCustomer001 = clientB.start(rpcUsername, rpcPassword).proxy
-        getThisNode(proxyCustomer001)
+        proxyCustomerNode1 = clientB.start(rpcUsername, rpcPassword).proxy
+        getThisNode(proxyCustomerNode1)
 
         val clientReg = CordaRPCClient(nodeAddressRegulator)
         proxyRegulator = clientReg.start(rpcUsername, rpcPassword).proxy
 
         getThisNode(proxyRegulator)
-        doNodesAndAggregates(proxyAnchorInvestor, proxyCustomer001, proxyRegulator)
+        doNodesAndAggregates(proxyNetworkAnchorNode, proxyCustomerNode1, proxyRegulator)
     }
 
     fun getRegulatorTotals(proxy: CordaRPCOps) {
@@ -433,7 +425,7 @@ private class Client {
             logger.info("️\uD83C\uDFC0️ \uD83C\uDFC0 INVOICE: " +
                     "${GSON.toJson(getDTO(invoice.state.data))} \uD83C\uDFC0️ \uD83C\uDFC0")
             profiles.states.forEach() {
-                if (it.state.data.accountId == invoice.state.data.supplierInfo.identifier.id.toString()) {
+                if (it.state.data.account.identifier.toString() == invoice.state.data.supplierInfo.identifier.id.toString()) {
                     logger.info("\uD83E\uDD5D \uD83E\uDD5D  SUPPLIER PROFILE: " +
                             "${GSON.toJson(getDTO(it.state.data))} \uD83E\uDD5D \uD83E\uDD5D \n")
                 }
@@ -472,13 +464,13 @@ private class Client {
             logger.info("\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9 INVOICE OFFER: #$cnt " +
                     "${GSON.toJson(getDTO(offer.state.data))} \uD83E\uDDE9\uD83E\uDDE9")
             supplierProfiles.states.forEach() {
-                if (it.state.data.accountId == offer.state.data.supplier.identifier.id.toString()) {
+                if (it.state.data.account.identifier.toString() == offer.state.data.supplier.identifier.id.toString()) {
                     logger.info("\uD83D\uDC8A \uD83D\uDC8A \uD83D\uDC8A  SUPPLIER PROFILE: " +
                             "${GSON.toJson(getDTO(it.state.data))} \uD83D\uDC8A  \uD83D\uDC8A ")
                 }
             }
             investorProfiles.states.forEach() {
-                if (it.state.data.accountId == offer.state.data.investor.identifier.id.toString()) {
+                if (it.state.data.account.identifier.toString() == offer.state.data.investor.identifier.id.toString()) {
                     logger.info("\uD83D\uDD31 \uD83D\uDD31 \uD83D\uDD31  INVESTOR PROFILE: " +
                             "${GSON.toJson(getDTO(it.state.data))} \uD83D\uDD31 \uD83D\uDD31 \uD83D\uDD31 \n\n")
                 }
@@ -532,7 +524,7 @@ private class Client {
     fun getDTO(a: InvestorProfileState): InvestorProfileStateDTO {
         return InvestorProfileStateDTO(
                 issuedBy = a.issuedBy.toString(),
-                accountId = a.accountId, date = a.date.toString(),
+                account = getDTO(a.account), date = a.date.toString(),
                 defaultDiscount = a.defaultDiscount,
                 maximumInvoiceAmount = a.maximumInvoiceAmount,
                 totalInvestment = a.totalInvestment,
@@ -544,7 +536,7 @@ private class Client {
     fun getDTO(a: SupplierProfileState): SupplierProfileStateDTO {
         return SupplierProfileStateDTO(
                 issuedBy = a.issuedBy.toString(),
-                accountId = a.accountId, date = a.date.toString(),
+                account = getDTO(a.account), date = a.date.toString(),
                 maximumDiscount = a.maximumDiscount,
                 bankAccount = a.bankAccount,
                 bank = a.bank
@@ -585,7 +577,7 @@ private class Client {
                 criteria = QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.ALL),
                 paging = PageSpecification(1, 5000))
 
-        val states = proxy.vaultQueryByWithPagingSpec(contractStateType = AnchorState::class.java,
+        val states = proxy.vaultQueryByWithPagingSpec(contractStateType = NetworkOperatorState::class.java,
                 criteria = QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.ALL),
                 paging = PageSpecification(1, 5)).states
 
@@ -637,13 +629,13 @@ private class Client {
 
     private fun startSupplierAccounts(numberOfAccounts: Int = 9, url: String) {
 
-        logger.info(" \uD83D\uDE21 generating accounts for AnchorInvestor")
+        logger.info("\uD83D\uDE21 generating accounts for NetworkAnchorNode NODE .................")
         val status = generateAccountsForNode(
-                proxy = proxyAnchorInvestor,
+                proxy = proxyNetworkAnchorNode,
                 url = url,
                 numberOfAccounts = numberOfAccounts)
         if (status == 200) {
-            logger.info("\uD83E\uDD6C  Successfully generated AnchorInvestor accounts")
+            logger.info("\uD83E\uDD6C  Successfully generated NetworkAnchorNode NODE accounts")
         } else {
             logger.info("Houston, we down, \uD83D\uDCA6 status :  $status ")
         }
@@ -653,19 +645,19 @@ private class Client {
     private fun generateProfiles() {
 
         logger.info(" \uD83D\uDE21 generating profiles for Anchor")
-        makeProfilesForNode(proxyAnchorInvestor, "http://localhost:10050")
-        logger.info(" \uD83D\uDE21 generating profiles forCustomer001")
-        makeProfilesForNode(proxyCustomer001, "http://localhost:10053")
+        makeProfilesForNode(proxyNetworkAnchorNode, "http://localhost:10050")
+        logger.info(" \uD83D\uDE21 generating profiles forCustomerNode1")
+        makeProfilesForNode(proxyCustomerNode1, "http://localhost:10053")
 
 
     }
 
     private fun generateInvoices(url: String) {
 
-        logger.info("\uD83D\uDE21 generateInvoices for Customer001 \uD83D\uDE21 \uD83D\uDE21 ")
+        logger.info("\uD83D\uDE21 generateInvoices for CustomerNode1 \uD83D\uDE21 \uD83D\uDE21 ")
         if (customer == null) {
             logger.info("\uD83D\uDD06 \uD83D\uDD06 Finding customer on Anchor Node ...")
-            val page = proxyAnchorInvestor.vaultQueryByWithPagingSpec(
+            val page = proxyNetworkAnchorNode.vaultQueryByWithPagingSpec(
                     contractStateType = AccountInfo::class.java,
                     criteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED),
                     paging = PageSpecification(1, 2000)).states
@@ -673,14 +665,14 @@ private class Client {
                     "Accounts on Anchor node: ${page.size}")
 
             page.forEach() {
-                if (it.state.data.name == "Customer001") {
+                if (it.state.data.name == "CustomerNode1") {
                     customer = getDTO(it.state.data)
                 }
             }
 
         }
         if (customer == null) {
-            throw IllegalArgumentException("Customer001 not found, cannot continue, Boss!")
+            throw IllegalArgumentException("CustomerNode1 not found, cannot continue, Boss!")
         }
         logger.info("CUSTOMER \uD83D\uDE0E " +
                 "to be used for invoice generation: \uD83D\uDE0E " +
@@ -698,34 +690,53 @@ private class Client {
 
     }
 
-    private fun createAnchor(url: String) {
+    fun createNetworkOperator(url: String, deleteFirebase: Boolean) {
 
-        val mxes: MutableList<TradeMatrixItem> = mutableListOf()
-        logger.info("\uD83D\uDE21 createAnchor for Node \uD83D\uDE21 \uD83D\uDE21 ")
-        logger.info("\uD83D\uDE21 deleting Firebase auth users and collections \uD83D\uDE21 \uD83D\uDE21 ")
-        val response0 = httpGet(
-                timeout = 990000000.0,
-                url = "$url/bfn/admin/deleteFirebase")
-        logger.info("\uD83C\uDF4E deleteFirebase; RESPONSE: statusCode: " +
-                "${response0.statusCode} - ${response0.text}")
+        logger.info("\uD83D\uDE21 createAnchor for Node $url deleteFirebase: $deleteFirebase .......... \uD83D\uDE21 \uD83D\uDE21 ")
 
-        val a = AnchorDTO(
+        if (deleteFirebase) {
+            logger.info("\uD83D\uDE21 deleting Firebase auth users and collections \uD83D\uDE21 \uD83D\uDE21 ")
+            val response0 = httpGet(
+                    timeout = 990000000.0,
+                    url = "$url/bfn/admin/deleteFirebase")
+            logger.info("\uD83C\uDF4E deleteFirebase; RESPONSE: statusCode: " +
+                    "${response0.statusCode} - ${response0.text}")
+        }
+
+
+        val mixes: MutableList<TradeMatrixItem> = mutableListOf()
+        val anchorInvestor = AnchorDTO(
                 minimumInvoiceAmount = 100000.00,
                 maximumInvoiceAmount = 20000000.00,
                 maximumInvestment = 1000000000.00,
                 defaultOfferDiscount = 8.8,
-                name = "AnchorInvestor",
+                name = "BFN Network Anchor",
                 email = "anchor1@bfn.com",
                 cellphone = "+27710441887",
                 tradeFrequencyInMinutes = 240,
-                tradeMatrixItems = mxes,
+                tradeMatrixItems = mixes,
                 date = todaysDate(),
                 password = "bfnanchor33",
                 uid = UUID.randomUUID().toString(),
                 issuedBy = "TBD", accountId = "TBD"
 
         )
+        addTradeMatrixItems(anchorInvestor)
+        val mGson = Gson()
+        val json = mGson.toJson(anchorInvestor)
+        val jsonObject = JSONObject(json)
+        logger.info("\uD83C\uDF4E Anchor about to be created: ${GSON.toJson(anchorInvestor)} \uD83C\uDF4E")
+        val response = httpPost(
+                json = jsonObject,
+                timeout = 990000000.0,
+                url = "$url/bfn/admin/createAnchor")
 
+        logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E create Anchor; RESPONSE: statusCode: " +
+                "🌍 ${response.statusCode} 🌍  - ${response.text}")
+
+    }
+
+    private fun addTradeMatrixItems(anchorInvestor: AnchorDTO) {
         val m2 = TradeMatrixItem(
                 startInvoiceAmount = 2000001.00,
                 endInvoiceAmount = 300000.00,
@@ -760,26 +771,14 @@ private class Client {
                 offerDiscount = 3.1,
                 date = todaysDate())
 
-        a.tradeMatrixItems = mutableListOf(m2, m3, m4, m5, m6, m7)
-        val mGson = Gson()
-        val json = mGson.toJson(a)
-        val jsonObject = JSONObject(json)
-        logger.info("\uD83C\uDF4E Anchor about to be created: ${GSON.toJson(a)} \uD83C\uDF4E")
-        val response = httpPost(
-                json = jsonObject,
-                timeout = 990000000.0,
-                url = "$url/bfn/admin/createAnchor")
-
-        logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E create Anchor; RESPONSE: statusCode: " +
-                "🌍 ${response.statusCode} 🌍  - ${response.text}")
-
+        anchorInvestor.tradeMatrixItems = mutableListOf(m2, m3, m4, m5, m6, m7)
     }
 
     var customer: AccountInfoDTO? = null
     val random = Random(Date().time)
 
     private fun createCustomer(url: String) {
-        val user = UserDTO(name = "Customer001",
+        val user = UserDTO(name = "CustomerNode1",
                 password = "customer#001$",
                 cellphone = "+27710441887",
                 email = "customer001@bfn.com")
@@ -791,11 +790,10 @@ private class Client {
                 timeout = 990000000.0,
                 url = "$url/bfn/admin/startAccountRegistrationFlow")
 
-        customer = GSON.fromJson(response.text, AccountInfoDTO::class.java)
-        logger.info("\uD83C\uDF4E  create Customer; RESPONSE: " +
-                "statusCode: 🌍 ${response.statusCode} 🌍   " +
-                response.text)
+        logger.info("\uD83C\uDF4E  create Customer Account; RESPONSE: " +
+                " 🌍 ${GSON.toJson(response)} 🌍   " )
         //todo - write to Firebase auth .....
+        FirebaseUtil.createBFNAccount(accountInfo = AccountInfoDTO(identifier = "", name = user.name, host = url, status = ""));
     }
 
     private fun getAccounts(proxy: CordaRPCOps): List<AccountInfo> {
@@ -811,11 +809,11 @@ private class Client {
 
     private fun generateCasualOffers() {
         logger.info("\uD83D\uDE21 generate Offers for non-anchor investors  \uD83D\uDE21  \uD83D\uDE21 ")
-        val accts = getAccounts(proxyAnchorInvestor)
+        val accts = getAccounts(proxyNetworkAnchorNode)
         logger.info("\uD83D\uDE3C \uD83D\uDE3C accounts from node: \uD83C\uDF3A ${accts.size}, calling makeInvoiceOffers ...")
         getOffers()
         accts.forEach() {
-            if (it.name == "AnchorInvestor" || it.name == "Customer001") {
+            if (it.name == "NetworkAnchorNode" || it.name == "CustomerNode1") {
                 logger.info("Ignore accounts: Anchor & Customer")
             } else {
                 val supplierProfile = getSupplierProfile(it.identifier.id.toString())
@@ -849,7 +847,7 @@ private class Client {
                 url = "$url/bfn/admin/demo",
                 params = params)
 
-        logger.info("\uD83C\uDF4E RESPONSE: statusCode: 🌍 ${response.statusCode} 🌍   " +
+        logger.info("\uD83C\uDF4E generateAccountsForNode RESPONSE: statusCode: 🌍 ${response.statusCode} 🌍   " +
                 "\uD83C\uDF4E ${response.text}")
         makeProfilesForNode(proxy, url)
 
@@ -861,8 +859,8 @@ private class Client {
         val page = proxy.vaultQuery(AccountInfo::class.java)
         var cnt = 0
         page.states.forEach() {
-            if (it.state.data.name == "AnchorInvestor" || it.state.data.name == "Customer001") {
-                logger.info("Ignore anchor and Customer001. \uD83C\uDF3A No need to create profiles")
+            if (it.state.data.name == "NetworkAnchorNode" || it.state.data.name == "CustomerNode1") {
+                logger.info("Ignore anchor and CustomerNode1. \uD83C\uDF3A No need to create profiles")
             } else {
                 if (it.state.data.host.toString() == proxy.nodeInfo().legalIdentities.first().toString()) {
                     cnt++
@@ -890,7 +888,7 @@ private class Client {
         }
         val investorProfile = InvestorProfileStateDTO(
                 issuedBy = "thisNode",
-                accountId = it.state.data.identifier.id.toString(),
+                account = getDTO(it.state.data),
                 date = todaysDate(),
                 defaultDiscount = disc,
                 minimumInvoiceAmount = min,
@@ -919,7 +917,7 @@ private class Client {
         }
 
         val prof = SupplierProfileStateDTO(
-                accountId = account.state.data.identifier.id.toString(),
+                account = getDTO(account.state.data),
                 date = todaysDate(),
                 bankAccount = (random.nextInt(123445) * 132647).toString(),
                 bank = "BlackOx Investment Bank",
@@ -942,10 +940,10 @@ private class Client {
         logger.info("++++++++++++++  \uD83C\uDFC0 \uD83C\uDFC0 \uD83C\uDFC0 CORDA NODES \uD83C\uDFC0 \uD83C\uDFC0 \uD83C\uDFC0 ++++++++++++++++++++++++\n")
         getNodes(proxyAnchor)
         //
-        logger.info("++++++++++++++   AnchorInvestor \uD83C\uDF4A ${proxyAnchor.nodeInfo().addresses.first()} " +
+        logger.info("++++++++++++++   NetworkAnchorNode \uD83C\uDF4A ${proxyAnchor.nodeInfo().addresses.first()} " +
                 " \uD83E\uDD6C ${proxyAnchor.nodeInfo().legalIdentities.first().name} \uD83C\uDFC0 \uD83C\uDFC0 \uD83C\uDFC0 ++++++++++++++++++++++++\n")
         getAggregates(proxyAnchor)
-        logger.info("++++++++++++++   Customer001 \uD83C\uDF4A ${proxyCustomer.nodeInfo().addresses.first()}  " +
+        logger.info("++++++++++++++   CustomerNode1 \uD83C\uDF4A ${proxyCustomer.nodeInfo().addresses.first()}  " +
                 " \uD83E\uDD6C ${proxyCustomer.nodeInfo().legalIdentities.first().name} \uD83C\uDFC0 \uD83C\uDFC0 \uD83C\uDFC0 ++++++++++++++++++++++++\n")
         getAggregates(proxyCustomer)
 

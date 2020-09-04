@@ -1,7 +1,7 @@
 [
   {
     "addresses": [
-      "O\u003dAnchorInvestor, L\u003dLondon, C\u003dGB"
+      "O\u003dNetworkAnchorNode, L\u003dLondon, C\u003dGB"
     ],
     "platformVersion": 5,
     "webServerAddress": "https://bfnwebinvestor-hkn7vsuxdq-ew.a.run.app",
@@ -9,7 +9,7 @@
     "port": 10201,
     "springBootProfile": "prod",
     "webServerPort": 8080,
-    "name": "AnchorInvestor",
+    "name": "NetworkAnchorNode",
     "username": "mystifying_cray",
     "password" : "device-grimy-herbs-kelp-cramp-sprout",
     "firebaseProjectId": "bfn-mobile-backend",
@@ -18,7 +18,7 @@
   },
   {
     "addresses": [
-      "O\u003dCustomer001, L\u003dLondon, C\u003dGB"
+      "O\u003dCustomerNode1, L\u003dLondon, C\u003dGB"
     ],
     "platformVersion": 5,
     "webServerAddress": "https://bfnwebcustomer-hkn7vsuxdq-ew.a.run.app",
@@ -26,7 +26,7 @@
     "port": 10201,
     "springBootProfile": "prod",
     "webServerPort": 8080,
-    "name": "Customer001",
+    "name": "CustomerNode1",
     "username": "mystifying_cray",
     "password" : "device-grimy-herbs-kelp-cramp-sprout",
     "firebaseProjectId": "bfn-mobile-backend",

@@ -1,4 +1,4 @@
-package com.bfn.client.dto
+package com.bfn.client.data
 
 import com.bfn.contractstates.states.TradeMatrixItem
 

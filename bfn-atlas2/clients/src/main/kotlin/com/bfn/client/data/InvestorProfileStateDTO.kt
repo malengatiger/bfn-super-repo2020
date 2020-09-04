@@ -1,9 +1,7 @@
-package com.bfn.client.dto
-
-import java.util.*
+package com.bfn.client.data
 
 data class InvestorProfileStateDTO (val issuedBy: String?,
-                                    val accountId: String,
+                                    val account: AccountInfoDTO,
                                     val minimumInvoiceAmount: Double,
                                     val maximumInvoiceAmount: Double,
                                     val totalInvestment: Double,

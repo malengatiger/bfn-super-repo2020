@@ -1,6 +1,4 @@
-package com.bfn.client.dto
-
-import java.util.*
+package com.bfn.client.data
 
 data class InvoiceDTO (
     var invoiceId: String,

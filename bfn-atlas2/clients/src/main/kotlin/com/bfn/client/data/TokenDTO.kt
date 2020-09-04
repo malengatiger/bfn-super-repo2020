@@ -1,4 +1,4 @@
-package com.bfn.client.dto
+package com.bfn.client.data
 
 data class TokenDTO(var accountId: String,
                     var invoiceId: String,

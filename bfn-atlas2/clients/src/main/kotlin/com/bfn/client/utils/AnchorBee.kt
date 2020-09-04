@@ -1,7 +1,6 @@
-package com.bfn.client.web
+package com.bfn.client.utils
 
-import com.bfn.client.dto.*
-import com.bfn.client.utils.FirebaseUtil
+import com.bfn.client.data.*
 import com.google.firebase.cloud.FirestoreClient
 import com.google.gson.GsonBuilder
 
@@ -26,7 +25,7 @@ object AnchorBee {
     fun getAnchor(proxy: CordaRPCOps, identifier: String) : AnchorDTO {
         logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to getAnchor ... $identifier")
 
-        val anchor = proxy.vaultQuery(AnchorState::class.java).states.singleOrNull() ?: throw Exception("Missing anchor")
+        val anchor = proxy.vaultQuery(NetworkOperatorState::class.java).states.singleOrNull() ?: throw Exception("Missing anchor")
         if (anchor.state.data.account.identifier.id.toString() != identifier) {
             throw Exception("Invalid anchor identifier")
         }
@@ -68,11 +67,11 @@ object AnchorBee {
     fun updateAnchor(proxy: CordaRPCOps,
                      anchor: AnchorDTO) : AnchorDTO {
         logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to update Anchor ... " )
-        var oldState: AnchorState? = null
+        var oldState: NetworkOperatorState? = null
         val states = proxy.vaultQueryByWithPagingSpec(
                 criteria = QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.UNCONSUMED),
                 paging = PageSpecification(1, 20),
-                contractStateType = AnchorState::class.java
+                contractStateType = NetworkOperatorState::class.java
         ).states
         logger.info("\uD83C\uDF15 \uD83C\uDF15 Anchor states found: ${states.size}")
         states.forEach() {
@@ -118,15 +117,16 @@ object AnchorBee {
     @Throws(Exception::class)
     fun createAnchor(proxy: CordaRPCOps,
                      anchor: AnchorDTO): AnchorDTO? {
-        logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to add Anchor to " +
+        logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to createAnchor: BFN Anchor investor to " +
                 "\uD83C\uDF88 Firebase auth, \uD83C\uDF88 Corda and \uD83C\uDF88 Firestore")
-        val res = proxy.vaultQuery(AnchorState::class.java).states.singleOrNull()
+        val res = proxy.vaultQuery(NetworkOperatorState::class.java).states.singleOrNull()
         if (res != null) {
-            throw Exception("\uD83D\uDC7F \uD83D\uDC7F Anchor already exists")
+            throw Exception("\uD83D\uDC7F \uD83D\uDC7F Anchor already exists: only one anchor on the network!")
         }
         val mUser = FirebaseUtil.getUser(anchor.email)
         if (mUser != null) {
-            throw Exception("\uD83D\uDE21 Firebase auth user already exists")
+//            throw Exception("\uD83D\uDE21 Firebase auth user already exists")
+            logger.info("\uD83D\uDE21 Firebase auth user already exists");
         }
         //todo - improve this query ...
         val accounts = proxy.vaultQuery(AccountInfo::class.java).states
@@ -136,10 +136,10 @@ object AnchorBee {
                 account = it.state.data
             }
         }
-        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 Creating node anchor account ")
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 Creating node anchor account ................ ")
         try {
             if (account == null) {
-                WorkerBee.startAccountRegistrationFlow(proxy, anchor.name,anchor.email, anchor.password)
+                WorkerBee.startAccountRegistrationFlow(proxy, anchor.name, anchor.email, anchor.password)
                 val criteria: QueryCriteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED)
                 val (states) = proxy.vaultQueryByWithPagingSpec(
                         AccountInfo::class.java, criteria,
@@ -155,7 +155,7 @@ object AnchorBee {
             if (account == null) {
                 throw Exception("Corda account not found")
             }
-            val anc = AnchorState(
+            val anc = NetworkOperatorState(
                     issuedBy = proxy.nodeInfo().legalIdentities.first(),
                     account = account!!,
                     minimumInvoiceAmount = anchor.minimumInvoiceAmount,
@@ -175,8 +175,9 @@ object AnchorBee {
             logger.info("\uD83C\uDF53 createAnchor: Anchor response txId: \uD83C\uDF53 ${tx.id}")
 
             //add anchor to Firestore
-            logger.info("\uD83C\uDF53 createAnchor: \uD83C\uDF3A about to add anchor to Firestore")
-            db.collection("anchors").add(anchor)
+
+            logger.info("\uD83C\uDF53 createAnchor: \uD83C\uDF3A about to add BFN anchor to Firestore .... ")
+            db.collection("bfn_anchors").add(anchor)
             val msg = "\uD83C\uDF3A createAnchor set up, added to Firestore. DONE!: " +
                     "${anchor.name} - ${anchor.email} \uD83C\uDF3A " +
                     "txId: ${tx.id}"
@@ -189,7 +190,7 @@ object AnchorBee {
 
     }
 
-    private fun getDTO(a:AnchorState): AnchorDTO {
+    private fun getDTO(a:NetworkOperatorState): AnchorDTO {
         return AnchorDTO(
                issuedBy = a.issuedBy.toString(),
                 accountId = a.account.identifier.id.toString(),

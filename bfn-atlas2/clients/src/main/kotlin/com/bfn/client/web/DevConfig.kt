@@ -1,5 +1,6 @@
 package com.bfn.client.web
 
+import com.bfn.client.utils.FirebaseScaffold
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component

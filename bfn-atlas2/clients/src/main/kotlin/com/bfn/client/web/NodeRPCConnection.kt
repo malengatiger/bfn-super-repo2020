@@ -1,25 +1,18 @@
 package com.bfn.client.web
 
-import com.bfn.client.dto.NodeInfoDTO
-import com.google.gson.Gson
+import com.bfn.client.data.NodeInfoDTO
+import com.bfn.client.utils.getThisNode
 import net.corda.client.rpc.CordaRPCClient
 import net.corda.client.rpc.CordaRPCConnection
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.utilities.NetworkHostAndPort
-import org.apache.commons.io.IOUtils
-import org.json.JSONArray
-import org.json.JSONObject
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.ResourceLoader
 import org.springframework.stereotype.Component
-import org.springframework.util.Assert
-import org.springframework.util.FileCopyUtils
 import java.io.File
 import java.io.IOException
-import java.io.InputStream
-import java.nio.charset.StandardCharsets
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 

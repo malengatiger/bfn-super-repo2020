@@ -1,6 +1,7 @@
-package com.bfn.client.web
+package com.bfn.client.utils
 
-import com.bfn.client.dto.NodeInfoDTO
+import com.bfn.client.data.NodeInfoDTO
+import com.bfn.client.web.ResponseTimer
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions

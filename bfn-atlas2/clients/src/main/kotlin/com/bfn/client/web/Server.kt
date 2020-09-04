@@ -1,8 +1,6 @@
 package com.bfn.client.web
 
-import com.google.auth.oauth2.GoogleCredentials
-import com.google.firebase.FirebaseApp
-import com.google.firebase.FirebaseOptions
+import com.bfn.client.utils.WorkerBee
 import net.corda.nodeapi.internal.config.toConfigValue
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -17,9 +15,7 @@ import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerF
 import org.springframework.context.ApplicationContext
 import org.springframework.context.ApplicationListener
 import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Primary
 import org.springframework.scheduling.annotation.EnableScheduling
-import java.io.IOException
 import java.net.InetAddress
 import java.text.SimpleDateFormat
 import java.util.*
@@ -55,6 +51,7 @@ private open class ApiApp: ApplicationListener<ApplicationReadyEvent> {
 
     @Autowired
     private lateinit var context: ApplicationContext
+
     @Value("\${interval}")
     private var interval: String = "900"
     @Value("\${spring.profiles.active}")

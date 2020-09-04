@@ -1,6 +1,6 @@
 package com.bfn.client.utils
 
-import com.bfn.client.dto.*
+import com.bfn.client.data.*
 import com.google.api.core.ApiFuture
 import com.google.cloud.firestore.CollectionReference
 import com.google.cloud.firestore.DocumentReference
@@ -113,6 +113,36 @@ object FirebaseUtil {
             throw e
         }
     }
+    @JvmStatic
+    @Throws(Exception::class)
+    fun deleteBFNAnchor() {
+        try {
+            val collectionRef = db.collection("bfn_anchors").get()
+            logger.info("\uD83C\uDF4E Found ${collectionRef.get().documents.size} bfn_anchors to delete on Firestore")
+            collectionRef.get().documents.forEach() {
+                it.reference.delete()
+                logger.info(".... BFN Anchor deleted from Firestore: \uD83C\uDF4E ${it.data["host"]} \uD83C\uDF4E ")
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to delete BFN Anchor", e)
+            throw e
+        }
+    }
+    @JvmStatic
+    @Throws(Exception::class)
+    fun deleteCustomers() {
+        try {
+            val collectionRef = db.collection("bfn_customers").get()
+            logger.info("\uD83C\uDF4E Found ${collectionRef.get().documents.size} BFN Customers to delete on Firestore")
+            collectionRef.get().documents.forEach() {
+                it.reference.delete()
+                logger.info(".... BFN Customer deleted from Firestore: \uD83C\uDF4E ${it.data["name"]} \uD83C\uDF4E ")
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to delete BFN Customers", e)
+            throw e
+        }
+    }
 
     @JvmStatic
     @Throws(Exception::class)
@@ -140,6 +170,33 @@ object FirebaseUtil {
     }
 
     @JvmStatic
+    @Throws(Exception::class)
+    fun getBFNAnchorByName(name: String): AnchorDTO? {
+        var anchor: AnchorDTO? = null
+        try {
+            val future = db.collection("bfn_anchors")
+                    .whereEqualTo("name", name)
+                    .limit(1)
+                    .get()
+            val qs: QuerySnapshot = future.get()
+            qs.documents.forEach() {
+
+                anchor = AnchorDTO(issuedBy = it.data["issuedBy"] as String, accountId =  it.data["accountId"] as String,
+                cellphone = it.data["issuedBy"] as String, date = it.data["date"] as String, email = it.data["email"] as String,
+                defaultOfferDiscount = it.data["defaultOfferDiscount"] as Double, maximumInvestment = it.data["maximumInvestment"] as Double,
+                maximumInvoiceAmount = it.data["maximumInvoiceAmount"] as Double, minimumInvoiceAmount = it.data["minimumInvoiceAmount"] as Double,
+                name = it.data["name"] as String, password = "", tradeFrequencyInMinutes = it.data["tradeFrequencyInMinutes"] as Int,
+                tradeMatrixItems = mutableListOf(), uid = "")
+            }
+
+        } catch (e: Exception) {
+            logger.error("Failed to get nodes", e)
+            throw e
+        }
+        return anchor
+    }
+
+    @JvmStatic
     @Throws(FirebaseAuthException::class)
     fun createUser(name: String?, email: String?, password: String?,
                    uid: String?): UserRecord {
@@ -155,6 +212,13 @@ object FirebaseUtil {
         return userRecord
     }
 
+    @JvmStatic
+    @Throws(FirebaseAuthException::class)
+    fun createBFNAccount(accountInfo: AccountInfoDTO): String {
+        logger.info("\uD83D\uDD37 \uD83D\uDD37 ..... createBFNCustomer: writing to Firestore ... \uD83D\uDD37 ")
+        val future = db.collection("bfn_accounts").add(accountInfo)
+        return future.get().path
+    }
     @JvmStatic
     @Throws(FirebaseAuthException::class)
     fun deleteUsers() { // Start listing users from the beginning, 1000 at a time.

@@ -1,6 +1,8 @@
 package com.bfn.client.web
 
-import com.bfn.client.dto.*
+import com.bfn.client.data.*
+import com.bfn.client.utils.SupplierBee
+import com.bfn.client.utils.WorkerBee
 import com.google.gson.GsonBuilder
 import net.corda.core.messaging.CordaRPCOps
 import org.slf4j.LoggerFactory

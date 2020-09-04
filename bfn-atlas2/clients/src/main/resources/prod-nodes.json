@@ -1,14 +1,14 @@
 [
   {
     "addresses": [
-      "O\u003dAnchorInvestor, L\u003dLondon, C\u003dGB"
+      "O\u003dNetworkAnchorNode, L\u003dLondon, C\u003dGB"
     ],
-    "platformVersion": 5,
+    "platformVersion": 7,
     "webServerAddress": "https://bfnwebinvestor-hkn7vsuxdq-ew.a.run.app",
     "host": "nd-601-154-124.rg-788-479.p2pify.com",
     "port": 10201,
     "springBootProfile": "prod",
-    "name": "AnchorInvestor",
+    "name": "NetworkAnchorNode",
     "username": "mystifying_cray",
     "password" : "device-grimy-herbs-kelp-cramp-sprout",
     "firebaseProjectId": "stellar-anchor-333",
@@ -17,14 +17,29 @@
   },
   {
     "addresses": [
-      "O\u003dCustomer001, L\u003dLondon, C\u003dGB"
+      "O\u003dCustomerNode1, L\u003dLondon, C\u003dGB"
     ],
-    "platformVersion": 5,
+    "platformVersion": 7,
     "webServerAddress": "https://bfnwebcustomer-hkn7vsuxdq-ew.a.run.app",
     "host": "nd-601-154-124.rg-788-479.p2pify.com",
     "port": 10201,
     "springBootProfile": "prod",
-    "name": "Customer001",
+    "name": "CustomerNode1",
+    "username": "mystifying_cray",
+    "password" : "device-grimy-herbs-kelp-cramp-sprout",
+    "firebaseProjectId": "stellar-anchor-333",
+    "firebaseUrl": "https://stellar-anchor-333.firebaseio.com"
+  },
+  {
+    "addresses": [
+      "O\u003dRegulator, L\u003dPretoria, C\u003dGB"
+    ],
+    "platformVersion": 7,
+    "webServerAddress": "https://bfnwebcustomer-hkn7vsuxdq-ew.a.run.app",
+    "host": "nd-601-154-124.rg-788-479.p2pify.com",
+    "port": 10201,
+    "springBootProfile": "prod",
+    "name": "Regulator",
     "username": "mystifying_cray",
     "password" : "device-grimy-herbs-kelp-cramp-sprout",
     "firebaseProjectId": "stellar-anchor-333",

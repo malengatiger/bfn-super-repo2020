@@ -1,15 +1,16 @@
 package com.bfn.client.local
 
 import com.google.gson.GsonBuilder
-import com.bfn.client.dto.*
+import com.bfn.client.data.*
 import com.bfn.client.utils.FirebaseUtil
-import com.bfn.client.web.WorkerBee
-import com.bfn.client.web.WorkerBee.getNodeAccounts
-import com.bfn.client.web.WorkerBee.startAccountRegistrationFlow
-import com.bfn.client.web.WorkerBee.startInvoiceOfferFlow
-import com.bfn.client.web.WorkerBee.startInvoiceRegistrationFlow
+import com.bfn.client.utils.WorkerBee
+import com.bfn.client.utils.WorkerBee.getNodeAccounts
+import com.bfn.client.utils.WorkerBee.startAccountRegistrationFlow
+import com.bfn.client.utils.WorkerBee.startInvoiceOfferFlow
+import com.bfn.client.utils.WorkerBee.startInvoiceRegistrationFlow
 import com.bfn.flows.thisDate
 import com.bfn.flows.todaysDate
+import net.corda.core.internal.Emoji
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.node.NodeInfo
 import org.slf4j.LoggerFactory
@@ -31,6 +32,7 @@ object DemoUtil {
 
     @Throws(Exception::class)
     fun generateLocalNodeAccounts(mProxy: CordaRPCOps?, numberOfAccounts: Int = 1): DemoSummary {
+        val start = Date().time;
         proxy = mProxy
         logger.info("\n\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 " +
                 "DemoUtil started, proxy: ${proxy.toString()}...  \uD83D\uDD06 \uD83D\uDD06 " +
@@ -44,6 +46,7 @@ object DemoUtil {
         if (myNode!!.legalIdentities[0].name.organisation.contains("Regulator")) {
             throw Exception("Cannot add demo data to Regulator")
         }
+        logger.info("${Emoji.CODE_COOL_GUY} my node is: ${myNode!!.addresses[0]}")
         suppliers = mutableListOf()
         customers = mutableListOf()
         investors = mutableListOf()
@@ -61,7 +64,9 @@ object DemoUtil {
             cnt++
             logger.info("🔵 🔵 userRecord 😡 #" + cnt + " - " + userRecord.displayName + " 😡 " + userRecord.email)
         }
+        val end = Date().time;
         demoSummary.numberOfAccounts = list.size
+        demoSummary.elapsedSeconds = (end - start / 1000).toDouble();
         return demoSummary
     }
 
@@ -239,7 +244,7 @@ object DemoUtil {
             logger.info("⏰ ⏰ ⏰ create invoices for month:  ⏰ ${cal.time}  ⏰ \n")
             var cnt2 = 0
             accounts.forEach() {
-                if (it.name == "AnchorInvestor" || it.name == "Customer001") {
+                if (it.name == "NetworkAnchorNode" || it.name == "CustomerNode1") {
                     logger.info("${it.name} \uD83E\uDD80 this baby don't do invoices. IGNORED! \uD83D\uDC2C ")
                 } else {
                     val randomInvoice = random.nextBoolean()

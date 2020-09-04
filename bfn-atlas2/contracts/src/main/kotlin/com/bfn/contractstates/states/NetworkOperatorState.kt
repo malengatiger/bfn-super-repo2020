@@ -1,6 +1,6 @@
 package com.bfn.contractstates.states
 
-import com.bfn.contractstates.contracts.InvestorProfileContract
+import com.bfn.contractstates.contracts.NetworkOperatorContract
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import net.corda.core.contracts.BelongsToContract
 import net.corda.core.contracts.ContractState
@@ -10,16 +10,19 @@ import net.corda.core.serialization.CordaSerializable
 import java.util.*
 
 @CordaSerializable
-@BelongsToContract(InvestorProfileContract::class)
-class InvestorProfileState(var issuedBy: Party,
+@BelongsToContract(NetworkOperatorContract::class)
+class NetworkOperatorState(val issuedBy: Party,
                            val account: AccountInfo,
                            val minimumInvoiceAmount: Double,
                            val maximumInvoiceAmount: Double,
-                           val totalInvestment: Double,
-                           val defaultDiscount: Double,
-                           val bank: String,
-                           val bankAccount: String,
-                           var date: Date
+                           val maximumInvestment: Double,
+                           val tradeFrequencyInMinutes: Int,
+                           val defaultOfferDiscount: Double,
+                           val tradeMatrixItems: MutableList<TradeMatrixItem>,
+                           val date: Date,
+                           val name: String,
+                           val email: String,
+                           val cellphone: String
                    ) : ContractState {
 
     override val participants: List<AbstractParty>

@@ -1,20 +1,24 @@
 package com.bfn.client.web
 
-import com.bfn.client.dto.*
+import com.bfn.client.TesterBee
+import com.bfn.client.data.*
 import com.bfn.client.local.DemoUtil
 import com.bfn.client.utils.FirebaseUtil
-import com.bfn.client.web.WorkerBee.getAccount
-import com.bfn.client.web.WorkerBee.getDashboardData
-import com.bfn.client.web.WorkerBee.getStates
-import com.bfn.client.web.WorkerBee.listFlows
-import com.bfn.client.web.WorkerBee.listNodes
-import com.bfn.client.web.WorkerBee.listNotaries
-import com.bfn.client.web.WorkerBee.startAccountRegistrationFlow
+import com.bfn.client.utils.AnchorBee
+import com.bfn.client.utils.WorkerBee
+import com.bfn.client.utils.WorkerBee.getAccount
+import com.bfn.client.utils.WorkerBee.getDashboardData
+import com.bfn.client.utils.WorkerBee.getStates
+import com.bfn.client.utils.WorkerBee.listFlows
+import com.bfn.client.utils.WorkerBee.listNodes
+import com.bfn.client.utils.WorkerBee.listNotaries
+import com.bfn.client.utils.WorkerBee.startAccountRegistrationFlow
 import com.google.firebase.auth.UserRecord
 import com.google.gson.GsonBuilder
 import net.corda.core.messaging.CordaRPCOps
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.*
 import java.util.*
 
@@ -27,8 +31,18 @@ class AdminController(rpc: NodeRPCConnection) {
     private val proxy: CordaRPCOps = rpc.proxy
     @Value("\${spring.profiles.active}")
     private lateinit var profile: String
-    @GetMapping(value = ["/demo"], produces = ["application/json"])
 
+    @GetMapping(value = ["/test"], produces = [MediaType.TEXT_PLAIN_VALUE])
+    @Throws(Exception::class)
+    private fun testerRun(): String {
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting DemoUtil: buildDemo ... \uD83C\uDF4F ")
+       val msg = TesterBee.runMe();
+        logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 TesterBee completed " +
+                 "    \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
+        return "Tester Done: $msg"
+    }
+
+    @GetMapping(value = ["/demo"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun buildDemo(@RequestParam numberOfAccounts: Int = 9): DemoSummary {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting DemoUtil: buildDemo ... \uD83C\uDF4F ")
@@ -38,7 +52,8 @@ class AdminController(rpc: NodeRPCConnection) {
                 + "    \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
         return result
     }
-    @GetMapping(value = ["/deleteFirebase"], produces = ["application/json"])
+
+    @GetMapping(value = ["/deleteFirebase"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun deleteFirebase(): String {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting deleteFirebase: ... \uD83C\uDF4F ")
@@ -46,27 +61,27 @@ class AdminController(rpc: NodeRPCConnection) {
         FirebaseUtil.deleteCollections()
         return "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 deleteFirebase completed. \uD83C\uDF4F "
     }
-    @GetMapping(value = ["/makeAnchorOffers"], produces = ["application/json"])
+    @GetMapping(value = ["/makeAnchorOffers"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun makeAnchorOffers(): List<InvoiceOfferDTO> {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting makeAnchorOffers: ... \uD83C\uDF4F ")
         return AnchorBee.makeOffers(proxy)
     }
 
-    @GetMapping(value = ["/makeSinglePayment"], produces = ["application/json"])
+    @GetMapping(value = ["/makeSinglePayment"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun makeSinglePayment(@RequestParam invoiceId: String): SupplierPaymentDTO {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting makeSinglePayment: ... \uD83C\uDF4F ")
-        return AnchorBee.makeSinglePayment(proxy,invoiceId = invoiceId)
+        return AnchorBee.makeSinglePayment(proxy, invoiceId = invoiceId)
     }
-    @GetMapping(value = ["/makeMultiplePayments"], produces = ["application/json"])
+    @GetMapping(value = ["/makeMultiplePayments"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun makeMultiplePayments(delayMinutesUntilNextPaymentFlow: Long): List<SupplierPaymentDTO> {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting makeMultiplePayments: ... \uD83C\uDF4F ")
         return AnchorBee.makeMultiplePayments(proxy, delayMinutesUntilNextPaymentFlow)
     }
 
-    @GetMapping(value = ["/getInvoicesAcrossNodes"], produces = ["application/json"])
+    @GetMapping(value = ["/getInvoicesAcrossNodes"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun getInvoicesAcrossNodes(): List<InvoiceDTO> {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting getInvoicesAcrossNodes: ... \uD83C\uDF4F ")
@@ -79,7 +94,7 @@ class AdminController(rpc: NodeRPCConnection) {
         }
         return list
     }
-    @GetMapping(value = ["/generateOffers"], produces = ["application/json"])
+    @GetMapping(value = ["/generateOffers"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun generateOffers(@RequestParam max: Int?): String {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting DemoUtil: generateOffers ... \uD83C\uDF4F ")
@@ -90,20 +105,20 @@ class AdminController(rpc: NodeRPCConnection) {
         return result
     }
 
-    @GetMapping(value = ["/getAnchor"], produces = ["application/json"])
+    @GetMapping(value = ["/getAnchor"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun getAnchor(@RequestParam identifier: String): AnchorDTO {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting getAnchor signIn ... \uD83C\uDF4F ")
-        return AnchorBee.getAnchor(proxy,identifier);
+        return AnchorBee.getAnchor(proxy, identifier);
     }
-    @GetMapping(value = ["/getAccounts"], produces = ["application/json"])
+    @GetMapping(value = ["/getAccounts"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun getAccounts(): List<AccountInfoDTO> {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting getAccounts signIn ... \uD83C\uDF4F ")
         return WorkerBee.getNodeAccounts(proxy)
     }
 
-    @PostMapping(value = ["/generateInvoices"], produces = ["application/json"])
+    @PostMapping(value = ["/generateInvoices"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun generateInvoices(@RequestBody customer:AccountInfoDTO): String {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 AdminController: generateInvoices ... \uD83C\uDF4F ")
@@ -112,36 +127,36 @@ class AdminController(rpc: NodeRPCConnection) {
         return result
     }
 
-    @PostMapping(value = ["/createAnchor"], produces = ["application/json"])
+    @PostMapping(value = ["/createAnchor"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun createAnchor(@RequestBody anchor: AnchorDTO): AnchorDTO? {
         return AnchorBee.createAnchor(anchor = anchor, proxy = proxy)
     }
-    @PostMapping(value = ["/updateAnchor"], produces = ["application/json"])
+    @PostMapping(value = ["/updateAnchor"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun updateAnchor(@RequestBody anchor: AnchorDTO): AnchorDTO {
         return AnchorBee.updateAnchor(anchor = anchor, proxy = proxy)
     }
 
-    @PostMapping(value = ["/startAccountRegistrationFlow"], produces = ["application/json"])
+    @PostMapping(value = ["/startAccountRegistrationFlow"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun startAccountRegistrationFlow(@RequestBody user: UserDTO): AccountInfoDTO {
         return startAccountRegistrationFlow(proxy, user.name,
                 user.email, user.password!!)
     }
 
-    @PostMapping(value = ["/addSupplierProfile"], produces = ["application/json"])
+    @PostMapping(value = ["/addSupplierProfile"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun addSupplierProfile(@RequestBody profile: SupplierProfileStateDTO): String {
-       return WorkerBee.createSupplierProfile(proxy,profile)
+       return WorkerBee.createSupplierProfile(proxy, profile)
     }
-    @PostMapping(value = ["/addInvestorProfile"], produces = ["application/json"])
+    @PostMapping(value = ["/addInvestorProfile"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun addInvestorProfile(@RequestBody profile: InvestorProfileStateDTO): String {
-        return WorkerBee.createInvestorProfile(proxy,profile)
+        return WorkerBee.createInvestorProfile(proxy, profile)
     }
 
-    @get:GetMapping(value = ["/getStates"], produces = ["application/json"])
+    @get:GetMapping(value = ["/getStates"], produces = [MediaType.APPLICATION_JSON_VALUE])
     val states: List<String>
         get() {
             return getStates(proxy)
@@ -194,7 +209,7 @@ class AdminController(rpc: NodeRPCConnection) {
     @GetMapping(value = ["/makeInvoiceOffers"])
     @Throws(Exception::class)
     fun makeInvoiceOffers(@RequestParam investorId: String): List<InvoiceOfferDTO> {
-        return WorkerBee.makeInvoiceOffers(proxy,investorId)
+        return WorkerBee.makeInvoiceOffers(proxy, investorId)
     }
     @PostMapping(value = ["/createInvestorProfile"])
     @Throws(Exception::class)
@@ -204,12 +219,12 @@ class AdminController(rpc: NodeRPCConnection) {
     @GetMapping(value = ["/getSupplierProfile"])
     @Throws(Exception::class)
     fun getSupplierProfile(@RequestParam(value = "accountId") accountId: String?): SupplierProfileStateDTO? {
-        return WorkerBee.getSupplierProfile(proxy,accountId)
+        return WorkerBee.getSupplierProfile(proxy, accountId)
     }
     @GetMapping(value = ["/getInvestorProfile"])
     @Throws(Exception::class)
     fun getInvestorProfile(@RequestParam(value = "accountId") accountId: String?): InvestorProfileStateDTO? {
-        return WorkerBee.getInvestorProfile(proxy,accountId)
+        return WorkerBee.getInvestorProfile(proxy, accountId)
     }
     @PostMapping(value = ["/createSupplierProfile"])
     @Throws(Exception::class)
@@ -239,7 +254,7 @@ class AdminController(rpc: NodeRPCConnection) {
                 )
                 users.add(user)
             }
-            ResponseTimer.writeResponse(start = start, 
+            ResponseTimer.writeResponse(start = start,
                     callName = "getUsersFromFirestore", profile = profile)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -261,7 +276,7 @@ class AdminController(rpc: NodeRPCConnection) {
         return "\uD83D\uDC9A  BFNWebApi: AdminController says  \uD83E\uDD6C HELLO WORLD!  \uD83D\uDC9A  \uD83D\uDC9A"
     }
 
-    @GetMapping(value = ["/ping"], produces = ["application/json"])
+    @GetMapping(value = ["/ping"], produces = [MediaType.APPLICATION_JSON_VALUE])
      fun ping(): String {
         val msg = ("\uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A AdminController:BFN Web API pinged: " + Date().toString()
                 + " \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A")
@@ -277,38 +292,38 @@ class AdminController(rpc: NodeRPCConnection) {
                 " \uD83C\uDF3A \uD83C\uDF3A \uD83C\uDF3A \uD83C\uDF3A " +
                 proxy.networkParameters.toString()
 
-        ResponseTimer.writeResponse(start = start, 
+        ResponseTimer.writeResponse(start = start,
                 callName = "ping", profile = profile)
         return  mm
     }
 
-    @get:GetMapping(value = ["/getDashboardData"], produces = ["application/json"])
+    @get:GetMapping(value = ["/getDashboardData"], produces = [MediaType.APPLICATION_JSON_VALUE])
     private val dashboardData: DashboardData
         get() = getDashboardData(proxy)
 
-    @GetMapping(value = ["/nodes"], produces = ["application/json"])
+    @GetMapping(value = ["/nodes"], produces = [MediaType.APPLICATION_JSON_VALUE])
     fun listNodes(): List<NodeInfoDTO> {
         val start = Date()
         val nodes =listNodes(proxy)
-        ResponseTimer.writeResponse(start = start, 
+        ResponseTimer.writeResponse(start = start,
                 callName = "listNodes", profile = profile)
         return nodes
     }
 
-    @GetMapping(value = ["/notaries"], produces = ["application/json"])
+    @GetMapping(value = ["/notaries"], produces = [MediaType.APPLICATION_JSON_VALUE])
     private fun listNotaries(): List<String> {
         val start = Date()
         val mm = listNotaries(proxy)
-        ResponseTimer.writeResponse(start = start, 
+        ResponseTimer.writeResponse(start = start,
                 callName = "listNotaries", profile = profile)
         return mm
     }
 
-    @GetMapping(value = ["/flows"], produces = ["application/json"])
+    @GetMapping(value = ["/flows"], produces = [MediaType.APPLICATION_JSON_VALUE])
     private fun listFlows(): List<String> {
         val start = Date()
         val mm = listFlows(proxy)
-        ResponseTimer.writeResponse(start = start, 
+        ResponseTimer.writeResponse(start = start,
                 callName = "listFlows", profile = profile)
         return mm
     }

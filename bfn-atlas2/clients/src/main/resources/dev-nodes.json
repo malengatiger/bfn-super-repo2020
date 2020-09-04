@@ -1,7 +1,7 @@
 [
   {
     "addresses": [
-      "O\u003dAnchorInvestor, L\u003dLondon, C\u003dGB"
+      "O\u003dNetworkAnchorNode, L\u003dLondon, C\u003dGB"
     ],
     "platformVersion": 5,
     "webServerAddress": "http://192.168.86.240",
@@ -9,7 +9,7 @@
     "port": 10006,
     "springBootProfile": "dev",
     "webServerPort": 10050,
-    "name": "AnchorInvestor",
+    "name": "NetworkAnchorNode",
     "username": "user1",
     "password" : "test",
     "firebaseProjectId": "stellar-anchor-333",
@@ -17,7 +17,7 @@
   },
   {
     "addresses": [
-      "O\u003dCustomer001, L\u003dLondon, C\u003dGB"
+      "O\u003dCustomerNode1, L\u003dLondon, C\u003dGB"
     ],
     "platformVersion": 5,
     "webServerAddress": "http://192.168.86.240",
@@ -25,7 +25,7 @@
     "port": 10009,
     "springBootProfile": "dev",
     "webServerPort": 10053,
-    "name": "Customer001",
+    "name": "CustomerNode1",
     "username": "user1",
     "password" : "test",
     "firebaseProjectId": "stellar-anchor-333",
