@@ -29,7 +29,7 @@ import kotlin.reflect.full.declaredFunctions
 
 fun main(args: Array<String>) {
     println("\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 " +
-            "BFN Web API (Kotlin) starting  ... Senor! ...");
+            "BFN Web Backend API (Kotlin) ......... starting  ... Senor! ...");
             val p = SpringApplicationBuilder().sources(
                     ApiApp::class.java)
             .bannerMode(Banner.Mode.OFF)
@@ -37,7 +37,7 @@ fun main(args: Array<String>) {
             .run(*args)
 
     println("\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 " +
-            "BFN Web API (Kotlin) started " +
+            "BFN Web Backend API (Kotlin) ............ started .............." +
             "\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83C\uDF50️ " +
             "isRunning: ${p.isRunning} \uD83C\uDF50️")
 
@@ -56,8 +56,6 @@ private open class ApiApp: ApplicationListener<ApplicationReadyEvent> {
     private var interval: String = "900"
     @Value("\${spring.profiles.active}")
     private var profile: String = ""
-    @Value("\${interval}")
-    private var databaseUrl: String = "https://stellar-anchor-333.firebaseio.com"
 
     override fun onApplicationEvent(contextRefreshedEvent: ApplicationReadyEvent) {
         logger.info("\uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C  STARTED BFN WEB APP:  " +

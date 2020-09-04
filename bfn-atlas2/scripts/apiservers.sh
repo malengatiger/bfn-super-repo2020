@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "🔆 🍎 🍎 Woke up, 🧩 🧩 🧩 🧩  opening Anchor webserver"
+echo "🔆 🍎 🍎 Woke up, 🧩 🧩 🧩 🧩  opening Network Operator webserver"
 ttab ./scripts/wanchor.sh
 echo "🕗 Sleeping for 15 seconds ... "
 sleep 15s

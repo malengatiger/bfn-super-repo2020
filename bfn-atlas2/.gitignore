@@ -1,6 +1,6 @@
 dockerbuild/bfn.json
 dockerbuild/clients-0.1.jar
-build
+build/
 contracts/build
 contracts/logs
 workflows/build
@@ -10,3 +10,5 @@ clients/logs
 clients/src/main/resources/application-prod.properties
 clients/src/main/resources/prod-nodes.json
 /clients/out/
+.gradle/
+.idea/
