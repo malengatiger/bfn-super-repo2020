@@ -26,6 +26,7 @@ import java.util.*
  * Define your API endpoints here.
  */
 @RestController
+@CrossOrigin(maxAge = 3600)
 @RequestMapping("/admin") // The paths for HTTP requests are relative to this base path.
 class AdminController(rpc: NodeRPCConnection) {
     private val proxy: CordaRPCOps = rpc.proxy

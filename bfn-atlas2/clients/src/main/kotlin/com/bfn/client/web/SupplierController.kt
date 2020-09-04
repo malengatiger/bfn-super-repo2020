@@ -15,6 +15,7 @@ import java.util.*
  * Define your API endpoints here.
  */
 @RestController
+@CrossOrigin(maxAge = 3600)
 @RequestMapping("/supplier") // The paths for HTTP requests are relative to this base path.
 class SupplierController(rpc: NodeRPCConnection) {
     private val logger = LoggerFactory.getLogger(SupplierController::class.java)

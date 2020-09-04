@@ -24,7 +24,7 @@ import kotlin.reflect.full.declaredFunctions
 
 
 /**
- * Our Spring Boot application.
+ * BFN Web Backend API - Spring Boot application.
  */
 
 fun main(args: Array<String>) {
