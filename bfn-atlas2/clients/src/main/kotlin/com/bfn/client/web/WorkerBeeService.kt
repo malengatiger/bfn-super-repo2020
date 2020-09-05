@@ -1,6 +1,7 @@
-package com.bfn.client.services
+package com.bfn.client.web
 
 import com.bfn.client.data.*
+import com.bfn.client.web.FirebaseService
 
 import com.bfn.contractstates.states.*
 import com.bfn.flows.CreateAccountFlow

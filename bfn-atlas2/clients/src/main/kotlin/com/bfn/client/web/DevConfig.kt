@@ -1,6 +1,5 @@
 package com.bfn.client.web
 
-import com.bfn.client.services.FirestoreNodeRefresh
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component

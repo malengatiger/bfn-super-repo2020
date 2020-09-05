@@ -1,4 +1,4 @@
-package com.bfn.client.services
+package com.bfn.client.web
 
 import com.bfn.client.data.NodeInfoDTO
 import com.bfn.client.web.ResponseTimer

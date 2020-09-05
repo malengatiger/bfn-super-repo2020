@@ -1,6 +1,7 @@
-package com.bfn.client.services
+package com.bfn.client.web
 
 import com.bfn.client.data.NodeInfoDTO
+import com.bfn.client.web.FirebaseService
 import com.google.cloud.firestore.Firestore
 import com.google.firebase.FirebaseApp
 import com.google.firebase.cloud.FirestoreClient

@@ -1,6 +1,5 @@
 package com.bfn.client.web;
 
-import com.bfn.client.services.FirebaseService;
 import com.google.firebase.auth.UserRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

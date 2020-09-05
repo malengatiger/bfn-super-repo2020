@@ -1,6 +1,6 @@
 package com.bfn.client.web
 
-import com.bfn.client.services.WorkerBeeService
+import com.bfn.client.web.WorkerBeeService
 import net.corda.nodeapi.internal.config.toConfigValue
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -105,16 +105,16 @@ private open class ApiApp: ApplicationListener<ApplicationReadyEvent> {
             logger.info("\uD83C\uDF4E WorkerBeeService function: #$cnt \t\uD83E\uDDA0  ${it.name} \uD83E\uDDA0 ")
         }
         logger.info("Pinging self, \uD83C\uDF56 \uD83C\uDF56 ... just for the hell of it! \uD83C\uDF56 \uD83C\uDF56")
-//        val bean = context.getBean(AdminController::class.java)
-//        bean.ping()
-//        val flows = bean.listNodes()
-//        cnt = 0
-//        flows.forEach() {
-//
-//                cnt++
-//                logger.info("\uD83D\uDD37 Registered Corda Node #$cnt : \uD83D\uDD37  ${it.addresses?.first()}  \uD83C\uDF4F")
-//
-//        }
+        val bean = context.getBean(AdminController::class.java)
+        bean.ping()
+        val flows = bean.listNodes()
+        cnt = 0
+        flows.forEach() {
+
+                cnt++
+                logger.info("\uD83D\uDD37 Registered Corda Node #$cnt : \uD83D\uDD37  ${it.addresses?.first()}  \uD83C\uDF4F")
+
+        }
     }
 
     private val dateFormat = SimpleDateFormat("HH:mm:ss")

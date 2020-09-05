@@ -1,10 +1,7 @@
-package com.bfn.client.local
+package com.bfn.client.web
 
 import com.google.gson.GsonBuilder
 import com.bfn.client.data.*
-import com.bfn.client.services.DTOUtil
-import com.bfn.client.services.FirebaseService
-import com.bfn.client.services.WorkerBeeService
 
 import com.bfn.contractstates.states.TradeMatrixItem
 import com.bfn.flows.thisDate
