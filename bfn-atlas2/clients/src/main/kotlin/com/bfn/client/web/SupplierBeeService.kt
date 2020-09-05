@@ -1,7 +1,6 @@
 package com.bfn.client.web
 
 import com.bfn.client.data.*
-import com.bfn.client.web.FirebaseService
 import com.google.firebase.cloud.FirestoreClient
 import com.google.gson.GsonBuilder
 
