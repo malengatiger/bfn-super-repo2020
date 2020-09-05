@@ -30,7 +30,7 @@ class FirebaseService() {
     private lateinit var db: Firestore
     private lateinit var messaging: FirebaseMessaging
 
-    private val m = "\uD83D\uDE21 \uD83E\uDD6C \uD83E\uDD6C  \uD83E\uDD6C \uD83E\uDD6C";
+    private val m = "\uD83E\uDD6C \uD83E\uDD6C ";
     private val logger = LoggerFactory.getLogger(FirebaseService::class.java)
     private val gson = GsonBuilder().setPrettyPrinting().create()
     

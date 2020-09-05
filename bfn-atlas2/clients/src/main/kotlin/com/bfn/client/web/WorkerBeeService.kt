@@ -39,7 +39,7 @@ class WorkerBeeService {
 
     @PostConstruct
     fun init() {
-        logger.info("\uD83C\uDF3C \uD83C\uDF3C \uD83C\uDF3C WorkerBee service has been constructed")
+        logger.info("\uD83C\uDF3C \uD83C\uDF3C  WorkerBee service has been constructed")
     }
 
     

@@ -1,6 +1,7 @@
 package com.bfn.client.web;
 
 import com.google.firebase.auth.UserRecord;
+import net.corda.core.node.NodeInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +37,12 @@ public class TestJavaController {
             + " email: " + userRecord.getEmail() + " \uD83C\uDF4E uid: " + userRecord.getUid());
         }
         LOGGER.info("\uD83C\uDFC0 \uD83C\uDFC0 NodeInfo via NodeRPCConnection: "
-                .concat(rpcConnection.getProxy().nodeInfo().toString()));
+                .concat(rpcConnection.getProxy().nodeInfo().toString()
+                .concat("  \uD83C\uDFC0 \uD83C\uDFC0")));
+        for (NodeInfo nodeInfo : rpcConnection.getProxy().networkMapSnapshot()) {
+            LOGGER.info("\uD83D\uDD06 networkMapSnapshot \uD83D\uDD06 NODE: \uD83D\uDD06 "
+                    .concat(nodeInfo.toString()).concat(" \uD83C\uDF4E"));
+        }
 
         return mList;
     }
