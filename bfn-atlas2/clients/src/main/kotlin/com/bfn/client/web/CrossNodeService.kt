@@ -3,25 +3,32 @@ package com.bfn.client.web
 import com.google.gson.GsonBuilder
 import com.bfn.client.data.InvoiceDTO
 import com.bfn.client.data.NodeInfoDTO
-import com.bfn.client.utils.FirebaseUtil
+import com.bfn.client.services.FirebaseService
+import com.bfn.client.services.WorkerBeeService
 import khttp.get
 import net.corda.core.messaging.CordaRPCOps
 import org.json.JSONArray
 import org.slf4j.LoggerFactory
-import org.springframework.stereotype.Component
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Service
 
-@Component
+@Service
 class CrossNodeService {
     private val logger = LoggerFactory.getLogger(CrossNodeService::class.java)
-    private val GSON = GsonBuilder().setPrettyPrinting().create()
+    private val gson = GsonBuilder().setPrettyPrinting().create()
     private var nodes: List<NodeInfoDTO> = mutableListOf()
     private var invoices: MutableList<InvoiceDTO> = mutableListOf()
     private var proxies: MutableList<CordaRPCOps> = mutableListOf()
 
+    @Autowired
+    private val firebaseService: FirebaseService? = null
+    @Autowired
+    private val workerBeeService: WorkerBeeService? = null
+
     private fun getNodes() {
-        nodes = FirebaseUtil.getCordaNodes();
+        nodes = firebaseService?.getCordaNodes()!!
         nodes.forEach() {
-            logger.info("\uD83C\uDF30 \uD83C\uDF30 NodeInfo: ${GSON.toJson(it)}  \uD83C\uDF51 ")
+            logger.info("\uD83C\uDF30 \uD83C\uDF30 NodeInfo: ${gson.toJson(it)}  \uD83C\uDF51 ")
 
         }
         logger.info("\uD83D\uDD25 \uD83D\uDD25 Proxies created for Corda Nodes in Network: " +
@@ -42,20 +49,20 @@ class CrossNodeService {
         return invoices
     }
 
-    private fun addNodeInvoices(it: NodeInfoDTO) {
-        logger.info("\n\uD83C\uDF30 Getting invoices from Node: \uD83E\uDDE9 ${it.addresses?.first()}  " +
-                "\uD83C\uDF30 ${it.webServerAddress}")
+    private fun addNodeInvoices(nodeInfo: NodeInfoDTO) {
+        logger.info("\n\uD83C\uDF30 Getting invoices from Node: \uD83E\uDDE9 ${nodeInfo.addresses?.first()}  " +
+                "\uD83C\uDF30 ${nodeInfo.webServerAddress}")
         val response2 = get(
                 timeout = 990000000.0,
-                url = "${it.host!!}:${it.port!!.toInt()}/admin/findInvoicesForNode")
+                url = "${nodeInfo.host!!}:${nodeInfo.port!!.toInt()}/admin/findInvoicesForNode")
 
         logger.info("\uD83C\uDF4E RESPONSE: statusCode: ${response2.statusCode}  ")
         if (response2.statusCode == 200) {
             val jsonArray = JSONArray(response2.text)
             logger.info("\uD83C\uDF51 \uD83C\uDF51 NodeInvoices: ${jsonArray.length()}")
             jsonArray.forEach() {
-                val d = GSON.fromJson(it.toString(), InvoiceDTO::class.java)
-                logger.info("\uD83E\uDDE9 \uD83E\uDDE9 ${GSON.toJson(d)} \uD83E\uDD66 \uD83E\uDD66 ️ ")
+                val d = gson.fromJson(it.toString(), InvoiceDTO::class.java)
+                logger.info("\uD83E\uDDE9 \uD83E\uDDE9 ${gson.toJson(d)} \uD83E\uDD66 \uD83E\uDD66 ️ ")
                 invoices.add(d)
             }
 

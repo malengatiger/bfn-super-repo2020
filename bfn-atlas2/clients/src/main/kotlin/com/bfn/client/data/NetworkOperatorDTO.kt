@@ -2,7 +2,7 @@ package com.bfn.client.data
 
 import com.bfn.contractstates.states.TradeMatrixItem
 
-data class AnchorDTO(
+data class NetworkOperatorDTO(
         var issuedBy: String,
         var accountId: String,
         var minimumInvoiceAmount: Double,

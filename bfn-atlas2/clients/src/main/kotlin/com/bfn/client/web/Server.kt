@@ -1,7 +1,8 @@
 package com.bfn.client.web
 
-import com.bfn.client.utils.WorkerBee
+import com.bfn.client.services.WorkerBeeService
 import net.corda.nodeapi.internal.config.toConfigValue
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.Banner
@@ -19,7 +20,6 @@ import org.springframework.scheduling.annotation.EnableScheduling
 import java.net.InetAddress
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.logging.Logger
 import kotlin.reflect.full.declaredFunctions
 
 
@@ -47,7 +47,7 @@ fun main(args: Array<String>) {
 @EnableScheduling
 
 private open class ApiApp: ApplicationListener<ApplicationReadyEvent> {
-    private val logger = Logger.getLogger(ApiApp::class.java.name)
+    private val logger = LoggerFactory.getLogger(ApiApp::class.java.name)
 
     @Autowired
     private lateinit var context: ApplicationContext
@@ -67,7 +67,7 @@ private open class ApiApp: ApplicationListener<ApplicationReadyEvent> {
         if (contextRefreshedEvent is WebServerInitializedEvent ) {
             logger.info("\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 Yeah Baby, this is a WebServerInitializedEvent. Fucking Hooray! $contextRefreshedEvent");
             val configValue = contextRefreshedEvent.toConfigValue();
-            logger.info(" ${configValue.toString()}");
+            logger.info(" $configValue");
         }
         info()
 //        setTimer()
@@ -93,39 +93,39 @@ private open class ApiApp: ApplicationListener<ApplicationReadyEvent> {
         logger.info("\n..... \uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 Functions available from SupplierController")
         sorted3.forEach() {
             cnt++
-            logger.info(" \uD83D\uDE21 SupplierController Function: #$cnt \t\uD83D\uDE21 ${it.name}  \uD83D\uDE21 ")
+            logger.info(" \uD83D\uDE21 SupplierController function: #$cnt \t\uD83D\uDE21 ${it.name}  \uD83D\uDE21 ")
         }
         cnt = 0
-        logger.info("\n..... \uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0  Functions available from WorkerBee ...")
-        val workerBee = WorkerBee::class
+        logger.info("\n..... \uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0  Functions available from WorkerBeeService ...")
+        val workerBee = WorkerBeeService::class
         val collection = workerBee.declaredFunctions
         val sorted2 = collection.sortedBy { it.name }
         sorted2.forEach() {
             cnt++
-            logger.info("\uD83C\uDF4E WorkerBee Function: #$cnt \t\uD83E\uDDA0  ${it.name} \uD83E\uDDA0 ")
+            logger.info("\uD83C\uDF4E WorkerBeeService function: #$cnt \t\uD83E\uDDA0  ${it.name} \uD83E\uDDA0 ")
         }
         logger.info("Pinging self, \uD83C\uDF56 \uD83C\uDF56 ... just for the hell of it! \uD83C\uDF56 \uD83C\uDF56")
-        val bean = context.getBean(AdminController::class.java)
-        bean.ping()
-        val flows = bean.listNodes()
-        cnt = 0
-        flows.forEach() {
-
-                cnt++
-                logger.info("\uD83D\uDD37 Registered Corda Node #$cnt : \uD83D\uDD37  ${it.addresses?.first()}  \uD83C\uDF4F")
-
-        }
+//        val bean = context.getBean(AdminController::class.java)
+//        bean.ping()
+//        val flows = bean.listNodes()
+//        cnt = 0
+//        flows.forEach() {
+//
+//                cnt++
+//                logger.info("\uD83D\uDD37 Registered Corda Node #$cnt : \uD83D\uDD37  ${it.addresses?.first()}  \uD83C\uDF4F")
+//
+//        }
     }
 
     private val dateFormat = SimpleDateFormat("HH:mm:ss")
     fun setTimer() {
-        val bean = context.getBean(AdminController::class.java)
-        val org: String = bean.getProxy().nodeInfo().legalIdentities.first().name.organisation
-        logger.info("\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 NODE \uD83C\uDF4E $org \uD83C\uDF4E " +
-                "will start a Timer to control selectBestOffers for suppliers ...  ⏰  ⏰  ⏰ ")
-        logger.info("\uD83E\uDD6C\uD83E\uDD6C\uD83E\uDD6C\uD83E\uDD6C\uD83E\uDD6C interval from properties : " +
-                " \uD83D\uDE21  $interval minutes \uD83D\uDE21 ")
-        startTimer( org, interval.toLong(), bean)
+//        val bean = context.getBean(AdminController::class.java)
+//        val org: String = bean.getProxy().nodeInfo().legalIdentities.first().name.organisation
+//        logger.info("\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 NODE \uD83C\uDF4E $org \uD83C\uDF4E " +
+//                "will start a Timer to control selectBestOffers for suppliers ...  ⏰  ⏰  ⏰ ")
+//        logger.info("\uD83E\uDD6C\uD83E\uDD6C\uD83E\uDD6C\uD83E\uDD6C\uD83E\uDD6C interval from properties : " +
+//                " \uD83D\uDE21  $interval minutes \uD83D\uDE21 ")
+//        startTimer( org, interval.toLong(), bean)
     }
     fun startTimer(name: String, minutes: Long, bean: AdminController) {
         logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E  startTimer:  \uD83C\uDF50 NODE: $name \uD83C\uDF50️ ⏳ Interval in Minutes: $minutes  ⏰  ⏰  ⏰ ")

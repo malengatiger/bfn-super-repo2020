@@ -1,10 +1,7 @@
-package com.bfn.client.utils
+package com.bfn.client.services
 
 import com.bfn.client.data.*
-import com.bfn.client.utils.FirebaseUtil.createUser
-import com.bfn.client.utils.FirebaseUtil.sendAccountMessage
-import com.bfn.client.utils.FirebaseUtil.sendInvoiceMessage
-import com.bfn.client.utils.FirebaseUtil.sendInvoiceOfferMessage
+
 import com.bfn.contractstates.states.*
 import com.bfn.flows.CreateAccountFlow
 import com.bfn.flows.InvestorProfileFlow
@@ -18,7 +15,6 @@ import com.bfn.flows.todaysDate
 import com.google.firebase.cloud.FirestoreClient
 import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
-import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.messaging.CordaRPCOps
@@ -28,15 +24,24 @@ import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.node.services.vault.QueryCriteria.VaultQueryCriteria
 import net.corda.core.utilities.getOrThrow
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Service
 import java.util.*
+import javax.annotation.PostConstruct
 
+@Service
+class WorkerBeeService {
+    private val logger = LoggerFactory.getLogger(WorkerBeeService::class.java)
+    private val gson = GsonBuilder().setPrettyPrinting().create()
+    @Autowired
+    private lateinit var firebaseService: FirebaseService
 
-object WorkerBee {
-    private val logger = LoggerFactory.getLogger(WorkerBee::class.java)
-    private val GSON = GsonBuilder().setPrettyPrinting().create()
+    @PostConstruct
+    fun init() {
+        logger.info("\uD83C\uDF3C \uD83C\uDF3C \uD83C\uDF3C WorkerBee service has been constructed")
+    }
 
-
-    @JvmStatic
+    
     fun listNodes(proxy: CordaRPCOps): List<NodeInfoDTO> {
         val nodes = proxy.networkMapSnapshot()
         val nodeList: MutableList<NodeInfoDTO> = ArrayList()
@@ -58,7 +63,7 @@ object WorkerBee {
         return nodeList
     }
 
-    @JvmStatic
+    
     fun getNodeAccounts(proxy: CordaRPCOps): List<AccountInfoDTO> {
         val start = Date()
         val accounts = proxy.vaultQuery(AccountInfo::class.java).states
@@ -90,7 +95,7 @@ object WorkerBee {
         logger.info(msg)
         return list
     }
-    @JvmStatic
+    
     fun getNodeAccount(proxy: CordaRPCOps, identifier: String): AccountInfo? {
         val start = Date()
         val accounts = proxy.vaultQuery(AccountInfo::class.java).states
@@ -121,7 +126,7 @@ object WorkerBee {
         return account
     }
 
-    @JvmStatic
+    
     fun getNetworkAccounts(proxy: CordaRPCOps): List<AccountInfoDTO> {
         val accounts = proxy.vaultQuery(AccountInfo::class.java).states
         logger.info("\uD83C\uDF3A Total Accounts in Network: ${accounts.size} \uD83C\uDF3A ")
@@ -141,7 +146,7 @@ object WorkerBee {
         return list
     }
 
-    @JvmStatic
+    
     @Throws(Exception::class)
     fun getAccount(proxy: CordaRPCOps, accountId: String?): AccountInfoDTO {
         val list = getNodeAccounts(proxy)
@@ -157,12 +162,12 @@ object WorkerBee {
             logger.warn("Account not found on BFN account")
             throw Exception("Account not found on BFN network")
         }
-        val msg = "\uD83C\uDF3A \uD83C\uDF3A found account:  \uD83C\uDF3A " + GSON.toJson(dto)
+        val msg = "\uD83C\uDF3A \uD83C\uDF3A found account:  \uD83C\uDF3A " + gson.toJson(dto)
         logger.info(msg)
         return dto
     }
 
-    @JvmStatic
+    
     @Throws(Exception::class)
     fun getSupplierProfile(proxy: CordaRPCOps, accountId: String?): SupplierProfileStateDTO? {
         val list: List<StateAndRef<SupplierProfileState>> = proxy.vaultQueryByWithPagingSpec(
@@ -180,13 +185,13 @@ object WorkerBee {
         val msg = if (dto == null) {
             "\uD83C\uDF3A \uD83C\uDF3A SupplierProfile not found:  \uD83C\uDF3A "
         } else {
-            "\uD83C\uDF3A \uD83C\uDF3A found profile:  \uD83C\uDF3A " + GSON.toJson(dto)
+            "\uD83C\uDF3A \uD83C\uDF3A found profile:  \uD83C\uDF3A " + gson.toJson(dto)
         }
         logger.info(msg)
         return dto
     }
 
-    @JvmStatic
+    
     @Throws(Exception::class)
     fun getInvestorProfile(proxy: CordaRPCOps, accountId: String?): InvestorProfileStateDTO? {
         val list: List<StateAndRef<InvestorProfileState>> = proxy.vaultQueryByWithPagingSpec(
@@ -204,14 +209,14 @@ object WorkerBee {
         val msg = if (dto == null) {
             "\uD83C\uDF3A \uD83C\uDF3A InvestorProfile not found:  \uD83C\uDF3A "
         } else {
-            "\uD83C\uDF3A \uD83C\uDF3A found profile:  \uD83C\uDF3A " + GSON.toJson(dto)
+            "\uD83C\uDF3A \uD83C\uDF3A found profile:  \uD83C\uDF3A " + gson.toJson(dto)
         }
         logger.info(msg)
         return dto
     }
 
 
-    @JvmStatic
+    
     @Throws(Exception::class)
     fun findInvoicesForCustomer(proxy: CordaRPCOps,
                                 accountId: String): List<InvoiceDTO> {
@@ -229,7 +234,7 @@ object WorkerBee {
         return dtos
     }
 
-    @JvmStatic
+    
     @Throws(Exception::class)
     fun findInvoicesForSupplier(proxy: CordaRPCOps,
                                 accountId: String): List<InvoiceDTO> {
@@ -247,7 +252,7 @@ object WorkerBee {
         return dtos
     }
 
-    @JvmStatic
+    
     @Throws(Exception::class)
     fun findInvoicesForInvestor(proxy: CordaRPCOps,
                                 accountId: String): List<InvoiceDTO> {
@@ -265,7 +270,7 @@ object WorkerBee {
         return dtos
     }
 
-    @JvmStatic
+    
     @Throws(Exception::class)
     fun findInvoicesForNode(proxy: CordaRPCOps): List<InvoiceDTO> {
         val fut = proxy.startTrackedFlowDynamic(
@@ -285,7 +290,7 @@ object WorkerBee {
     }
 
 
-    @JvmStatic
+    
     @Throws(Exception::class)
     fun createInvestorProfile(proxy: CordaRPCOps, profile: InvestorProfileStateDTO, account: AccountInfo): String {
 
@@ -307,7 +312,7 @@ object WorkerBee {
         return m
     }
 
-    @JvmStatic
+    
     @Throws(Exception::class)
     fun createSupplierProfile(proxy: CordaRPCOps, profile: SupplierProfileStateDTO, account: AccountInfo): String {
 
@@ -327,7 +332,7 @@ object WorkerBee {
         return m
     }
 
-    @JvmStatic
+    
     @Throws(Exception::class)
     fun makeInvoiceOffers(proxy: CordaRPCOps, investorId: String): List<InvoiceOfferDTO> {
         val fut = proxy.startTrackedFlowDynamic(
@@ -350,7 +355,7 @@ object WorkerBee {
         return offers
     }
 
-    @JvmStatic
+    
     @Throws(Exception::class)
     fun findOffersForInvestor(proxy: CordaRPCOps, accountId: String): List<InvoiceOfferDTO> {
         val fut = proxy.startTrackedFlowDynamic(
@@ -366,7 +371,7 @@ object WorkerBee {
         return dtos
     }
 
-    @JvmStatic
+    
     @Throws(Exception::class)
     fun findOffersForSupplier(proxy: CordaRPCOps, accountId: String): List<InvoiceOfferDTO> {
         val fut = proxy.startTrackedFlowDynamic(
@@ -384,7 +389,7 @@ object WorkerBee {
         return dtos
     }
 
-    @JvmStatic
+    
     @Throws(Exception::class)
     fun findOffersForNode(proxy: CordaRPCOps): List<InvoiceOfferDTO> {
         val fut = proxy.startTrackedFlowDynamic(
@@ -403,10 +408,7 @@ object WorkerBee {
         return dtos
     }
 
-    //todo extend paging query where appropriate
-    private const val PAGE_SIZE = 200
 
-    @JvmStatic
     fun getDashboardData(proxy: CordaRPCOps): DashboardData {
         var pageNumber = 1
         val states: MutableList<StateAndRef<ContractState>> = ArrayList()
@@ -415,7 +417,7 @@ object WorkerBee {
         do {
             logger.info("\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 " +
                     "processing page " + pageNumber)
-            val pageSpec = PageSpecification(pageNumber, PAGE_SIZE)
+            val pageSpec = PageSpecification(pageNumber, Companion.PAGE_SIZE)
             val criteria: QueryCriteria = VaultQueryCriteria(StateStatus.UNCONSUMED)
             val (newStates, _, totalStatesAvailable) = proxy.vaultQueryByWithPagingSpec(
                     ContractState::class.java, criteria, pageSpec)
@@ -423,7 +425,7 @@ object WorkerBee {
             logger.info("\uD83D\uDCA6 \uD83D\uDCA6 Number of States \uD83C\uDF4E " + newStates.size)
             states.addAll(newStates)
             pageNumber++
-        } while (PAGE_SIZE * (pageNumber - 1) <= totalResults)
+        } while (Companion.PAGE_SIZE * (pageNumber - 1) <= totalResults)
         var accts = 0
         var invoices = 0
         var offers = 0
@@ -467,7 +469,7 @@ object WorkerBee {
         return data
     }
 
-    @JvmStatic
+    
     fun getStates(proxy: CordaRPCOps): List<String> {
         var pageNumber = 1
         val states: MutableList<StateAndRef<ContractState>> = ArrayList()
@@ -475,7 +477,7 @@ object WorkerBee {
         do {
             logger.info("\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 " +
                     "processing page " + pageNumber)
-            val pageSpec = PageSpecification(pageNumber, PAGE_SIZE)
+            val pageSpec = PageSpecification(pageNumber, Companion.PAGE_SIZE)
             val criteria: QueryCriteria = VaultQueryCriteria(StateStatus.UNCONSUMED)
             val (newStates, _, totalStatesAvailable) = proxy.vaultQueryByWithPagingSpec(
                     ContractState::class.java, criteria, pageSpec)
@@ -483,7 +485,7 @@ object WorkerBee {
             logger.info("\uD83D\uDCA6 \uD83D\uDCA6 Number of States \uD83C\uDF4E " + newStates.size)
             states.addAll(newStates)
             pageNumber++
-        } while (PAGE_SIZE * (pageNumber - 1) <= totalResults)
+        } while (Companion.PAGE_SIZE * (pageNumber - 1) <= totalResults)
         var accts = 0
         var invoices = 0
         var offers = 0
@@ -523,14 +525,14 @@ object WorkerBee {
         return mList
     }
 
-    @JvmStatic
+    
     fun listFlows(proxy: CordaRPCOps): List<String> {
         val flows = proxy.registeredFlows()
         logger.info("🥬 🥬 🥬 🥬 Total Registered Flows  \uD83C\uDF4E  ${flows.size}  \uD83C\uDF4E \uD83E\uDD6C ")
         return flows
     }
 
-    @JvmStatic
+    
     fun listNotaries(proxy: CordaRPCOps): List<String> {
         val notaryIdentities = proxy.notaryIdentities()
         val list: MutableList<String> = ArrayList()
@@ -541,7 +543,7 @@ object WorkerBee {
         return list
     }
 
-    @JvmStatic
+    
     @Throws(Exception::class)
     fun startInvoiceRegistrationFlow(proxy: CordaRPCOps, invoice: InvoiceDTO): InvoiceDTO {
         return try {
@@ -588,7 +590,7 @@ object WorkerBee {
             val dto = invoiceState.let { getDTO(it) }
             //logger.info("Check amount discount total calculations: " + GSON.toJson(dto))
             try {
-                sendInvoiceMessage(dto)
+                firebaseService.sendInvoiceMessage(dto)
                 val db = FirestoreClient.getFirestore()
                 val reference = db.collection("invoices").add(dto)
                 logger.info("\uD83E\uDDE9" +
@@ -606,8 +608,9 @@ object WorkerBee {
             }
         }
     }
+    
 
-    @JvmStatic
+    
     @Throws(Exception::class)
     fun startAccountRegistrationFlow(proxy: CordaRPCOps,
                                      accountName: String, email: String,
@@ -631,7 +634,7 @@ object WorkerBee {
             logger.info("\uD83C\uDF4F Flow completed... \uD83D\uDC4C accountInfo returned: \uD83E\uDD4F $name")
             //create user record in firebase
             try {
-                createUser(accountName, email, password,
+                firebaseService.createUser(accountName, email, password,
                         identifier.id.toString())
 
             } catch (e: Exception) {
@@ -646,7 +649,7 @@ object WorkerBee {
                     status = "")
 
             try {
-                sendAccountMessage(dto)
+                firebaseService.sendAccountMessage(dto)
                 val db = FirestoreClient.getFirestore()
                 val reference = db.collection("accounts").add(dto)
                 logger.info("\uD83E\uDDE9 Firestore path: " + reference.get().path)
@@ -662,7 +665,7 @@ object WorkerBee {
         }
     }
 
-    @JvmStatic
+    
     @Throws(Exception::class)
     fun startInvoiceOfferFlow(proxy: CordaRPCOps, invoiceOffer: InvoiceOfferDTO): InvoiceOfferDTO {
         return try {
@@ -740,28 +743,11 @@ object WorkerBee {
         } catch (e: Exception) {
             logger.error(e.message)
         }
-        sendInvoiceOfferMessage(offerDTO)
+        firebaseService.sendInvoiceOfferMessage(offerDTO)
         return offerDTO
     }
 
-
-    @JvmStatic
-    fun getDTO(token: FungibleToken, accountId: String,
-               invoiceId: String, account: AccountInfo, invoiceAmount: Double): TokenDTO {
-        return TokenDTO(
-                accountId = accountId,
-                invoiceId = invoiceId,
-                tokenIdentifier = token.issuedTokenType.tokenIdentifier,
-                amount = token.amount.toDecimal().toDouble(),
-                issuer = token.issuer.toString(),
-                holder = token.holder.toString(),
-                invoiceAmount = invoiceAmount,
-                account = getDTO(account)
-
-        )
-    }
-
-    @JvmStatic
+    
     @Throws(Exception::class)
     fun getDTO(state: InvoiceState): InvoiceDTO {
         return InvoiceDTO(
@@ -778,7 +764,7 @@ object WorkerBee {
         )
     }
 
-    @JvmStatic
+    
     @Throws(Exception::class)
     fun getDTO(state: InvoiceOfferState): InvoiceOfferDTO {
         return InvoiceOfferDTO(
@@ -798,7 +784,7 @@ object WorkerBee {
         )
     }
 
-    @JvmStatic
+    
     fun getDTO(a: AccountInfo): AccountInfoDTO {
         return AccountInfoDTO(
                 host = a.host.toString(),
@@ -806,7 +792,7 @@ object WorkerBee {
                 name = a.name, status = "")
     }
 
-    @JvmStatic
+    
     fun getDTO(a: InvestorProfileState): InvestorProfileStateDTO {
         return InvestorProfileStateDTO(
                 issuedBy = a.issuedBy.toString(),
@@ -819,7 +805,7 @@ object WorkerBee {
         )
     }
 
-    @JvmStatic
+    
     fun getDTO(a: SupplierPaymentState): SupplierPaymentDTO {
         return SupplierPaymentDTO(
                 acceptedOffer = getDTO(a.acceptedOffer),
@@ -828,7 +814,7 @@ object WorkerBee {
                 paid = a.paid
         )
     }
-    @JvmStatic
+    
     fun getDTO(a: SupplierProfileState): SupplierProfileStateDTO {
         return SupplierProfileStateDTO(
                 issuedBy = a.issuedBy.toString(),
@@ -837,5 +823,10 @@ object WorkerBee {
                 bank = a.bank,
                 bankAccount = a.bankAccount
         )
+    }
+
+    companion object {
+        //todo extend paging query where appropriate
+        private const val PAGE_SIZE = 200
     }
 }

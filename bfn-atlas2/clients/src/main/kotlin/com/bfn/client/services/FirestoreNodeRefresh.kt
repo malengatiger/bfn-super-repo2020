@@ -1,7 +1,8 @@
-package com.bfn.client.utils
+package com.bfn.client.services
 
 import com.bfn.client.data.NodeInfoDTO
 import com.google.cloud.firestore.Firestore
+import com.google.firebase.FirebaseApp
 import com.google.firebase.cloud.FirestoreClient
 import com.google.gson.GsonBuilder
 import org.slf4j.LoggerFactory
@@ -16,13 +17,17 @@ import java.util.*
 import javax.annotation.PostConstruct
 
 @Component
-class FirebaseScaffold {
-    private val logger = LoggerFactory.getLogger(FirebaseScaffold::class.java)
+class FirestoreNodeRefresh {
+    private val logger = LoggerFactory.getLogger(FirestoreNodeRefresh::class.java)
     private val gson = GsonBuilder().setPrettyPrinting().create()
     @Autowired
     private lateinit var environment: Environment
     @Autowired
     private lateinit var context: ApplicationContext
+
+    @Autowired
+    private lateinit var firebaseService: FirebaseService
+
     @Value("\${spring.profiles.active}")
     private var profile: String = "dev"
     @Value("\${node.index}")
@@ -36,9 +41,9 @@ class FirebaseScaffold {
     @PostConstruct
     fun init() {
         logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D " +
-                "PostConstruct: \uD83C\uDF3F Alexa and AI are coming for you! \uD83C\uDF1E SPRINGBOOT_PROFILE : $profile \uD83C\uDF1E")
+                "FirestoreNodeRefresh PostConstruct: \uD83C\uDF3F Alexa and AI are coming for you! \uD83C\uDF1E SPRINGBOOT_PROFILE : $profile \uD83C\uDF1E")
 
-        logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06  BFNWebApi: setting up Firebase service account ...."
+        logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06  FirestoreNodeRefresh: setting up Firebase service account ...."
                 + " \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06")
         try {
             val file: File = if (profile == "dev") {
@@ -48,7 +53,13 @@ class FirebaseScaffold {
             }
 
             logger.info("\uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C Nodes JSON File Found :  " +
-                    "\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21  " + file.exists())
+                    "\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21  file exists? " + file.exists())
+            try {
+                logger.info(" \uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0 initializing Firebase ............." )
+                FirebaseApp.initializeApp()
+            } catch (e: Exception) {
+                logger.info("\uD83D\uDE08 \uD83D\uDC7F Firebase may already be initialized" )
+            }
             val nodes: List<NodeInfoDTO> = buildFirebase(file, stringIndex.toInt())
             logger.info("\uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C Nodes from JSON File: ${nodes.size}" )
             val db: Firestore = FirestoreClient.getFirestore()
@@ -64,7 +75,7 @@ class FirebaseScaffold {
             } else {
                 val node = nodesFromFB[0];
                 if (Date().time.minus(node.data["date"] as Long) > (1000 * 60 * 5) ) {
-                    FirebaseUtil.deleteNodes(profile)
+                    firebaseService.deleteNodes(profile)
                     nodes.forEach {
                         it.date = Date().time
                         db.collection("nodes").add(it)
@@ -76,18 +87,17 @@ class FirebaseScaffold {
                             "\uD83D\uDC8A \uD83D\uDC8A \uD83D\uDC8A booted within last 5 minutes")
                 }
             }
-
-
+            
             try {
                 val start = WebServerStart(date = Date(), profile = profile, numberOfNodes = nodes.size)
                 db.collection("webServerStarts").add(start)
-                logger.info("\uD83C\uDF50 \uD83C\uDF50 \uD83C\uDF50 WebServerStart added to Firestore:  \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E ")
+                logger.info("\uD83C\uDF50 \uD83C\uDF50 \uD83C\uDF50 WebServerStart data added to Firestore:  \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E ")
             } catch (e: Exception) {
-                logger.error("\uD83D\uDE21 ResponseTime add to Firestore is fucked.", e)
+                logger.error("\uD83D\uDE21 WebServerStart addition to Firestore is fucked.", e)
             }
 
             listAccountsFromFirebase()
-            logger.info("\uD83C\uDF4E Firebase Scaffolding is complete.  ⚽️  ⚽️  ⚽️  ⚽️  ⚽️ \n")
+            logger.info("\uD83C\uDF4E FirestoreNodeRefresh is complete.  ⚽️  ⚽️  ⚽️  ⚽️  ⚽️ \n")
 
         } catch (e: Exception) {
             logger.error("\uD83D\uDC7F  \uD83D\uDC7F  \uD83D\uDC7F  \uD83D\uDC7F Firebase Admin SDK setup failed")
@@ -100,7 +110,7 @@ class FirebaseScaffold {
 
 
     private fun listAccountsFromFirebase() {
-        val users = FirebaseUtil.getUsers()
+        val users = firebaseService.getUsers()
         logger.info("\n⚽️ Accounts on Firebase Auth:  \uD83D\uDC9A \uD83D\uDC99 ${users.size}")
         if (users.isEmpty()) {
             return

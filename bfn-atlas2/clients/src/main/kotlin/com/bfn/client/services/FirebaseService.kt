@@ -1,4 +1,4 @@
-package com.bfn.client.utils
+package com.bfn.client.services
 
 import com.bfn.client.data.*
 import com.google.api.core.ApiFuture
@@ -6,11 +6,11 @@ import com.google.cloud.firestore.CollectionReference
 import com.google.cloud.firestore.DocumentReference
 import com.google.cloud.firestore.Firestore
 import com.google.cloud.firestore.QuerySnapshot
+import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.ExportedUserRecord
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.UserRecord
-import com.google.firebase.auth.UserRecord.CreateRequest
 import com.google.firebase.cloud.FirestoreClient
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.Message
@@ -18,29 +18,32 @@ import com.google.firebase.messaging.Notification
 import com.google.gson.GsonBuilder
 import net.corda.core.utilities.getOrThrow
 import org.slf4j.LoggerFactory
-import java.util.*
+import org.springframework.stereotype.Service
+import java.util.ArrayList
 import java.util.concurrent.ExecutionException
 import java.util.function.Consumer
+import javax.annotation.PostConstruct
 
-object FirebaseUtil {
-    private val logger = LoggerFactory.getLogger(FirebaseUtil::class.java)
-    private val GSON = GsonBuilder().setPrettyPrinting().create()
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
-    private val db: Firestore = FirestoreClient.getFirestore()
-    private val messaging: FirebaseMessaging = FirebaseMessaging.getInstance()
+@Service
+class FirebaseService() {
+    private lateinit var auth: FirebaseAuth
+    private lateinit var db: Firestore
+    private lateinit var messaging: FirebaseMessaging
 
-
-    @JvmStatic
-    @Throws(ExecutionException::class, InterruptedException::class)
-    fun initialize() {
-
-        // Response is a message ID string.
-        logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 "
-                + "Successfully initialized Firebase \uD83D\uDE21 \uD83E\uDD6C \uD83E\uDD6C  \uD83E\uDD6C \uD83E\uDD6C");
+    private val m = "\uD83D\uDE21 \uD83E\uDD6C \uD83E\uDD6C  \uD83E\uDD6C \uD83E\uDD6C";
+    private val logger = LoggerFactory.getLogger(FirebaseService::class.java)
+    private val gson = GsonBuilder().setPrettyPrinting().create()
+    
+    @PostConstruct
+    fun init() {
+        
+            FirebaseApp.initializeApp()
+            auth = FirebaseAuth.getInstance()
+            db = FirestoreClient.getFirestore()
+            messaging = FirebaseMessaging.getInstance()
+            logger.info("$m PostConstruct: ...... Successfully initialized Firebase ......  $m");
+        
     }
-
-
-    @JvmStatic
     @Throws(ExecutionException::class, InterruptedException::class)
     fun sendInvoiceOfferMessage(offer: InvoiceOfferDTO?) {
         val topic = "invoiceOffers"
@@ -48,56 +51,62 @@ object FirebaseUtil {
         val m = Notification("New Invoice Offer", offer?.offerAmount.toString())
 
         val message = Message.builder()
-                .putData("invoiceOffer", GSON.toJson(offer))
+                .putData("invoiceOffer", gson.toJson(offer))
                 .setNotification(m)
                 .setTopic(topic).build()
         // Send a message to the devices subscribed to the provided topic.
-        val response = messaging.sendAsync(message).get()
+        val response = messaging.sendAsync(message)?.get()
         // Response is a message ID string.
         logger.info(("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 "
                 + "Successfully sent FCM INVOICE OFFER message to topic: \uD83D\uDE21 ") + topic + "; Response: \uD83E\uDD6C \uD83E\uDD6C " + response + " \uD83E\uDD6C \uD83E\uDD6C")
     }
 
-    @JvmStatic
+
     @Throws(ExecutionException::class, InterruptedException::class)
     fun sendInvoiceMessage(invoice: InvoiceDTO?) {
         val topic = "invoices"
         // See documentation on defining a message payload.
         val m = Notification("New Invoice", invoice?.totalAmount.toString())
         val message = Message.builder()
-                .putData("invoice", GSON.toJson(invoice))
+                .putData("invoice", gson.toJson(invoice))
                 .setNotification(m).setTopic(topic)
                 .build()
         // Send a message to the devices subscribed to the provided topic.
-        val response = messaging.sendAsync(message).get()
+        val response = messaging.sendAsync(message)?.get()
         // Response is a message ID string.
-        logger.info(("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 "
-                + "Successfully sent FCM INVOICE message to topic: \uD83D\uDE21 ") + topic + "; Response: \uD83E\uDD6C \uD83E\uDD6C " + response + " \uD83E\uDD6C \uD83E\uDD6C")
+        logger.info(("$m Successfully sent FCM INVOICE message to topic: \uD83D\uDE21 ")
+                + topic + "; Response: \uD83E\uDD6C \uD83E\uDD6C " + response + " \uD83E\uDD6C \uD83E\uDD6C")
     }
 
-    @JvmStatic
+
     @Throws(ExecutionException::class, InterruptedException::class)
     fun sendAccountMessage(account: AccountInfoDTO?) {
         val topic = "accounts"
         // See documentation on defining a message payload.
-        val m = Notification("New BFN Account", GSON.toJson(account))
-        val message = Message.builder().putData("account", GSON.toJson(account)).setNotification(m).setTopic(topic)
+        val m = Notification("New BFN Account", gson.toJson(account))
+        val message = Message.builder().putData("account", gson.toJson(account)).setNotification(m).setTopic(topic)
                 .build()
         // Send a message to the devices subscribed to the provided topic.
-        val response = messaging.sendAsync(message).get()
+        val response = messaging.sendAsync(message)?.get()
         // Response is a message ID string.
         logger.info(("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 "
                 + "Successfully sent FCM ACCOUNT message to topic: \uD83D\uDE21 ") + topic + "; Response: \uD83E\uDD6C \uD83E\uDD6C " + response + " \uD83E\uDD6C \uD83E\uDD6C")
     }
 
-    @JvmStatic
+
     @Throws(ExecutionException::class, InterruptedException::class)
     fun addToken(token: TokenDTO) {
         val future: ApiFuture<DocumentReference> = db.collection("tokens").add(token);
         logger.info("\uD83D\uDE3C \uD83D\uDE3C Token added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
 
-    @JvmStatic
+    @Throws(ExecutionException::class, InterruptedException::class)
+    fun addNetworkOperator(operator: NetworkOperatorDTO) {
+        val future: ApiFuture<DocumentReference> = db.collection("networkOperator").add(operator);
+        logger.info("\uD83D\uDE3C \uD83D\uDE3C NetworkOperator added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+    }
+
+
     @Throws(Exception::class)
     fun deleteNodes(springBootProfile: String) {
         try {
@@ -113,7 +122,8 @@ object FirebaseUtil {
             throw e
         }
     }
-    @JvmStatic
+
+
     @Throws(Exception::class)
     fun deleteBFNAnchor() {
         try {
@@ -128,7 +138,8 @@ object FirebaseUtil {
             throw e
         }
     }
-    @JvmStatic
+
+
     @Throws(Exception::class)
     fun deleteCustomers() {
         try {
@@ -144,7 +155,7 @@ object FirebaseUtil {
         }
     }
 
-    @JvmStatic
+
     @Throws(Exception::class)
     fun getCordaNodes(): List<NodeInfoDTO> {
         val mList: MutableList<NodeInfoDTO> = mutableListOf()
@@ -169,10 +180,10 @@ object FirebaseUtil {
         return mList
     }
 
-    @JvmStatic
+
     @Throws(Exception::class)
-    fun getBFNAnchorByName(name: String): AnchorDTO? {
-        var anchor: AnchorDTO? = null
+    fun getBFNAnchorByName(name: String): NetworkOperatorDTO? {
+        var networkOperator: NetworkOperatorDTO? = null
         try {
             val future = db.collection("bfn_anchors")
                     .whereEqualTo("name", name)
@@ -181,45 +192,46 @@ object FirebaseUtil {
             val qs: QuerySnapshot = future.get()
             qs.documents.forEach() {
 
-                anchor = AnchorDTO(issuedBy = it.data["issuedBy"] as String, accountId =  it.data["accountId"] as String,
-                cellphone = it.data["issuedBy"] as String, date = it.data["date"] as String, email = it.data["email"] as String,
-                defaultOfferDiscount = it.data["defaultOfferDiscount"] as Double, maximumInvestment = it.data["maximumInvestment"] as Double,
-                maximumInvoiceAmount = it.data["maximumInvoiceAmount"] as Double, minimumInvoiceAmount = it.data["minimumInvoiceAmount"] as Double,
-                name = it.data["name"] as String, password = "", tradeFrequencyInMinutes = it.data["tradeFrequencyInMinutes"] as Int,
-                tradeMatrixItems = mutableListOf(), uid = "")
+                networkOperator = NetworkOperatorDTO(issuedBy = it.data["issuedBy"] as String, accountId = it.data["accountId"] as String,
+                        cellphone = it.data["issuedBy"] as String, date = it.data["date"] as String, email = it.data["email"] as String,
+                        defaultOfferDiscount = it.data["defaultOfferDiscount"] as Double, maximumInvestment = it.data["maximumInvestment"] as Double,
+                        maximumInvoiceAmount = it.data["maximumInvoiceAmount"] as Double, minimumInvoiceAmount = it.data["minimumInvoiceAmount"] as Double,
+                        name = it.data["name"] as String, password = "", tradeFrequencyInMinutes = it.data["tradeFrequencyInMinutes"] as Int,
+                        tradeMatrixItems = mutableListOf(), uid = "")
             }
 
         } catch (e: Exception) {
             logger.error("Failed to get nodes", e)
             throw e
         }
-        return anchor
+        return networkOperator
     }
 
-    @JvmStatic
+
     @Throws(FirebaseAuthException::class)
     fun createUser(name: String?, email: String?, password: String?,
-                   uid: String?): UserRecord {
+                   uid: String?): UserRecord? {
         logger.info("\uD83D\uDD37 \uD83D\uDD37 ..... createUser: writing to Firestore ... \uD83D\uDD37 ")
-        val request = CreateRequest()
+        val request = UserRecord.CreateRequest()
         request.setEmail(email)
         request.setDisplayName(name)
         request.setPassword(password)
         request.setUid(uid)
-        val userRecord = auth.createUser(request)
+        val userRecord = auth?.createUser(request)
         logger.info("\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C \uD83E\uDD66 \uD83E\uDD66 " +
                 "Auth User record created in Firebase:  \uD83E\uDD66 " + userRecord.email)
         return userRecord
     }
 
-    @JvmStatic
+
     @Throws(FirebaseAuthException::class)
-    fun createBFNAccount(accountInfo: AccountInfoDTO): String {
+    fun createBFNAccount(accountInfo: AccountInfoDTO): String? {
         logger.info("\uD83D\uDD37 \uD83D\uDD37 ..... createBFNCustomer: writing to Firestore ... \uD83D\uDD37 ")
         val future = db.collection("bfn_accounts").add(accountInfo)
-        return future.get().path
+        return future?.get()?.path
     }
-    @JvmStatic
+
+
     @Throws(FirebaseAuthException::class)
     fun deleteUsers() { // Start listing users from the beginning, 1000 at a time.
         var cnt = 0
@@ -229,25 +241,25 @@ object FirebaseUtil {
                 if (user.email != null && user.email.contains("aubrey")) {
                     continue
                 }
-                auth.deleteUser(user.uid)
+                auth?.deleteUser(user.uid)
                 cnt++
                 logger.info("\uD83C\uDF4A  User deleted: 🔵 #$cnt")
             }
             page = page.nextPage
         }
-        page = auth.listUsers(null)
+        page = auth!!.listUsers(null)
         for (user in page.iterateAll()) {
             if (user.email != null && user.email.contains("aubrey")) {
                 continue
             }
             logger.info("\uD83C\uDF4A \uD83C\uDF4A \uD83C\uDF4A User delete .....: ")
-            auth.deleteUser(user.uid)
+            auth!!.deleteUser(user.uid)
             cnt++
             logger.info("🔆 🔆 🔆 user deleted: 🔵 #$cnt ${user.displayName}")
         }
     }
 
-    @JvmStatic
+
     @Throws(FirebaseAuthException::class)
     fun getUser(email: String?): UserRecord? {
 
@@ -259,7 +271,7 @@ object FirebaseUtil {
         return record
     }
 
-    @JvmStatic
+
     @Throws(FirebaseAuthException::class)
     fun getUsers(): List<UserRecord> {
         logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 Getting Firebase auth users ...")
@@ -275,7 +287,7 @@ object FirebaseUtil {
         return records
     }
 
-    @JvmStatic
+
     fun deleteCollections() {
         val m = db.listCollections()
         for (reference in m) {
@@ -322,12 +334,13 @@ object FirebaseUtil {
         }
     }
 
-    private const val BATCH_SIZE = 2000
-    @JvmStatic
+    private  val batchSize = 2000
+
+
     @Throws(ExecutionException::class, InterruptedException::class)
     fun deleteCollection(collectionName: String?) { // retrieve a small batch of documents to avoid out-of-memory errors
         val collection = db.collection(collectionName!!)
-        val future = collection.limit(BATCH_SIZE).get()
+        val future = collection.limit(batchSize).get()
         var deleted = 0
         // future.get() blocks on document retrieval
         val documents = future.get().documents
@@ -336,7 +349,7 @@ object FirebaseUtil {
             ++deleted
             logger.info(" \uD83E\uDD4F  \uD83E\uDD4F  \uD83E\uDD4F  Deleted document:  \uD83D\uDC9C " + document.reference.path)
         }
-        if (deleted >= BATCH_SIZE) { // retrieve and delete another batch
+        if (deleted >= batchSize) { // retrieve and delete another batch
             deleteCollection(collectionName)
             logger.info(" \uD83E\uDD4F  \uD83E\uDD4F  \uD83E\uDD4F  Deleted collection:  \uD83E\uDDE1 " + collection.path)
         }

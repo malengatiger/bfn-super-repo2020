@@ -23,8 +23,8 @@ class MyWebServerStartedListener : ApplicationListener<ApplicationStartedEvent> 
         logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21  ApplicationStartedEvent: " +
                 "⚽️  ⚽️  \uD83C\uDF4E beanDefinitionCount: ${event.applicationContext.beanDefinitionCount} \uD83C\uDF4E " +
                 "Do us a ping, huh? ..." )
-        val bean = event.applicationContext.getBean(AdminController::class.java)
-        bean.ping()
+//        val bean = event.applicationContext.getBean(AdminController::class.java)
+//        bean.ping()
     }
 
 }

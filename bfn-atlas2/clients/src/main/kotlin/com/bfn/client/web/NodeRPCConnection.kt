@@ -1,7 +1,7 @@
 package com.bfn.client.web
 
 import com.bfn.client.data.NodeInfoDTO
-import com.bfn.client.utils.getThisNode
+import com.bfn.client.services.getThisNode
 import net.corda.client.rpc.CordaRPCClient
 import net.corda.client.rpc.CordaRPCConnection
 import net.corda.core.messaging.CordaRPCOps

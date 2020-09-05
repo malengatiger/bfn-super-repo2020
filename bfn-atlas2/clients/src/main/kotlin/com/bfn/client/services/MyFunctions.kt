@@ -1,4 +1,4 @@
-package com.bfn.client.utils
+package com.bfn.client.services
 
 import com.bfn.client.data.NodeInfoDTO
 import com.bfn.client.web.ResponseTimer
@@ -10,6 +10,7 @@ import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import org.json.JSONArray
 import org.json.JSONObject
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.core.io.ResourceLoader
 import org.springframework.util.Assert
@@ -19,8 +20,12 @@ import java.io.InputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 
+val logger: Logger = LoggerFactory.getLogger(ResponseTimer::class.java)
+
 fun buildFirebase(nodePropertiesFile: File, nodeIndex: Int): List<NodeInfoDTO> {
-    val logger = LoggerFactory.getLogger(ResponseTimer::class.java)
+    logger.info("\uD83D\uDD35 \uD83D\uDD35\uD83D\uDD35 \uD83D\uDD35\uD83D\uDD35 \uD83D\uDD35 "
+            + "Setting up Firebase Admin SDK ....  \uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9 ")
+
     val gson = GsonBuilder().setPrettyPrinting().create()
     val content = String(Files.readAllBytes(nodePropertiesFile.toPath()))
     val nodeType = object : TypeToken<List<NodeInfoDTO>>() {}.type

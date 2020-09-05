@@ -1,40 +1,49 @@
-package com.bfn.client.utils
+package com.bfn.client.services
 
 import com.bfn.client.data.*
-import com.google.firebase.cloud.FirestoreClient
 import com.google.gson.GsonBuilder
 
 import com.bfn.contractstates.states.*
 import com.bfn.flows.anchor.*
-import com.google.cloud.firestore.Firestore
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.node.services.Vault
 import net.corda.core.node.services.vault.PageSpecification
 import net.corda.core.node.services.vault.QueryCriteria
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Service
 import java.util.*
+import javax.annotation.PostConstruct
 
-object AnchorBee {
-    private val logger = LoggerFactory.getLogger(AnchorBee::class.java)
-    private val GSON = GsonBuilder().setPrettyPrinting().create()
-    private val db: Firestore = FirestoreClient.getFirestore()
+@Service
+class NetworkOperatorBeeService {
+    private val logger = LoggerFactory.getLogger(NetworkOperatorBeeService::class.java)
+    private val gson = GsonBuilder().setPrettyPrinting().create()
+    @Autowired
+    private lateinit var firebaseService: FirebaseService
+    @Autowired
+    private lateinit var workerBeeService: WorkerBeeService
 
-    @JvmStatic
+    @PostConstruct
+    fun init() {
+        logger.info("\uD83C\uDFC0 \uD83C\uDFC0 NetworkOperatorBeeService initialized")
+    }
+    
     @Throws(Exception::class)
-    fun getAnchor(proxy: CordaRPCOps, identifier: String) : AnchorDTO {
+    fun getNetworkOperator(proxy: CordaRPCOps, identifier: String) : NetworkOperatorDTO {
         logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to getAnchor ... $identifier")
 
-        val anchor = proxy.vaultQuery(NetworkOperatorState::class.java).states.singleOrNull() ?: throw Exception("Missing anchor")
-        if (anchor.state.data.account.identifier.id.toString() != identifier) {
+        val netOperator = proxy.vaultQuery(NetworkOperatorState::class.java).states.singleOrNull() ?: throw Exception("Missing anchor")
+        if (netOperator.state.data.account.identifier.id.toString() != identifier) {
             throw Exception("Invalid anchor identifier")
         }
-        val dto = getDTO(anchor.state.data)
+        val dto = DTOUtil.getDTO(netOperator.state.data)
         logger.info("\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C " +
-                "Anchor: ${GSON.toJson(dto)} \uD83D\uDC4C ")
+                "Anchor: ${gson.toJson(dto)} \uD83D\uDC4C ")
         return dto
     }
-    @JvmStatic
+    
     @Throws(Exception::class)
     fun makeSinglePayment(proxy: CordaRPCOps, invoiceId: String) : SupplierPaymentDTO {
         logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to makeSinglePayment ... ")
@@ -44,9 +53,9 @@ object AnchorBee {
         val result = cordaFuture.get()
         logger.info("\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C " +
                 "Bank: ${result.supplierProfile.bank} \uD83D\uDC4C amount: ${result.acceptedOffer.offerAmount} payment state made")
-        return WorkerBee.getDTO(result)
+        return DTOUtil.getDTO(result)
     }
-    @JvmStatic
+    
     @Throws(Exception::class)
     fun makeMultiplePayments(proxy: CordaRPCOps, delayMinutesUntilNextPaymentFlow: Long) : List<SupplierPaymentDTO> {
         logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to makeMultiplePayments ... ")
@@ -56,16 +65,16 @@ object AnchorBee {
         val result = cordaFuture.get()
         val mList:MutableList<SupplierPaymentDTO> = mutableListOf()
         result.forEach() {
-            mList.add(WorkerBee.getDTO(it))
+            mList.add(DTOUtil.getDTO(it))
         }
         logger.info("\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C ${mList.size} payment states made")
         return mList
     }
 
-    @JvmStatic
+    
     @Throws(Exception::class)
-    fun updateAnchor(proxy: CordaRPCOps,
-                     anchor: AnchorDTO) : AnchorDTO {
+    fun updateNetworkOperator(proxy: CordaRPCOps,
+                              networkOperator: NetworkOperatorDTO) : NetworkOperatorDTO {
         logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to update Anchor ... " )
         var oldState: NetworkOperatorState? = null
         val states = proxy.vaultQueryByWithPagingSpec(
@@ -75,7 +84,7 @@ object AnchorBee {
         ).states
         logger.info("\uD83C\uDF15 \uD83C\uDF15 Anchor states found: ${states.size}")
         states.forEach() {
-            if (it.state.data.name == anchor.name) {
+            if (it.state.data.name == networkOperator.name) {
                 oldState = it.state.data
             }
         }
@@ -85,13 +94,13 @@ object AnchorBee {
         val cordaFuture = proxy.startFlowDynamic(
                 NetworkOperatorUpdateFlow::class.java,oldState!!).returnValue
         val result = cordaFuture.get()
-        val dto = getDTO(result)
+        val dto = DTOUtil.getDTO(result)
         logger.info("\uD83C\uDF53 createAnchor: Anchor updated: \uD83C\uDF53 ${dto.name}")
         return dto
     }
-    @JvmStatic
+    
     @Throws(Exception::class)
-    fun makeOffers(proxy: CordaRPCOps) : List<InvoiceOfferDTO> {
+    public fun makeOffers(proxy: CordaRPCOps) : List<InvoiceOfferDTO> {
         logger.info("\uD83C\uDFC0 \uD83C\uDFC0 .............. " +
                 "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 Starting to make Offers for Anchor ... " )
 
@@ -100,46 +109,46 @@ object AnchorBee {
         val result = cordaFuture.get()
         val mList:MutableList<InvoiceOfferDTO> = mutableListOf()
         result.forEach() {
-            val dto = WorkerBee.getDTO(it)
+            val dto = DTOUtil.getDTO(it)
             mList.add(dto)
         }
 
         mList.forEach() {
-            logger.info("$xx OFFER: ${GSON.toJson(it)}  $xx")
+            logger.info("$xx OFFER: ${gson.toJson(it)}  $xx")
         }
         logger.info("$xx makeOffers: Number of Anchor offers made OK: " +
                 "\uD83C\uDF53 ${mList.size} \uD83C\uDF53 ")
         return mList
     }
 
-    private const val xx = "\uD83C\uDF53 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35"
-    @JvmStatic
+    private  val xx = "\uD83C\uDF53 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35"
+
+
     @Throws(Exception::class)
-    fun createAnchor(proxy: CordaRPCOps,
-                     anchor: AnchorDTO): AnchorDTO? {
+    fun createNetworkOperator(proxy: CordaRPCOps,
+                              networkOperator: NetworkOperatorDTO): NetworkOperatorDTO? {
         logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to createAnchor: BFN Anchor investor to " +
                 "\uD83C\uDF88 Firebase auth, \uD83C\uDF88 Corda and \uD83C\uDF88 Firestore")
         val res = proxy.vaultQuery(NetworkOperatorState::class.java).states.singleOrNull()
         if (res != null) {
-            throw Exception("\uD83D\uDC7F \uD83D\uDC7F Anchor already exists: only one anchor on the network!")
-        }
-        val mUser = FirebaseUtil.getUser(anchor.email)
-        if (mUser != null) {
-//            throw Exception("\uD83D\uDE21 Firebase auth user already exists")
-            logger.info("\uD83D\uDE21 Firebase auth user already exists");
+            throw Exception("\uD83D\uDC7F \uD83D\uDC7F NetworkOperatorState already exists: only one operator allowed on the network!")
         }
         //todo - improve this query ...
-        val accounts = proxy.vaultQuery(AccountInfo::class.java).states
         var account: AccountInfo? = null
+        val accounts = proxy.vaultQuery(AccountInfo::class.java).states
         accounts.forEach {
-            if (it.state.data.name == anchor.name) {
+            if (it.state.data.name == networkOperator.name) {
                 account = it.state.data
             }
+        }
+        if (account != null) {
+            throw Exception("\uD83D\uDC7F \uD83D\uDC7F " +
+                    "AccountInfo already exists: only one operator account allowed on the network!")
         }
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 Creating node anchor account ................ ")
         try {
             if (account == null) {
-                WorkerBee.startAccountRegistrationFlow(proxy, anchor.name, anchor.email, anchor.password)
+                workerBeeService.startAccountRegistrationFlow(proxy, networkOperator.name, networkOperator.email, networkOperator.password)
                 val criteria: QueryCriteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED)
                 val (states) = proxy.vaultQueryByWithPagingSpec(
                         AccountInfo::class.java, criteria,
@@ -147,7 +156,7 @@ object AnchorBee {
                logger.info(" \uD83E\uDDA0 \uD83E\uDDA0 Accounts found on network:  \uD83E\uDD6C " + states.size)
                 for ((state) in states) {
                     val info = state.data
-                    if (info.name.equals(anchor.name, ignoreCase = true)) {
+                    if (info.name.equals(networkOperator.name, ignoreCase = true)) {
                        account = info
                     }
                 }
@@ -158,53 +167,39 @@ object AnchorBee {
             val anc = NetworkOperatorState(
                     issuedBy = proxy.nodeInfo().legalIdentities.first(),
                     account = account!!,
-                    minimumInvoiceAmount = anchor.minimumInvoiceAmount,
-                    maximumInvoiceAmount = anchor.maximumInvoiceAmount,
-                    maximumInvestment = anchor.maximumInvestment,
-                    defaultOfferDiscount = anchor.defaultOfferDiscount,
-                    tradeFrequencyInMinutes = anchor.tradeFrequencyInMinutes,
-                    tradeMatrixItems = anchor.tradeMatrixItems,
-                    name = anchor.name, email = anchor.email,
-                    cellphone = anchor.cellphone, date = Date())
+                    minimumInvoiceAmount = networkOperator.minimumInvoiceAmount,
+                    maximumInvoiceAmount = networkOperator.maximumInvoiceAmount,
+                    maximumInvestment = networkOperator.maximumInvestment,
+                    defaultOfferDiscount = networkOperator.defaultOfferDiscount,
+                    tradeFrequencyInMinutes = networkOperator.tradeFrequencyInMinutes,
+                    tradeMatrixItems = networkOperator.tradeMatrixItems,
+                    name = networkOperator.name, email = networkOperator.email,
+                    cellphone = networkOperator.cellphone, date = Date())
 
             val fut = proxy.startTrackedFlowDynamic(
                     NetworkOperatorCreationFlow::class.java, anc).returnValue
             val tx = fut.get()
-            anchor.accountId = account!!.identifier.id.toString()
-            anchor.issuedBy = proxy.nodeInfo().legalIdentities.first().toString()
+            networkOperator.accountId = account!!.identifier.id.toString()
+            networkOperator.issuedBy = proxy.nodeInfo().legalIdentities.first().toString()
             logger.info("\uD83C\uDF53 createAnchor: Anchor response txId: \uD83C\uDF53 ${tx.id}")
 
             //add anchor to Firestore
 
             logger.info("\uD83C\uDF53 createAnchor: \uD83C\uDF3A about to add BFN anchor to Firestore .... ")
-            db.collection("bfn_anchors").add(anchor)
-            val msg = "\uD83C\uDF3A createAnchor set up, added to Firestore. DONE!: " +
-                    "${anchor.name} - ${anchor.email} \uD83C\uDF3A " +
+
+            firebaseService.addNetworkOperator(DTOUtil.getDTO(anc))
+            firebaseService.createBFNAccount(accountInfo = DTOUtil.getDTO(account!!))
+
+            val msg = "\uD83C\uDF3A NetworkOperatorState set up, added to Firestore. DONE!: " +
+                    "${networkOperator.name} - ${networkOperator.email} \uD83C\uDF3A " +
                     "txId: ${tx.id}"
             logger.info(msg)
-            return anchor
+            return networkOperator
         } catch (e: Exception) {
-            logger.error("\uD83D\uDE21 Anchor creation failed", e)
+            logger.error("\uD83D\uDE21 NetworkOperatorState creation failed", e)
             throw e
         }
 
-    }
-
-    private fun getDTO(a:NetworkOperatorState): AnchorDTO {
-        return AnchorDTO(
-               issuedBy = a.issuedBy.toString(),
-                accountId = a.account.identifier.id.toString(),
-                minimumInvoiceAmount = a.minimumInvoiceAmount,
-                maximumInvoiceAmount = a.maximumInvoiceAmount,
-                maximumInvestment = a.maximumInvestment,
-                defaultOfferDiscount = a.defaultOfferDiscount,
-                tradeFrequencyInMinutes = a.tradeFrequencyInMinutes,
-                tradeMatrixItems = a.tradeMatrixItems,
-                date = a.date.toString(),
-                name = a.name,
-                email = a.email,
-                cellphone = a.cellphone, password = ""
-        )
     }
 
 }
