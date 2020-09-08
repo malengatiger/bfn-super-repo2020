@@ -211,7 +211,7 @@ class FirebaseService() {
     @Throws(FirebaseAuthException::class)
     fun createUser(name: String?, email: String?, password: String?,
                    uid: String?): UserRecord? {
-        logger.info("\uD83D\uDD37 \uD83D\uDD37 ..... createUser: writing to Firestore ... \uD83D\uDD37 ")
+        logger.info("\uD83D\uDD37 \uD83D\uDD37 ..... createUser: writing to Firestore ... \uD83D\uDD37 $name $email $password $uid")
         val request = UserRecord.CreateRequest()
         request.setEmail(email)
         request.setDisplayName(name)

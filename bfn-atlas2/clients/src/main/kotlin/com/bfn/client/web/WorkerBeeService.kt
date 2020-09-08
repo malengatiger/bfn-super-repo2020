@@ -14,6 +14,7 @@ import com.bfn.flows.queries.InvoiceOfferQueryFlow
 import com.bfn.flows.queries.InvoiceQueryFlow
 import com.bfn.flows.scheduled.CreateInvoiceOffersFlow
 import com.bfn.flows.todaysDate
+import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.cloud.FirestoreClient
 import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
@@ -659,8 +660,12 @@ class WorkerBeeService {
 
             } catch (e: Exception) {
                 logger.error(e.message)
-                logger.error("Firebase fucked up! Auth user FAIL ......")
-                throw e
+                logger.info("Firebase fucked up! Auth user FAIL ......")
+                if (e is FirebaseAuthException) {
+                    logger.info("Firebase fucked up! Auth user FAIL: FirebaseAuthException ignoring createUser and continuing with message sending ......")
+                } else {
+                    throw e
+                }
             }
             val dto = AccountInfoDTO(
                     host = host.toString(),
