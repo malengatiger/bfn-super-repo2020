@@ -137,14 +137,16 @@ class AdminController(rpc: NodeRPCConnection) {
         return result
     }
 
-    @PostMapping(value = ["/createAnchor"], produces = [MediaType.APPLICATION_JSON_VALUE])
+    @PostMapping(value = ["/createNetworkOperator"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
-    private fun createAnchor(@RequestBody networkOperator: NetworkOperatorDTO): NetworkOperatorDTO? {
+    private fun createNetworkOperator(@RequestBody networkOperator: NetworkOperatorDTO): NetworkOperatorDTO? {
+        logger.info(" \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E  " +
+                "Creating Network Operator:, check fields, tradeFrequencyInMinutes, defaultOfferDiscount ...  ${GSON.toJson(networkOperator)}")
         return networkOperatorBeeService.createNetworkOperator(networkOperator = networkOperator, proxy = proxy)
     }
-    @PostMapping(value = ["/updateAnchor"], produces = [MediaType.APPLICATION_JSON_VALUE])
+    @PostMapping(value = ["/updateNetworkOperator"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
-    private fun updateAnchor(@RequestBody networkOperator: NetworkOperatorDTO): NetworkOperatorDTO? {
+    private fun updateNetworkOperator(@RequestBody networkOperator: NetworkOperatorDTO): NetworkOperatorDTO? {
         return networkOperatorBeeService.updateNetworkOperator(networkOperator = networkOperator, proxy = proxy)
     }
 
@@ -153,6 +155,11 @@ class AdminController(rpc: NodeRPCConnection) {
     private fun startAccountRegistrationFlow(@RequestBody user: UserDTO): AccountInfoDTO {
         return workerBeeService.startAccountRegistrationFlow(proxy, user.name,
                 user.email, user.password!!)
+    }
+    @PostMapping(value = ["/startAccountInfoQueryFlow"], produces = [MediaType.APPLICATION_JSON_VALUE])
+    @Throws(Exception::class)
+    private fun startAccountInfoQuery(@RequestParam identifier: String): AccountInfoDTO {
+        return workerBeeService.startAccountInfoQueryFlow(proxy, identifier)
     }
 
     @PostMapping(value = ["/addSupplierProfile"], produces = [MediaType.APPLICATION_JSON_VALUE])

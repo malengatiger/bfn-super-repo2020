@@ -1,4 +1,4 @@
-package com.bfn.flows.anchor
+package com.bfn.flows.operator
 
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.contracts.NetworkOperatorContract

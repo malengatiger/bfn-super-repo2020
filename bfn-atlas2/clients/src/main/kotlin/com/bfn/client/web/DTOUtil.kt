@@ -5,71 +5,91 @@ import com.bfn.contractstates.states.*
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 
-object  DTOUtil {
+object DTOUtil {
     @JvmStatic
-    fun getDTO(state: InvoiceState): InvoiceDTO {
+    fun getDTO(a: InvoiceState): InvoiceDTO {
 
         return InvoiceDTO(
-                amount = state.amount,
-                customer = getDTO(state.customerInfo),
-                supplier = getDTO(state.supplierInfo),
-                description = state.description,
-                invoiceId = state.invoiceId.toString(),
-                invoiceNumber = state.invoiceNumber,
-                dateRegistered = state.dateRegistered.toString(),
-                valueAddedTax = state.valueAddedTax,
-                totalAmount = state.totalAmount,
-                externalId = state.externalId
+                amount = a.amount,
+                customer = getDTO(a.customerInfo),
+                supplier = getDTO(a.supplierInfo),
+                description = a.description,
+                invoiceId = a.invoiceId.toString(),
+                invoiceNumber = a.invoiceNumber,
+                dateRegistered = a.dateRegistered.toString(),
+                valueAddedTax = a.valueAddedTax,
+                totalAmount = a.totalAmount,
+                externalId = a.externalId
         )
     }
+
+
     @JvmStatic
-    fun getDTO(state: SupplierPaymentState): SupplierPaymentDTO {
+    fun getDTO(a: SupplierPaymentState): SupplierPaymentDTO {
 
         return SupplierPaymentDTO(
-                supplierProfile = getDTO(state.supplierProfile),
-                acceptedOffer = getDTO(state.acceptedOffer),
-                date = state.date,
-                paid = state.paid
+                supplierProfile = getDTO(a.supplierProfile),
+                acceptedOffer = getDTO(a.acceptedOffer),
+                date = a.date,
+                paid = a.paid,
+                paymentRequest = null
         )
     }
+
     @JvmStatic
-    fun getDTO(state: NetworkOperatorState): NetworkOperatorDTO {
+    fun getDTO(a: PaymentRequestState): PaymentRequestDTO {
+
+        return PaymentRequestDTO(
+                paymentRequestId = a.paymentRequestId,
+                investorInfo = getDTO(a.investorInfo),
+                customerInfo = getDTO(a.customerInfo),
+                supplierInfo = getDTO(a.supplierInfo),
+                assetCode = a.assetCode,
+                amount = a.amount,
+                date = a.date
+        )
+    }
+
+    @JvmStatic
+    fun getDTO(a: NetworkOperatorState): NetworkOperatorDTO {
 
         return NetworkOperatorDTO(
-                issuedBy = state.issuedBy.toString(),
-                accountId = state.account.identifier.toString(),
-                minimumInvoiceAmount = state.minimumInvoiceAmount,
-                maximumInvoiceAmount = state.maximumInvoiceAmount,
-                maximumInvestment = state.maximumInvestment,
-                defaultOfferDiscount = state.defaultOfferDiscount,
-                tradeFrequencyInMinutes = state.tradeFrequencyInMinutes,
-                name = state.name,
-                cellphone = state.cellphone,
-                email = state.email,
-                tradeMatrixItems = state.tradeMatrixItems,
+                issuedBy = a.issuedBy.toString(),
+                accountId = a.account.identifier.toString(),
+                minimumInvoiceAmount = a.minimumInvoiceAmount,
+                maximumInvoiceAmount = a.maximumInvoiceAmount,
+                maximumInvestment = a.maximumInvestment,
+                defaultOfferDiscount = a.defaultOfferDiscount,
+                tradeFrequencyInMinutes = a.tradeFrequencyInMinutes,
+                name = a.name,
+                cellphone = a.cellphone,
+                email = a.email,
+                tradeMatrixItems = a.tradeMatrixItems,
                 password = "",
-                date = state.date.toString()
+                date = a.date.toString()
         )
     }
+
     @JvmStatic
-    fun getDTO(state: InvoiceOfferState): InvoiceOfferDTO {
+    fun getDTO(a: InvoiceOfferState): InvoiceOfferDTO {
         return InvoiceOfferDTO(
-                invoiceId = state.invoiceId.toString(),
-                invoiceNumber = state.invoiceNumber,
-                offerAmount = state.offerAmount,
-                originalAmount = state.originalAmount,
-                discount = state.discount,
-                supplier = getDTO(state.supplier),
-                investor = getDTO(state.investor),
-                offerDate = state.offerDate,
-                investorDate = state.acceptanceDate,
-                accepted = state.accepted, externalId = state.externalId,
-                acceptanceDate = state.acceptanceDate,
-                offerId = state.offerId,
-                isAnchor = state.isAnchor
+                invoiceId = a.invoiceId.toString(),
+                invoiceNumber = a.invoiceNumber,
+                offerAmount = a.offerAmount,
+                originalAmount = a.originalAmount,
+                discount = a.discount,
+                supplier = getDTO(a.supplier),
+                investor = getDTO(a.investor),
+                offerDate = a.offerDate,
+                investorDate = a.acceptanceDate,
+                accepted = a.accepted, externalId = a.externalId,
+                acceptanceDate = a.acceptanceDate,
+                offerId = a.offerId,
+                isAnchor = a.isAnchor
 
         )
     }
+
     @JvmStatic
     fun getDTO(a: AccountInfo): AccountInfoDTO {
         return AccountInfoDTO(
@@ -77,6 +97,7 @@ object  DTOUtil {
                 identifier = a.identifier.id.toString(),
                 name = a.name, status = "")
     }
+
     @JvmStatic
     fun getDTO(a: InvestorProfileState): InvestorProfileStateDTO {
         return InvestorProfileStateDTO(
@@ -89,6 +110,7 @@ object  DTOUtil {
                 bank = a.bank, bankAccount = a.bankAccount
         )
     }
+
     @JvmStatic
     fun getDTO(a: SupplierProfileState): SupplierProfileStateDTO {
         return SupplierProfileStateDTO(
@@ -99,6 +121,7 @@ object  DTOUtil {
                 bank = a.bank
         )
     }
+
     @JvmStatic
     fun getDTO(token: FungibleToken, accountId: String,
                invoiceId: String, account: AccountInfo, invoiceAmount: Double): TokenDTO {

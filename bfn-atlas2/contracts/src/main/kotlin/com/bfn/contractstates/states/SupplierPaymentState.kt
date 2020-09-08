@@ -16,6 +16,7 @@ class SupplierPaymentState(
          val supplierProfile: SupplierProfileState,
          val date: String,
          val delayMinutesUntilNextPaymentFlow: Long,
+         var paymentRequest: PaymentRequestState?,
          val paid: Boolean) : ContractState, SchedulableState {
 
     override val participants: List<AbstractParty>

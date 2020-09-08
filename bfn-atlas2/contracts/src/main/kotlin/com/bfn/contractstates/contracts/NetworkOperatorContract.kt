@@ -31,7 +31,7 @@ class NetworkOperatorContract : Contract {
                 throw IllegalArgumentException("Default Offer Discount must be greater than zero")
             }
             if (networkOperatorState.tradeFrequencyInMinutes <= 0) {
-                throw IllegalArgumentException("Trade Frequency In Minutes must be greater than zero")
+                throw IllegalArgumentException("Trade Frequency In Minutes must be greater than zero: ${networkOperatorState.tradeFrequencyInMinutes }")
             }
         }
 

@@ -8,7 +8,7 @@ import java.util.logging.Logger;
 public class TesterBee {
     public static final Logger LOGGER = Logger.getLogger(TesterBee.class.getSimpleName());
     public static String runMe() {
-        String msg = "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 White Americans are fucking ignorant, lying racists!!  " +
+        String msg = "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 White Americans are fucking ignorant, lying, pig-faced racists!!  " +
                 "\uD83C\uDF4E  \uD83C\uDF4E  \uD83C\uDF4E ... " + " date: " + new Date().toString();
         LOGGER.info(msg );
         return msg;

@@ -1,8 +1,9 @@
-package com.bfn.flows.anchor
+package com.bfn.flows.operator
 
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.contracts.SupplierPaymentContract
 import com.bfn.contractstates.states.NetworkOperatorState
+import com.bfn.contractstates.states.PaymentRequestState
 import com.bfn.contractstates.states.SupplierPaymentState
 import com.bfn.flows.services.InvoiceOfferFinderService
 import com.bfn.flows.services.PaymentFinderService
@@ -13,17 +14,18 @@ import net.corda.core.identity.Party
 import net.corda.core.transactions.TransactionBuilder
 import org.slf4j.LoggerFactory
 import java.security.PublicKey
+import java.util.*
 
 
 @InitiatingFlow
 @StartableByRPC
-class AnchorMakeSinglePaymentFlow(private val invoiceId: String, private val delayMinutesUntilNextPaymentFlow: Long) : FlowLogic<SupplierPaymentState>() {
+class NetworkOperatorMakeSinglePaymentFlow(private val invoiceId: String, private val delayMinutesUntilNextPaymentFlow: Long) : FlowLogic<SupplierPaymentState>() {
 
     @Suspendable
     override fun call(): SupplierPaymentState {
-        Companion.logger.info("$pp AnchorMakePaymentFlow started ... $pp")
-        val existingAnchor = serviceHub.vaultService.queryBy( NetworkOperatorState::class.java).states.singleOrNull()
-                ?: throw IllegalArgumentException("Anchor does not exist")
+        Companion.logger.info("$pp NetworkOperatorMakeSinglePaymentFlow started ... $pp")
+        val existingOperator = serviceHub.vaultService.queryBy( NetworkOperatorState::class.java).states.singleOrNull()
+                ?: throw IllegalArgumentException("NetworkOperator does not exist")
 
         val service = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
         val acceptedOffer = service.findAnchorOffer(invoiceId) ?: throw IllegalArgumentException("Accepted offer not found")
@@ -38,7 +40,7 @@ class AnchorMakeSinglePaymentFlow(private val invoiceId: String, private val del
                 throw IllegalArgumentException("Payment already exists for this invoice: $invoiceId")
             }
         }
-        val anchorParty = existingAnchor.state.data.account.host
+        val anchorParty = existingOperator.state.data.account.host
         val command = SupplierPaymentContract.Pay()
         val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
         val supplierParty = acceptedOffer.state.data.supplier.host
@@ -52,7 +54,17 @@ class AnchorMakeSinglePaymentFlow(private val invoiceId: String, private val del
                 acceptedOffer = acceptedOffer.state.data,
                 supplierProfile = supplierProfile.state.data,
                 date = todaysDate(), paid = false,
-                delayMinutesUntilNextPaymentFlow = delayMinutesUntilNextPaymentFlow
+                delayMinutesUntilNextPaymentFlow = delayMinutesUntilNextPaymentFlow,
+                paymentRequest = PaymentRequestState(
+                        paymentRequestId = UUID.randomUUID().toString(),
+                        amount = acceptedOffer.state.data.offerAmount,
+                        assetCode = "ZAR",
+                        customerInfo = acceptedOffer.state.data.customer,
+                        supplierInfo = acceptedOffer.state.data.supplier,
+                        investorInfo = acceptedOffer.state.data.investor,
+                        date = todaysDate()
+
+                )
 
         )
         //todo - make EFT payment to supplier ... OR do this externally; kicked off in api?
@@ -96,7 +108,7 @@ class AnchorMakeSinglePaymentFlow(private val invoiceId: String, private val del
     private val pp = "\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95";
 
     companion object {
-        private val logger = LoggerFactory.getLogger(AnchorMakeSinglePaymentFlow::class.java)
+        private val logger = LoggerFactory.getLogger(NetworkOperatorMakeSinglePaymentFlow::class.java)
     }
 
 }

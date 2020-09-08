@@ -1,9 +1,10 @@
-package com.bfn.flows.anchor
+package com.bfn.flows.operator
 
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.contracts.SupplierPaymentContract
 import com.bfn.contractstates.states.InvoiceOfferState
 import com.bfn.contractstates.states.NetworkOperatorState
+import com.bfn.contractstates.states.PaymentRequestState
 import com.bfn.contractstates.states.SupplierPaymentState
 import com.bfn.flows.regulator.ReportToRegulatorFlow
 import com.bfn.flows.services.InvoiceOfferFinderService
@@ -17,6 +18,7 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import org.slf4j.LoggerFactory
 import java.security.PublicKey
+import java.util.*
 
 /**
  * The anchor investor finds all his accepted offers and creates payments for each
@@ -26,7 +28,7 @@ import java.security.PublicKey
 @InitiatingFlow
 @StartableByRPC
 @SchedulableFlow
-class AnchorMakeMultiplePaymentsFlow(private val delayMinutesUntilNextPaymentFlow: Long) : FlowLogic<List<SupplierPaymentState>>() {
+class NetworkOperatorMakeMultiplePaymentsFlow(private val delayMinutesUntilNextPaymentFlow: Long) : FlowLogic<List<SupplierPaymentState>>() {
 
     @Suspendable
     override fun call(): List<SupplierPaymentState> {
@@ -67,7 +69,17 @@ class AnchorMakeMultiplePaymentsFlow(private val delayMinutesUntilNextPaymentFlo
                         acceptedOffer = acceptedOffer.state.data,
                         supplierProfile = supplierProfile.state.data,
                         date = todaysDate(), paid = false,
-                        delayMinutesUntilNextPaymentFlow = delayMinutesUntilNextPaymentFlow
+                        delayMinutesUntilNextPaymentFlow = delayMinutesUntilNextPaymentFlow,
+                        paymentRequest = PaymentRequestState(
+                                paymentRequestId = UUID.randomUUID().toString(),
+                                amount = acceptedOffer.state.data.offerAmount,
+                                assetCode = "ZAR",
+                                customerInfo = acceptedOffer.state.data.customer,
+                                supplierInfo = acceptedOffer.state.data.supplier,
+                                investorInfo = acceptedOffer.state.data.investor,
+                                date = todaysDate()
+
+                        )
                 )
                 //find ALL offers available for THIS invoice, accepted or not and consume the suckers
                 val allOffers = offerFinderService.findOffersByInvoice(
@@ -147,7 +159,7 @@ class AnchorMakeMultiplePaymentsFlow(private val delayMinutesUntilNextPaymentFlo
     private val pp = "\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95"
 
     companion object {
-        private val logger = LoggerFactory.getLogger(AnchorMakeMultiplePaymentsFlow::class.java)
+        private val logger = LoggerFactory.getLogger(NetworkOperatorMakeMultiplePaymentsFlow::class.java)
     }
 
 }

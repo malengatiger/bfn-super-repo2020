@@ -9,6 +9,7 @@ import com.bfn.flows.InvestorProfileFlow
 import com.bfn.flows.SupplierProfileFlow
 import com.bfn.flows.invoices.InvoiceOfferFlow
 import com.bfn.flows.invoices.InvoiceRegistrationFlow
+import com.bfn.flows.queries.AccountInfoQueryFlow
 import com.bfn.flows.queries.InvoiceOfferQueryFlow
 import com.bfn.flows.queries.InvoiceQueryFlow
 import com.bfn.flows.scheduled.CreateInvoiceOffersFlow
@@ -179,7 +180,7 @@ class WorkerBeeService {
         var dto: SupplierProfileStateDTO? = null
         for (profile in list) {
             if (profile.state.data.account.identifier.equals(accountId)) {
-                dto = getDTO(profile.state.data)
+                dto = DTOUtil.getDTO(profile.state.data)
                 break
             }
         }
@@ -203,7 +204,7 @@ class WorkerBeeService {
         var dto: InvestorProfileStateDTO? = null
         for (profile in list) {
             if (profile.state.data.account.identifier.equals(accountId)) {
-                dto = getDTO(profile.state.data)
+                dto = DTOUtil.getDTO(profile.state.data)
                 break
             }
         }
@@ -227,7 +228,7 @@ class WorkerBeeService {
         val invoices = fut.get()
         val dtos: MutableList<InvoiceDTO> = mutableListOf()
         invoices.forEach() {
-            dtos.add(getDTO(it))
+            dtos.add(DTOUtil.getDTO(it))
 
         }
         val m = " \uD83C\uDF3A  \uD83C\uDF3A  \uD83C\uDF3A  done listing InvoiceStates:  \uD83C\uDF3A " + invoices.size
@@ -245,7 +246,7 @@ class WorkerBeeService {
         val invoices = fut.get()
         val dtos: MutableList<InvoiceDTO> = mutableListOf()
         invoices.forEach() {
-            dtos.add(getDTO(it))
+            dtos.add(DTOUtil.getDTO(it))
 
         }
         val m = "\uD83C\uDF3A done listing InvoiceStates:  \uD83C\uDF3A " + invoices.size
@@ -263,7 +264,7 @@ class WorkerBeeService {
         val invoices = fut.get()
         val dtos: MutableList<InvoiceDTO> = mutableListOf()
         invoices.forEach() {
-            dtos.add(getDTO(it))
+            dtos.add(DTOUtil.getDTO(it))
 
         }
         val m = "\uD83C\uDF3A done listing InvoiceStates:  \uD83C\uDF3A " + invoices.size
@@ -282,7 +283,7 @@ class WorkerBeeService {
         invoices.forEach() {
             if (it.supplierInfo.host.toString() ==
                     proxy.nodeInfo().legalIdentities.first().toString()) {
-                dtos.add(getDTO(it))
+                dtos.add(DTOUtil.getDTO(it))
             }
         }
         val m = "\uD83C\uDF3A done listing InvoiceStates:  \uD83C\uDF3A " + invoices.size
@@ -341,7 +342,7 @@ class WorkerBeeService {
         val offerStates = fut.get()
         val offers: MutableList<InvoiceOfferDTO> = mutableListOf()
         offerStates!!.forEach() {
-            val offer = getDTO(it)
+            val offer = DTOUtil.getDTO(it)
             offers.add(offer)
 
         }
@@ -365,7 +366,7 @@ class WorkerBeeService {
         val offers = fut.get()
         val dtos: MutableList<InvoiceOfferDTO> = mutableListOf()
         offers.forEach() {
-            dtos.add(getDTO(it))
+            dtos.add(DTOUtil.getDTO(it))
         }
         val m = "\uD83D\uDCA6  done listing InvoiceOfferStates:  \uD83C\uDF3A " + offers.size
         logger.info(m)
@@ -382,7 +383,7 @@ class WorkerBeeService {
         val dtos: MutableList<InvoiceOfferDTO> = mutableListOf()
         offers.forEach() {
 
-            dtos.add(getDTO(it))
+            dtos.add(DTOUtil.getDTO(it))
 
         }
         val m = "\uD83D\uDCA6  done listing InvoiceOfferStates:  \uD83C\uDF3A " + offers.size
@@ -401,7 +402,7 @@ class WorkerBeeService {
         offers.forEach() {
             if (proxy.nodeInfo().legalIdentities.first().toString()
                     == it.investor.host.toString()) {
-                dtos.add(getDTO(it))
+                dtos.add(DTOUtil.getDTO(it))
             }
         }
         val m = "\uD83D\uDCA6  done listing InvoiceOfferStates:  \uD83C\uDF3A " + offers.size
@@ -588,7 +589,7 @@ class WorkerBeeService {
 
             logger.info("\uD83C\uDF4F flow completed... ")
 
-            val dto = invoiceState.let { getDTO(it) }
+            val dto = invoiceState.let { DTOUtil.getDTO(it) }
             //logger.info("Check amount discount total calculations: " + GSON.toJson(dto))
             try {
                 firebaseService.sendInvoiceMessage(dto)
@@ -612,6 +613,24 @@ class WorkerBeeService {
     
 
     
+    @Throws(Exception::class)
+    fun startAccountInfoQueryFlow(proxy: CordaRPCOps,
+                                     identifier: String): AccountInfoDTO {
+        try {
+
+            val accountInfoCordaFuture = proxy.startTrackedFlowDynamic(
+                    AccountInfoQueryFlow::class.java, identifier).returnValue
+            val acctInfo = accountInfoCordaFuture.get()
+            return AccountInfoDTO(identifier = identifier, name = acctInfo.name, host = acctInfo.name, status = "active");
+
+        } catch (e: Exception) {
+            logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D " +
+                    "Houston, we have fallen over! Account query failed")
+            logger.error(e.message)
+            throw e
+        }
+    }
+
     @Throws(Exception::class)
     fun startAccountRegistrationFlow(proxy: CordaRPCOps,
                                      accountName: String, email: String,
@@ -665,7 +684,6 @@ class WorkerBeeService {
             throw e
         }
     }
-
     
     @Throws(Exception::class)
     fun startInvoiceOfferFlow(proxy: CordaRPCOps, invoiceOffer: InvoiceOfferDTO): InvoiceOfferDTO {
@@ -735,7 +753,7 @@ class WorkerBeeService {
         signedTransactionCordaFuture.get()
         logger.info("\uD83C\uDF4F \uD83C\uDF4F processInvoiceOffer completed... " +
                 "\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C   ")
-        val offerDTO = getDTO(invoiceOfferState)
+        val offerDTO = DTOUtil.getDTO(invoiceOfferState)
         try {
             val db = FirestoreClient.getFirestore()
             val reference = db.collection("invoiceOffers").add(offerDTO)
@@ -749,82 +767,11 @@ class WorkerBeeService {
     }
 
     
-    @Throws(Exception::class)
-    fun getDTO(state: InvoiceState): InvoiceDTO {
-        return InvoiceDTO(
-                amount = state.amount,
-                customer = getDTO(state.customerInfo),
-                supplier = getDTO(state.supplierInfo),
-                description = state.description,
-                invoiceId = state.invoiceId.toString(),
-                invoiceNumber = state.invoiceNumber,
-                dateRegistered = state.dateRegistered,
-                valueAddedTax = state.valueAddedTax,
-                totalAmount = state.totalAmount,
-                externalId = state.externalId
-        )
-    }
-
     
-    @Throws(Exception::class)
-    fun getDTO(state: InvoiceOfferState): InvoiceOfferDTO {
-        return InvoiceOfferDTO(
-                invoiceId = state.invoiceId.toString(),
-                invoiceNumber = state.invoiceNumber,
-                offerAmount = state.offerAmount,
-                originalAmount = state.originalAmount,
-                discount = state.discount,
-                supplier = getDTO(state.supplier),
-                investor = getDTO(state.investor),
-                offerDate = state.offerDate,
-                investorDate = state.acceptanceDate,
-                accepted = state.accepted, externalId = state.externalId,
-                acceptanceDate = state.acceptanceDate,
-                offerId = state.offerId, isAnchor = state.isAnchor
 
-        )
-    }
+   
 
-    
-    fun getDTO(a: AccountInfo): AccountInfoDTO {
-        return AccountInfoDTO(
-                host = a.host.toString(),
-                identifier = a.identifier.id.toString(),
-                name = a.name, status = "")
-    }
 
-    
-    fun getDTO(a: InvestorProfileState): InvestorProfileStateDTO {
-        return InvestorProfileStateDTO(
-                issuedBy = a.issuedBy.toString(),
-                account = getDTO(a.account), date = a.date.toString(),
-                defaultDiscount = a.defaultDiscount,
-                maximumInvoiceAmount = a.maximumInvoiceAmount,
-                totalInvestment = a.totalInvestment,
-                minimumInvoiceAmount = a.minimumInvoiceAmount,
-                bank = a.bank, bankAccount = a.bankAccount
-        )
-    }
-
-    
-    fun getDTO(a: SupplierPaymentState): SupplierPaymentDTO {
-        return SupplierPaymentDTO(
-                acceptedOffer = getDTO(a.acceptedOffer),
-                supplierProfile = getDTO(a.supplierProfile),
-                date = a.date,
-                paid = a.paid
-        )
-    }
-    
-    fun getDTO(a: SupplierProfileState): SupplierProfileStateDTO {
-        return SupplierProfileStateDTO(
-                issuedBy = a.issuedBy.toString(),
-                account = getDTO(a.account), date = a.date.toString(),
-                maximumDiscount = a.maximumDiscount,
-                bank = a.bank,
-                bankAccount = a.bankAccount
-        )
-    }
 
     companion object {
         //todo extend paging query where appropriate

@@ -2,6 +2,7 @@ package com.bfn.flows.investor
 
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.contracts.SupplierPaymentContract
+import com.bfn.contractstates.states.PaymentRequestState
 import com.bfn.contractstates.states.SupplierPaymentState
 import com.bfn.flows.regulator.ReportToRegulatorFlow
 import com.bfn.flows.services.InvoiceOfferFinderService
@@ -72,7 +73,17 @@ class InvestorMakeMultiplePaymentsFlow(private val investorId: String, private v
                         acceptedOffer = acceptedOffer.state.data,
                         supplierProfile = supplierProfile.state.data,
                         date = todaysDate(), paid = false,
-                        delayMinutesUntilNextPaymentFlow = delayMinutesUntilNextPaymentFlow
+                        delayMinutesUntilNextPaymentFlow = delayMinutesUntilNextPaymentFlow,
+                        paymentRequest = PaymentRequestState(
+                                paymentRequestId = UUID.randomUUID().toString(),
+                                amount = acceptedOffer.state.data.offerAmount,
+                                assetCode = "ZAR",
+                                customerInfo = acceptedOffer.state.data.customer,
+                                supplierInfo = acceptedOffer.state.data.supplier,
+                                investorInfo = acceptedOffer.state.data.investor,
+                                date = todaysDate()
+
+                        )
                 )
 
                 //find ALL offers available, accepted or not and consume the suckers

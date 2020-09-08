@@ -1,4 +1,4 @@
-package com.bfn.flows.anchor
+package com.bfn.flows.operator
 
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.contracts.NetworkOperatorContract
@@ -24,11 +24,11 @@ class NetworkOperatorCreationFlow(private val anchor: NetworkOperatorState ) : F
     override fun call(): SignedTransaction {
         Companion.logger.info(pp + "NetworkOperatorCreationFlow started, name: ${anchor.name}" )
 
-        val existingAnchor = serviceHub.vaultService.queryBy(NetworkOperatorState::class.java).states.singleOrNull()
-        if (existingAnchor != null) {
+        val existingOperator = serviceHub.vaultService.queryBy(NetworkOperatorState::class.java).states.singleOrNull()
+        if (existingOperator != null) {
             val msg = "\uD83C\uDFC0 There can be only one Kobe Bryant!! RIP \uD83C\uDFC0"
             logger.warn(msg)
-            throw IllegalArgumentException("NetworkOperator already exists: ${existingAnchor.state.data.account.name}")
+            throw IllegalArgumentException("NetworkOperator already exists: ${existingOperator.state.data.account.name}")
         }
         val command = NetworkOperatorContract.Create()
 

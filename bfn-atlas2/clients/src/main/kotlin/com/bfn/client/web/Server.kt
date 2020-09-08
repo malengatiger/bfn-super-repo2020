@@ -1,6 +1,5 @@
 package com.bfn.client.web
 
-import com.bfn.client.web.WorkerBeeService
 import net.corda.nodeapi.internal.config.toConfigValue
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -30,8 +29,8 @@ import kotlin.reflect.full.declaredFunctions
 fun main(args: Array<String>) {
     println("\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 " +
             "BFN Web Backend API (Kotlin) ......... starting  ... Senor! ...");
-            val p = SpringApplicationBuilder().sources(
-                    ApiApp::class.java)
+    val p = SpringApplicationBuilder().sources(
+            ApiApp::class.java)
             .bannerMode(Banner.Mode.OFF)
             .web(WebApplicationType.SERVLET)
             .run(*args)
@@ -46,7 +45,7 @@ fun main(args: Array<String>) {
 @SpringBootApplication
 @EnableScheduling
 
-private open class ApiApp: ApplicationListener<ApplicationReadyEvent> {
+private open class ApiApp : ApplicationListener<ApplicationReadyEvent> {
     private val logger = LoggerFactory.getLogger(ApiApp::class.java.name)
 
     @Autowired
@@ -54,6 +53,7 @@ private open class ApiApp: ApplicationListener<ApplicationReadyEvent> {
 
     @Value("\${interval}")
     private var interval: String = "900"
+
     @Value("\${spring.profiles.active}")
     private var profile: String = ""
 
@@ -64,7 +64,7 @@ private open class ApiApp: ApplicationListener<ApplicationReadyEvent> {
 
         logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 host: \uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C \uD83D\uDE21 " +
                 "${InetAddress.getLocalHost()} profile: $profile \uD83D\uDE21")
-        if (contextRefreshedEvent is WebServerInitializedEvent ) {
+        if (contextRefreshedEvent is WebServerInitializedEvent) {
             logger.info("\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 Yeah Baby, this is a WebServerInitializedEvent. Fucking Hooray! $contextRefreshedEvent");
             val configValue = contextRefreshedEvent.toConfigValue();
             logger.info(" $configValue");
@@ -74,12 +74,13 @@ private open class ApiApp: ApplicationListener<ApplicationReadyEvent> {
         logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 WE ARE DONE STARTING UP!!! \uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C \uD83D\uDE21 ")
 
     }
-//
+
+    //
     private fun info() {
 
         var cnt = 0
         val c = AdminController::class
-        val functions =c.declaredFunctions
+        val functions = c.declaredFunctions
         val sorted = functions.sortedBy { it.name }
         logger.info("\n..... \uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C Functions available from AdminController")
         sorted.forEach() {
@@ -104,15 +105,39 @@ private open class ApiApp: ApplicationListener<ApplicationReadyEvent> {
             cnt++
             logger.info("\uD83C\uDF4E WorkerBeeService function: #$cnt \t\uD83E\uDDA0  ${it.name} \uD83E\uDDA0 ")
         }
-        logger.info("Pinging self, \uD83C\uDF56 \uD83C\uDF56 ... just for the hell of it! \uD83C\uDF56 \uD83C\uDF56")
+        cnt = 0
+        logger.info("\n..... \uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0  Functions available from SupplierBeeService ...")
+        val supplierBee = SupplierBeeService::class
+        val collectionS = supplierBee.declaredFunctions
+        val sorted2S = collectionS.sortedBy { it.name }
+        sorted2S.forEach() {
+            cnt++
+            logger.info("\uD83C\uDF6E SupplierBeeService function: #$cnt \t\uD83C\uDF50  ${it.name}  \uD83D\uDD36 ")
+        }
+        cnt = 0
+        logger.info("\n..... \uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0  Functions available from FirebaseService ...")
+        val fbService = FirebaseService::class
+        val fbCollection = fbService.declaredFunctions
+        val fbSorted = fbCollection.sortedBy { it.name }
+        fbSorted.forEach() {
+            cnt++
+            logger.info("\uD83D\uDC99 FirebaseService function: #$cnt \t\uD83D\uDC99  ${it.name} \uD83D\uDD06 ")
+        }
+        logger.info("\nPinging self, \uD83C\uDF56 \uD83C\uDF56 ... just for the hell of it! \uD83C\uDF56 \uD83C\uDF56")
         val bean = context.getBean(AdminController::class.java)
         bean.ping()
-        val flows = bean.listNodes()
+        val nodes = bean.listNodes()
+        val flows = bean.getProxy().registeredFlows()
+        cnt = 0
+        nodes.forEach() {
+            cnt++
+            logger.info("\uD83D\uDD37 Registered Corda Node #$cnt : \uD83D\uDD37  ${it.addresses?.first()}  \uD83C\uDF4F")
+
+        }
         cnt = 0
         flows.forEach() {
-
-                cnt++
-                logger.info("\uD83D\uDD37 Registered Corda Node #$cnt : \uD83D\uDD37  ${it.addresses?.first()}  \uD83C\uDF4F")
+            cnt++
+            logger.info("\uD83C\uDFC8 Registered Corda Flow #$cnt : \uD83D\uDC9A  ${it}  \uD83D\uDC9A")
 
         }
     }
@@ -127,6 +152,7 @@ private open class ApiApp: ApplicationListener<ApplicationReadyEvent> {
 //                " \uD83D\uDE21  $interval minutes \uD83D\uDE21 ")
 //        startTimer( org, interval.toLong(), bean)
     }
+
     fun startTimer(name: String, minutes: Long, bean: AdminController) {
         logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E  startTimer:  \uD83C\uDF50 NODE: $name \uD83C\uDF50️ ⏳ Interval in Minutes: $minutes  ⏰  ⏰  ⏰ ")
         val ms: Long = minutes * 1000 * 60

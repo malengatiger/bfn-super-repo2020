@@ -1,11 +1,11 @@
 package com.bfn.client.web
 
 import com.bfn.client.data.*
-import com.bfn.client.web.FirebaseService
 import com.google.gson.GsonBuilder
 
 import com.bfn.contractstates.states.*
-import com.bfn.flows.anchor.*
+import com.bfn.flows.operator.*
+import com.bfn.flows.queries.AccountInfoQueryFlow
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.node.services.Vault
@@ -50,7 +50,7 @@ class NetworkOperatorBeeService {
         logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to makeSinglePayment ... ")
 
         val cordaFuture = proxy.startFlowDynamic(
-                AnchorMakeSinglePaymentFlow::class.java, invoiceId).returnValue
+                NetworkOperatorMakeSinglePaymentFlow::class.java, invoiceId).returnValue
         val result = cordaFuture.get()
         logger.info("\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C " +
                 "Bank: ${result.supplierProfile.bank} \uD83D\uDC4C amount: ${result.acceptedOffer.offerAmount} payment state made")
@@ -62,7 +62,7 @@ class NetworkOperatorBeeService {
         logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to makeMultiplePayments ... ")
 
         val cordaFuture = proxy.startFlowDynamic(
-                AnchorMakeMultiplePaymentsFlow::class.java, delayMinutesUntilNextPaymentFlow).returnValue
+                NetworkOperatorMakeMultiplePaymentsFlow::class.java, delayMinutesUntilNextPaymentFlow).returnValue
         val result = cordaFuture.get()
         val mList:MutableList<SupplierPaymentDTO> = mutableListOf()
         result.forEach() {
@@ -106,7 +106,7 @@ class NetworkOperatorBeeService {
                 "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 Starting to make Offers for Anchor ... " )
 
         val cordaFuture = proxy.startFlowDynamic(
-                AnchorMakeOffersFlow::class.java).returnValue
+                NetworkOperatorMakeOffersFlow::class.java).returnValue
         val result = cordaFuture.get()
         val mList:MutableList<InvoiceOfferDTO> = mutableListOf()
         result.forEach() {
@@ -128,12 +128,22 @@ class NetworkOperatorBeeService {
     @Throws(Exception::class)
     fun createNetworkOperator(proxy: CordaRPCOps,
                               networkOperator: NetworkOperatorDTO): NetworkOperatorDTO? {
-        logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to createAnchor: BFN Anchor investor to " +
-                "\uD83C\uDF88 Firebase auth, \uD83C\uDF88 Corda and \uD83C\uDF88 Firestore")
+        logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to create NetworkOperator: BFN Head Honcho to " +
+                "\uD83C\uDF88 Firebase auth, \uD83C\uDF88 Corda and \uD83C\uDF88 Firestore, check networkOperator.tradeFrequencyInMinutes  : ${gson.toJson(networkOperator)}")
+        if (networkOperator.tradeFrequencyInMinutes <= 0) {
+            throw Exception("Bad tradeFrequencyInMinutes ${networkOperator.tradeFrequencyInMinutes}")
+        }
         val res = proxy.vaultQuery(NetworkOperatorState::class.java).states.singleOrNull()
         if (res != null) {
-            throw Exception("\uD83D\uDC7F \uD83D\uDC7F NetworkOperatorState already exists: only one operator allowed on the network!")
+            logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 " +
+                    "We are not so cool up to now; vault query returned networkOperator: ${res.state.data}")
+            throw Exception("\uD83D\uDC7F \uD83D\uDC7F " +
+                    "NetworkOperator exists; there should only be one, Bro!")
+        } else {
+            logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 " +
+                    "We cool up to now; going ahead and creating NetworkOperator ... ")
         }
+
         //todo - improve this query ...
         var account: AccountInfo? = null
         val accounts = proxy.vaultQuery(AccountInfo::class.java).states
@@ -142,56 +152,50 @@ class NetworkOperatorBeeService {
                 account = it.state.data
             }
         }
-        if (account != null) {
-            throw Exception("\uD83D\uDC7F \uD83D\uDC7F " +
-                    "AccountInfo already exists: only one operator account allowed on the network!")
-        }
-        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 Creating node anchor account ................ ")
+
+
+        var accountInfoDTO:AccountInfoDTO? = null
         try {
             if (account == null) {
-                workerBeeService.startAccountRegistrationFlow(proxy, networkOperator.name, networkOperator.email, networkOperator.password)
-                val criteria: QueryCriteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED)
-                val (states) = proxy.vaultQueryByWithPagingSpec(
-                        AccountInfo::class.java, criteria,
-                        PageSpecification(1, 200))
-               logger.info(" \uD83E\uDDA0 \uD83E\uDDA0 Accounts found on network:  \uD83E\uDD6C " + states.size)
-                for ((state) in states) {
-                    val info = state.data
-                    if (info.name.equals(networkOperator.name, ignoreCase = true)) {
-                       account = info
-                    }
-                }
+                logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 Creating NetworkOperator BFN account ................ ")
+                 accountInfoDTO = workerBeeService.startAccountRegistrationFlow(proxy, networkOperator.name, networkOperator.email, networkOperator.password)
+
+            } else {
+                logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 No need to create a NetworkOperator BFN account ......${gson.toJson(accountInfoDTO)} ")
             }
-            if (account == null) {
-                throw Exception("Corda account not found")
+            if (accountInfoDTO == null) {
+                throw Exception("\uD83D\uDD35 \uD83D\uDD35 Expected BFN Corda account was NOT created or found in states")
             }
+            val fut2 = proxy.startTrackedFlowDynamic(
+                    AccountInfoQueryFlow::class.java, accountInfoDTO.identifier).returnValue
+            val mAccount = fut2.get()
             val anc = NetworkOperatorState(
                     issuedBy = proxy.nodeInfo().legalIdentities.first(),
-                    account = account!!,
+                    account = mAccount!!,
                     minimumInvoiceAmount = networkOperator.minimumInvoiceAmount,
                     maximumInvoiceAmount = networkOperator.maximumInvoiceAmount,
                     maximumInvestment = networkOperator.maximumInvestment,
                     defaultOfferDiscount = networkOperator.defaultOfferDiscount,
                     tradeFrequencyInMinutes = networkOperator.tradeFrequencyInMinutes,
                     tradeMatrixItems = networkOperator.tradeMatrixItems,
-                    name = networkOperator.name, email = networkOperator.email,
-                    cellphone = networkOperator.cellphone, date = Date())
+                    name = networkOperator.name,
+                    email = networkOperator.email,
+                    cellphone = networkOperator.cellphone,
+                    date = Date())
 
             val fut = proxy.startTrackedFlowDynamic(
                     NetworkOperatorCreationFlow::class.java, anc).returnValue
             val tx = fut.get()
-            networkOperator.accountId = account!!.identifier.id.toString()
-            networkOperator.issuedBy = proxy.nodeInfo().legalIdentities.first().toString()
-            logger.info("\uD83C\uDF53 createAnchor: Anchor response txId: \uD83C\uDF53 ${tx.id}")
 
-            //add anchor to Firestore
-
-            logger.info("\uD83C\uDF53 createAnchor: \uD83C\uDF3A about to add BFN anchor to Firestore .... ")
+            logger.info("\uD83C\uDF53 createNetworkOperator: \uD83C\uDF3A about to add BFN Network Operator to Firestore .... ")
 
             firebaseService.addNetworkOperator(DTOUtil.getDTO(anc))
-            firebaseService.createBFNAccount(accountInfo = DTOUtil.getDTO(account!!))
+            firebaseService.createBFNAccount(accountInfo = AccountInfoDTO(
+                    mAccount.identifier.toString(),
+                    host = mAccount.host.name.organisation,
+                    name = mAccount.name, status = "active"))
 
-            val msg = "\uD83C\uDF3A NetworkOperatorState set up, added to Firestore. DONE!: " +
+            val msg = "\uD83C\uDF3A ....... NetworkOperatorState set up, added to Firestore. DONE!: " +
                     "${networkOperator.name} - ${networkOperator.email} \uD83C\uDF3A " +
                     "txId: ${tx.id}"
             logger.info(msg)

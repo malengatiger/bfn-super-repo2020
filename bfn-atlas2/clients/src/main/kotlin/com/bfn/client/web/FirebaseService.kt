@@ -185,7 +185,7 @@ class FirebaseService() {
     fun getBFNAnchorByName(name: String): NetworkOperatorDTO? {
         var networkOperator: NetworkOperatorDTO? = null
         try {
-            val future = db.collection("bfn_anchors")
+            val future = db.collection("bfnAnchors")
                     .whereEqualTo("name", name)
                     .limit(1)
                     .get()
@@ -217,7 +217,7 @@ class FirebaseService() {
         request.setDisplayName(name)
         request.setPassword(password)
         request.setUid(uid)
-        val userRecord = auth?.createUser(request)
+        val userRecord = auth.createUser(request)
         logger.info("\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C \uD83E\uDD66 \uD83E\uDD66 " +
                 "Auth User record created in Firebase:  \uD83E\uDD66 " + userRecord.email)
         return userRecord
@@ -226,8 +226,8 @@ class FirebaseService() {
 
     @Throws(FirebaseAuthException::class)
     fun createBFNAccount(accountInfo: AccountInfoDTO): String? {
-        logger.info("\uD83D\uDD37 \uD83D\uDD37 ..... createBFNCustomer: writing to Firestore ... \uD83D\uDD37 ")
-        val future = db.collection("bfn_accounts").add(accountInfo)
+        logger.info("\uD83D\uDD37 \uD83D\uDD37 ..... createBFNAccount: writing to Firestore ... \uD83D\uDD37 ")
+        val future = db.collection("bfnAccounts").add(accountInfo)
         return future?.get()?.path
     }
 
@@ -241,19 +241,19 @@ class FirebaseService() {
                 if (user.email != null && user.email.contains("aubrey")) {
                     continue
                 }
-                auth?.deleteUser(user.uid)
+                auth.deleteUser(user.uid)
                 cnt++
                 logger.info("\uD83C\uDF4A  User deleted: 🔵 #$cnt")
             }
             page = page.nextPage
         }
-        page = auth!!.listUsers(null)
+        page = auth.listUsers(null)
         for (user in page.iterateAll()) {
             if (user.email != null && user.email.contains("aubrey")) {
                 continue
             }
             logger.info("\uD83C\uDF4A \uD83C\uDF4A \uD83C\uDF4A User delete .....: ")
-            auth!!.deleteUser(user.uid)
+            auth.deleteUser(user.uid)
             cnt++
             logger.info("🔆 🔆 🔆 user deleted: 🔵 #$cnt ${user.displayName}")
         }

@@ -1,4 +1,4 @@
-package com.bfn.flows.anchor
+package com.bfn.flows.operator
 
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.states.InvoiceOfferState
@@ -21,7 +21,7 @@ import java.util.*
 
 @InitiatingFlow
 @StartableByRPC
-class AnchorMakeOffersFlow : FlowLogic<List<InvoiceOfferState>>() {
+class NetworkOperatorMakeOffersFlow : FlowLogic<List<InvoiceOfferState>>() {
 
     @Suspendable
     override fun call(): List<InvoiceOfferState> {
@@ -170,7 +170,7 @@ class AnchorMakeOffersFlow : FlowLogic<List<InvoiceOfferState>>() {
     private val bbx = "\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D\uD83D\uDC7D \uD83D\uDC7D \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E "
 
     companion object {
-        private val logger = LoggerFactory.getLogger(AnchorMakeOffersFlow::class.java)
+        private val logger = LoggerFactory.getLogger(NetworkOperatorMakeOffersFlow::class.java)
     }
 
 }
