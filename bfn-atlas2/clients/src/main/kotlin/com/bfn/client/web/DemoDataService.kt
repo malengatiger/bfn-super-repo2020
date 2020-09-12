@@ -1,14 +1,12 @@
 package com.bfn.client.web
 
-import com.google.gson.GsonBuilder
 import com.bfn.client.data.*
-
-import com.bfn.contractstates.states.TradeMatrixItem
+import com.bfn.contractstates.states.NetworkOperatorState
 import com.bfn.flows.thisDate
 import com.bfn.flows.todaysDate
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
-import khttp.get
 import khttp.post
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.internal.Emoji
@@ -17,6 +15,7 @@ import net.corda.core.node.NodeInfo
 import org.json.JSONObject
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -35,6 +34,8 @@ class DemoDataService {
     private var investors: MutableList<AccountInfoDTO>? = null
     private val demoSummary = DemoSummary()
     private var myNode: NodeInfo? = null
+    @Value("\${stellarAnchorUrl}")
+    private lateinit var stellarAnchorUrl: String
 
     @PostConstruct
     fun init() {
@@ -45,85 +46,99 @@ class DemoDataService {
     private lateinit var firebaseService: FirebaseService
 
     @Autowired
-    private lateinit var workerBeeServiceService: WorkerBeeService
+    private lateinit var workerBeeService: WorkerBeeService
 
+    @Autowired
+    private lateinit var networkOperatorService: NetworkOperatorBeeService
 
-    fun createNetworkOperator(url: String, deleteFirebase: Boolean) {
+    /**
+     * Generate data for the main anchor node : NetworkOperator is created here as well as Accounts
+     */
+    fun generateAnchorNodeData(mProxy: CordaRPCOps, numberOfAccounts: Int): String {
+        logger.info("\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
+                "Generating data for the main anchor Node: NetworkOperator + Suppliers + Investors")
+        createNetworkOperator(mProxy)
+        generateLocalNodeAccounts(mProxy, numberOfAccounts)
 
-        logger.info("\uD83D\uDE21 createAnchor for Node $url deleteFirebase: $deleteFirebase .......... \uD83D\uDE21 \uD83D\uDE21 ")
+        val msg = "\n\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 DemoDataService: " +
+                "generateAnchorNodeData COMPLETE! \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40\n"
+        logger.info(msg)
+        return msg
+    }
+    /**
+     * Generate data for the customer node : Accounts are created for several customers
+     */
+    fun generateCustomerNodeData(mProxy: CordaRPCOps):String {
+        logger.info("\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
+                "Generating data for the Customer Node: Customers only")
+        createCustomers(mProxy, stellarAnchorUrl = stellarAnchorUrl)
+        val msg = "\n\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
+                "DemoDataService: generateCustomerNodeData COMPLETE! " +
+                "\uD83E\uDD6E \uD83E\uDD6E \uD83E\uDD6E\n"
+        logger.info(msg)
+        return msg
+    }
 
-        if (deleteFirebase) {
-            logger.info("\uD83D\uDE21 deleting Firebase auth users and collections \uD83D\uDE21 \uD83D\uDE21 ")
-            val response0 = get(
-                    timeout = 990000000.0,
-                    url = "$url/bfn/admin/deleteFirebase")
-            logger.info("\uD83C\uDF4E deleteFirebase; RESPONSE: statusCode: " +
-                    "${response0.statusCode} - ${response0.text}")
-        }
+    private fun getNetworkOperatorObject(): NetworkOperatorDTO {
 
-
-        val mixes: MutableList<TradeMatrixItem> = mutableListOf()
+        val mixes: MutableList<TradeMatrixItemDTO> = mutableListOf()
+        val email = "operator${System.currentTimeMillis()}@bfn.com"
         val operator = NetworkOperatorDTO(
                 minimumInvoiceAmount = 100000.00,
                 maximumInvoiceAmount = 20000000.00,
                 maximumInvestment = 1000000000.00,
                 defaultOfferDiscount = 8.8,
-                name = "BFN Network Anchor",
-                email = "anchor1@bfn.com",
+                name = "BFN Network Operator Ltd",
+                email = email,
                 cellphone = "+27710441887",
                 tradeFrequencyInMinutes = 240,
                 tradeMatrixItems = mixes,
                 date = todaysDate(),
-                password = "bfnanchor33",
+                password = "pass123",
+                rippleAccountId = "TBD",
+                stellarAccountId = "TBD",
                 uid = UUID.randomUUID().toString(),
-                issuedBy = "TBD", accountId = "TBD"
+                account = AccountInfoDTO(
+                        "TBD", "TBD",
+                        "BFN Network Operator Ltd"
+                )
 
         )
         addTradeMatrixItems(operator)
-        val mGson = Gson()
-        val json = mGson.toJson(operator)
-        val jsonObject = JSONObject(json)
-        logger.info("\uD83C\uDF4E Anchor about to be created: ${gson.toJson(operator)} \uD83C\uDF4E")
-        val response = post(
-                json = jsonObject,
-                timeout = 990000000.0,
-                url = "$url/bfn/admin/createAnchor")
-
-        logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E create Anchor; RESPONSE: statusCode: " +
-                "🌍 ${response.statusCode} 🌍  - ${response.text}")
+        return operator
 
     }
 
     private fun addTradeMatrixItems(networkOperatorInvestor: NetworkOperatorDTO) {
-        val m2 = TradeMatrixItem(
+        val m2 = TradeMatrixItemDTO(
                 startInvoiceAmount = 2000001.00,
                 endInvoiceAmount = 300000.00,
                 offerDiscount = 8.3,
                 date = todaysDate()
         )
-        val m3 = TradeMatrixItem(
+        val m3 = TradeMatrixItemDTO(
                 startInvoiceAmount = 300001.00,
                 endInvoiceAmount = 400000.00,
                 offerDiscount = 7.9,
                 date = todaysDate()
         )
-        val m4 = TradeMatrixItem(
+        val m4 = TradeMatrixItemDTO(
                 startInvoiceAmount = 400001.00,
                 endInvoiceAmount = 500000.00,
                 offerDiscount = 7.4,
                 date = todaysDate()
         )
-        val m5 = TradeMatrixItem(
+        val m5 = TradeMatrixItemDTO(
                 startInvoiceAmount = 500001.00,
                 endInvoiceAmount = 1000000.00,
                 offerDiscount = 5.5,
                 date = todaysDate())
-        val m6 = TradeMatrixItem(
+        val m6 = TradeMatrixItemDTO(
                 startInvoiceAmount = 1000001.00,
                 endInvoiceAmount = 10000000.00,
                 offerDiscount = 4.2,
                 date = todaysDate())
-        val m7 = TradeMatrixItem(
+        val m7 = TradeMatrixItemDTO(
                 startInvoiceAmount = 10000001.00,
                 endInvoiceAmount = 100000000.00,
                 offerDiscount = 3.1,
@@ -132,37 +147,25 @@ class DemoDataService {
         networkOperatorInvestor.tradeMatrixItems = mutableListOf(m2, m3, m4, m5, m6, m7)
     }
 
-//    var customer: AccountInfoDTO? = null
-//    val random = Random(Date().time)
-
-    private fun createCustomer(url: String) {
-        val user = UserDTO(name = "CustomerNode1",
-                password = "customer#001$",
-                cellphone = "+27710441887",
-                email = "customer001@bfn.com")
-
-        val mGson = Gson()
-        val jsonObject = JSONObject(mGson.toJson(user))
-        val response = post(
-                json = jsonObject,
-                timeout = 990000000.0,
-                url = "$url/bfn/admin/startAccountRegistrationFlow")
-
-        logger.info("\uD83C\uDF4E  create Customer Account; RESPONSE: " +
-                " 🌍 $response 🌍   " )
-        //todo - write to Firebase auth .....
-        firebaseService.createBFNAccount(accountInfo = AccountInfoDTO(identifier = "", name = user.name, host = url, status = ""));
-    }
-    
-    
-    
-    
-    
     @Throws(Exception::class)
-    fun generateLocalNodeAccounts(mProxy: CordaRPCOps?, numberOfAccounts: Int = 1): DemoSummary {
+    private fun createNetworkOperator(mProxy: CordaRPCOps): NetworkOperatorDTO? {
+        logger.info("\n\n\uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0 Demo createNetworkOperator started ..... \uD83E\uDDA0 \uD83E\uDDA0")
+        val page = mProxy.vaultQuery(NetworkOperatorState::class.java)
+        if (page.states.isNotEmpty()) {
+            logger.info("\uD83E\uDD6E \uD83E\uDD6E \uD83E\uDD6E Network Operator already exists: ${page.states[0].state.data.account.name}")
+        }
+
+        val operator = getNetworkOperatorObject()
+        val result = networkOperatorService.createNetworkOperator(mProxy, operator)
+        logger.info("\uD83E\uDD6E \uD83E\uDD6E \uD83E\uDD6E Demo createNetworkOperator result: " +
+                gson.toJson(result) + " \uD83E\uDD6E \uD83E\uDD6E")
+        return result
+    }
+    @Throws(Exception::class)
+    fun generateLocalNodeAccounts(mProxy: CordaRPCOps?, numberOfAccounts: Int = 10): DemoSummary {
         val start = Date().time;
         logger.info("\n\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 " +
-                "DemoUtil started, proxy: ${mProxy.toString()}...  \uD83D\uDD06 \uD83D\uDD06 " +
+                "DemoDataService started, proxy: ${mProxy.toString()}...  \uD83D\uDD06 \uD83D\uDD06 " +
                 "will generate data 🧩🧩 ")
 
         myNode = mProxy!!.nodeInfo()
@@ -178,11 +181,12 @@ class DemoDataService {
         customers = mutableListOf()
         investors = mutableListOf()
 
+
+        logger.info("👽 👽 👽 👽 start data generation:  numberOfAccounts $numberOfAccounts 👽 👽 👽 👽  ")
+        firebaseService.deleteCollection(collectionName = "accounts")
+        generateAccounts(mProxy, numberOfAccounts)
         //
-        logger.info(" 👽 👽 👽 👽 start data generation:  numberOfAccounts $numberOfAccounts 👽 👽 👽 👽  ")
-        generateAccounts(mProxy,numberOfAccounts)
-        //
-        val list = workerBeeServiceService.getNodeAccounts(mProxy)
+        val list = workerBeeService.getNodeAccounts(mProxy)
         var cnt = 0
         logger.info(" \uD83C\uDF4E  \uD83C\uDF4E Total Number of Accounts on Node after sharing:" +
                 " \uD83C\uDF4E  \uD83C\uDF4E " + list.size)
@@ -196,14 +200,51 @@ class DemoDataService {
         demoSummary.elapsedSeconds = (end - start / 1000).toDouble();
         return demoSummary
     }
+    @Throws(Exception::class)
+    fun generateAccounts(proxy: CordaRPCOps, count: Int = 10): String {
+        logger.info("\n\n$em1 generateAccounts started ...  " +
+                "\uD83D\uDD06 \uD83D\uDD06 ................. generating: $count")
+        var cnt = 0
+        for (x in 0..count) {
+            val prefix = "account" + System.currentTimeMillis()
+            try {
+                val mName = randomName
+                logger.info("$em1 Starting AccountRegistrationFlow for $mName")
+                workerBeeService.startAccountRegistrationFlow(proxy,
+                        mName,
+                        "$prefix@gmail.com",
+                        "pass123")
+                cnt++
+            } catch (e1: Exception) {
+                logger.warn("\uD83D\uDE21 \uD83D\uDE21 Unable to add account - probable duplicate name")
+            }
+        }
+        logger.info("$em1 generateAccounts complete ..." +
+                "  \uD83D\uDD06 \uD83D\uDD06 added $cnt accounts")
+        val accountInfos = workerBeeService.getNodeAccounts(proxy = proxy)
+        logger.info("$em1 getNodeAccounts complete ..." +
+                "  \uD83D\uDD06 \uD83D\uDD06 found  ${accountInfos.size} ... " +
+                "adding investor and supplier profiles and generating invoices for all accounts ........")
 
+        val page = proxy.vaultQuery(AccountInfo::class.java)
+        for (state in page.states) {
+            addInvestorProfile(account = state, proxy = proxy)
+            addSupplierProfile(account = state, proxy = proxy)
+            generateInvoices(proxy = proxy, accountInfo = DTOUtil.getDTO(state.state.data), count = 3)
+        }
+        val msg = "\uD83C\uDF3A \uD83C\uDF3A Generate accounts with profiles completed! \uD83C\uDF3A"
+        logger.info(msg)
+        return msg
+    }
+
+    private val em1 = "\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 ";
     private var nodes: List<NodeInfoDTO>? = null
 
     fun generateOffers(proxy: CordaRPCOps, maxRecords: Int = 3000): String {
 
         logger.info("\uD83D\uDD35 max records to generate: \uD83D\uDCA6 $maxRecords \uD83D\uDCA6");
-        val acctList = workerBeeServiceService.getNodeAccounts(proxy)
-        val mList = workerBeeServiceService.findInvoicesForNode(proxy)
+        val acctList = workerBeeService.getNodeAccounts(proxy)
+        val mList = workerBeeService.findInvoicesForNode(proxy)
         logger.info("Accounts on Node:  \uD83D\uDE21 \uD83D\uDE21 ️ ${acctList.size} ♻️")
         logger.info("Invoices on Node:  \uD83D\uDE21 \uD83D\uDE21 ️ ${mList.size} ♻️")
 
@@ -249,7 +290,6 @@ class DemoDataService {
         return msg;
     }
 
-
     @get:Throws(Exception::class)
     private val regulatorDashboard: DashboardData
         get() {
@@ -280,25 +320,9 @@ class DemoDataService {
             }
         }
 
-    private fun makeProfilesForNode(proxy: CordaRPCOps, url: String) {
-        val page = proxy.vaultQuery(AccountInfo::class.java)
-        var cnt = 0
-        page.states.forEach() {
-            if (it.state.data.name == "NetworkAnchorNode" || it.state.data.name == "CustomerNode1") {
-                logger.info("Ignore anchor and CustomerNode1. \uD83C\uDF3A No need to create profiles")
-            } else {
-                if (it.state.data.host.toString() == proxy.nodeInfo().legalIdentities.first().toString()) {
-                    cnt++
-                    addSupplierProfile(it, url)
-                    addInvestorProfile(it, url)
-                }
-            }
-        }
-        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35" +
-                " \uD83D\uDD35 \uD83D\uDD35 Profiles generated: $cnt")
-    }
-
-    private fun addInvestorProfile(it: StateAndRef<AccountInfo>, url: String) {
+    private fun addInvestorProfile(proxy: CordaRPCOps, account: StateAndRef<AccountInfo>) {
+        logger.info(" \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 addInvestorProfile ..." +
+                "  \uD83D\uDD06 \uD83D\uDD06 found  ${account.state.data.name} ... ")
         var disc = random.nextInt(10) * 1.5
         if (disc < 3.0) {
             disc = 3.5
@@ -312,30 +336,29 @@ class DemoDataService {
             max = 200000.00
         }
         val investorProfile = InvestorProfileStateDTO(
-                issuedBy = "thisNode",
-                account = DTOUtil.getDTO(it.state.data),
+                account = DTOUtil.getDTO(account.state.data),
                 date = todaysDate(),
                 defaultDiscount = disc,
                 minimumInvoiceAmount = min,
-                totalInvestment = 2999000.00,
+                totalInvestment = 24999000.00,
                 maximumInvoiceAmount = max,
                 bank = "BlackOx Investment Bank",
-                bankAccount = (random.nextInt(12345) * 647).toString()
+                bankAccount = (random.nextInt(12345) * 647).toString(),
+                stellarAccountId = "TBD", rippleAccountId = "TBD"
         )
 
-        val mGson = Gson()
-        val json = mGson.toJson(investorProfile)
-        val jsonObject = JSONObject(json)
-        val resp = post(
-                url = "$url/bfn/admin/createInvestorProfile",
-                json = jsonObject,
-                timeout = 8000000000.0
-        )
-        logger.info("\uD83D\uDE0E Create INVESTOR profile  \uD83C\uDF3A ${it.state.data.name} " +
-                "- RESPONSE: statusCode: \uD83C\uDF0D ${resp.statusCode} \uD83C\uDF0D \n")
+        workerBeeService.createInvestorProfile(
+                proxy = proxy,
+                account = account.state.data,
+                profile = investorProfile)
+
+        logger.info("\uD83D\uDE0E Create INVESTOR profile  \uD83C\uDF3A ${account.state.data.name} " +
+                "- RESPONSE: statusCode: \uD83C\uDF0D \uD83C\uDF0D \n")
     }
 
-    private fun addSupplierProfile(account: StateAndRef<AccountInfo>, url: String) {
+    private fun addSupplierProfile(proxy: CordaRPCOps, account: StateAndRef<AccountInfo>) {
+        logger.info(" \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 addSupplierProfile ..." +
+                "  \uD83D\uDD06 \uD83D\uDD06 found  ${account.state.data.name} ... ")
         var disc = random.nextInt(5) * 2.5
         if (disc < 2.0) {
             disc = 6.5
@@ -347,39 +370,15 @@ class DemoDataService {
                 bankAccount = (random.nextInt(123445) * 132647).toString(),
                 bank = "BlackOx Investment Bank",
                 maximumDiscount = disc,
-                issuedBy = "moi"
+                stellarAccountId = "TBD", rippleAccountId = "TBD"
         )
-        val mGson = Gson()
-        val json = mGson.toJson(prof)
-        val jsonObject = JSONObject(json)
-        val resp = post(
-                url = "$url/bfn/admin/createSupplierProfile",
-                json = jsonObject,
-                timeout = 8000000000.0
-        )
-        logger.info("\uD83E\uDD8A Create SUPPLIER profile for \uD83C\uDF3A ${account.state.data.name} " +
-                "- RESPONSE: statusCode: \uD83C\uDF0D ${resp.statusCode} \uD83C\uDF0D")
-    }
+        workerBeeService.createSupplierProfile(
+                proxy = proxy,
+                account = account.state.data,
+                profile = prof)
 
-
-    @Throws(Exception::class)
-    private fun executeForeignNodeDemoData(node: NodeInfoDTO) {
-        logger.info("\n\n\uD83E\uDD1F \uD83E\uDD1F \uD83E\uDD1F " +
-                "Node Demo Data to Generate: " + node.webServerAddress)
-        val nodeUrl = node.webServerAddress + "admin/demo?deleteFirestore=false"
-        val con = callNode(nodeUrl)
-        var summary: DemoSummary?
-        BufferedReader(InputStreamReader(con.inputStream, "utf-8")).use { br ->
-            val response = StringBuilder()
-            var responseLine: String = ""
-            while (br.readLine().also { responseLine = it } != null) {
-                response.append(responseLine.trim())
-            }
-            summary = gson.fromJson(response.toString(), DemoSummary::class.java)
-            logger.info("\uD83E\uDD1F \uD83E\uDD1F \uD83E\uDD1F " +
-                    "Response from Demo: \uD83E\uDD1F SUMMARY: NODE: " + node.addresses!![0] + " \uD83E\uDD1F "
-                    + gson.toJson(summary) + "\n\n")
-        }
+        logger.info("\uD83E\uDD8A Created SUPPLIER profile for \uD83C\uDF3A ${account.state.data.name} " +
+                "- RESPONSE: statusCode: \uD83C\uDF0D \uD83C\uDF0D")
     }
 
     @Throws(Exception::class)
@@ -399,25 +398,7 @@ class DemoDataService {
         return con
     }
 
-    @Throws(Exception::class)
-    private fun generateAccounts(proxy: CordaRPCOps, count: Int = 9) {
-        logger.info("\n\n\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 generateAccounts started ...  " +
-                "\uD83D\uDD06 \uD83D\uDD06 count: $count")
-        for (x in 0..count) {
-            val phone = phone
-            val prefix = myNode!!.legalIdentities[0].name.organisation
-            try {
-                workerBeeServiceService.startAccountRegistrationFlow(proxy,
-                        randomName,
-                        "$prefix$phone@gmail.com",
-                        "pass123")
-            } catch (e1: Exception) {
-                logger.warn("Unable to add account - probable duplicate name")
-            }
-        }
-        logger.info(" \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 registerSupplierAccounts complete ..." +
-                "  \uD83D\uDD06 \uD83D\uDD06 added " + suppliers!!.size + " accounts")
-    }
+
 
     private val phone: String
         get() {
@@ -436,124 +417,126 @@ class DemoDataService {
         }
 
     private val random = Random(System.currentTimeMillis())
-    private lateinit var customer: AccountInfoDTO
+    private lateinit var accountInfo: AccountInfoDTO
     private val cal: Calendar = GregorianCalendar.getInstance()
     private var invoiceCnt = 0
-    fun generateInvoices(proxy: CordaRPCOps, customer: AccountInfoDTO, count: Int = 40): String {
-        this.customer = customer
-        val accounts = workerBeeServiceService.getNodeAccounts(proxy).shuffled()
-        logger.info("\uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C accounts to have invoices generated: $count; generating 12 months worth of invoices")
+
+    fun generateInvoices(proxy: CordaRPCOps, accountInfo: AccountInfoDTO, count: Int): String {
+        this.accountInfo = accountInfo
+        val page = proxy.vaultQuery(NetworkOperatorState::class.java)
+        if (page.states.isEmpty()) {
+            throw Exception("Missing NetworkOperator")
+        }
+        val networkOperator = page.states[0].state.data
+        logger.info("\uD83C\uDF4E \uD83C\uDF4E Network Operator: ${gson.toJson(networkOperator)}")
+        val accounts = workerBeeService.getNodeAccounts(proxy).shuffled()
+        if (accounts.isEmpty()) {
+            throw Exception("Failed. \uD83D\uDD06 \uD83D\uDD06 generateInvoices could not find Accounts on the Node")
+        }
+        logger.info("\n\uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C number of invoices to generate for each account: $count " +
+                "\uD83D\uDC9C node accounts: ${accounts.size}")
         repeatCount = 0
         invoiceCnt = 0
 
         //todo - generate monthly invoices starting jan 2019
-        cal.set(2019,0,25)
-        for (i in 1..2) {
+        cal.set(2020, 8, 1)
+        var cnt3 = 0
+        for (i in 1..count) {
             logger.info("⏰ ⏰ ⏰ create invoices for month:  ⏰ ${cal.time}  ⏰ \n")
-            var cnt2 = 0
+            cnt3 = 0;
             accounts.forEach() {
-                if (it.name == "NetworkAnchorNode" || it.name == "CustomerNode1") {
-                    logger.info("${it.name} \uD83E\uDD80 this baby don't do invoices. IGNORED! \uD83D\uDC2C ")
+                if (it.identifier == networkOperator.account.identifier.toString()) {
+                    logger.info("\uD83C\uDF4E Ignoring invoice generation for ${networkOperator.account.name}")
                 } else {
-                    val randomInvoice = random.nextBoolean()
-                    if (randomInvoice) {
-                        startInvoiceFlow(proxy,it)
-                        cnt2++
-                    }
+                    startInvoiceFlow(proxy, it)
+                    invoiceCnt++
+                    cnt3++
                 }
-
             }
-            cal.add(Calendar.MONTH,1)
-            logger.info("\n\n⏰ ⏰ ⏰ created $cnt2 invoices this month; \uD83D\uDD35 " +
+            cal.add(Calendar.MONTH, 1)
+            logger.info("\n\n⏰ ⏰ ⏰ created $invoiceCnt invoices this month; \uD83D\uDD35 " +
                     "roll over to the next month:  ⏰ ${cal.time}  ⏰ \n\n")
         }
 
         demoSummary.numberOfInvoices = invoiceCnt
-        return "\uD83D\uDC9A Invoices on Node: $invoiceCnt \uD83D\uDC9C"
+        return "\uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A :: Total Invoices generated on Node: $invoiceCnt \uD83D\uDC9C"
     }
 
-    private fun startInvoiceFlow(proxy: CordaRPCOps, it: AccountInfoDTO) {
+    private fun startInvoiceFlow(proxy: CordaRPCOps, accountInfoDTO: AccountInfoDTO) {
+        logger.info("startInvoiceFlow: \uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C account: ${gson.toJson(accountInfoDTO)}")
+        val invoice = buildInvoice(accountInfoDTO)
+        val smallInvoice = buildSmallInvoice(accountInfoDTO)
 
-        val invoice = buildInvoice(it)
-        val smallInvoice = buildSmallInvoice(it)
-        val choice = random.nextBoolean()
-        if (choice) {
-            if (invoice != null) {
-                val result = workerBeeServiceService.startInvoiceRegistrationFlow(proxy, invoice)
-                invoiceCnt++
-                logger.info("\uD83D\uDC9C LARGE invoice #$invoiceCnt" +
-                        "generated, result: ${result.totalAmount} ${result.invoiceId}")
-            }
+        if (invoice != null) {
+            val result = workerBeeService.startInvoiceRegistrationFlow(proxy, invoice)
+            logger.info("\uD83D\uDC9C LARGE startInvoiceRegistrationFlow: " +
+                    "generated, result: ${result.totalAmount} ${result.invoiceId}")
         } else {
-            if (smallInvoice != null) {
-                val result = workerBeeServiceService.startInvoiceRegistrationFlow(proxy, smallInvoice)
-                invoiceCnt++
-                logger.info("\uD83D\uDC9C SMALL invoice #$invoiceCnt " +
-                        "generated, result: ${result.totalAmount} ${result.invoiceId}")
-            }
+            logger.info("\uD83D\uDC9C LARGE startInvoiceRegistrationFlow: \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 invoice is NULL");
+        }
+        if (smallInvoice != null) {
+            val result = workerBeeService.startInvoiceRegistrationFlow(proxy, smallInvoice)
+            logger.info("\uD83D\uDC9C SMALL startInvoiceRegistrationFlow: " +
+                    "generated, result: ${result.totalAmount} ${result.invoiceId}")
+        } else {
+            logger.info("\uD83D\uDC9C SMALL startInvoiceRegistrationFlow: \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 smallInvoice is NULL");
         }
     }
-
 
     private var repeatCount = 0
     private fun buildInvoice(supplier: AccountInfoDTO): InvoiceDTO? {
 
-        if (supplier.name == customer.name) {
-            return null
+        if (supplier.name == accountInfo.name) {
+            logger.info("Supplier Name is the same as CustomerName: ${supplier.name} customer: ${accountInfo.name}")
+            throw Exception("Supplier Name is the same as CustomerName: ${supplier.name} customer: ${accountInfo.name}");
         }
-        var invoice: InvoiceDTO? = null
         var num = random.nextInt(1000)
-        if (num == 0) num = 33
-        if (supplier.name != customer.name) {
-            invoice = InvoiceDTO(
-                    invoiceNumber = "INV_" + System.currentTimeMillis(),
-                    supplier = supplier,
-                    customer = customer,
-                    amount = num * 1200.0,
-                    valueAddedTax = 15.0,
-                    totalAmount = num * 1.15,
-                    description = "LARGE : Demo Invoice at ${Date()}",
-                    dateRegistered = thisDate(cal.time),
-                    invoiceId = UUID.randomUUID().toString(),
-                    externalId = UUID.randomUUID().toString()
-            )
-        } else {
-            logger.warn("... ... \uD83E\uDD80 \uD83E\uDD80 Supplier and Customer are the same. Ignoring ...\uD83D\uDC2C ")
-        }
+        if (num >= 700) num = 2000
 
-        return invoice
+        return InvoiceDTO(
+                invoiceNumber = "INV_" + System.currentTimeMillis(),
+                supplier = supplier,
+                customer = accountInfo,
+                amount = num * 1200.0,
+                valueAddedTax = 15.0,
+                totalAmount = num * 1200.0 * 1.15,
+                description = "LARGE : Demo Invoice at ${Date()}",
+                dateRegistered = thisDate(cal.time),
+                invoiceId = UUID.randomUUID().toString(),
+                externalId = UUID.randomUUID().toString()
+        )
 
 
     }
+
     private fun buildSmallInvoice(supplier: AccountInfoDTO): InvoiceDTO? {
 
-        if (supplier.name == customer.name) {
+        if (supplier.name == accountInfo.name) {
             return null
         }
         val invoice: InvoiceDTO?
         var num = random.nextInt(200)
-        if (num == 0) num = 10
+        if (num <= 50) num = 1000
 
-            invoice = InvoiceDTO(
-                    invoiceNumber = "INV_" + System.currentTimeMillis(),
-                    supplier = supplier,
-                    customer = customer,
-                    amount = num * 500.0,
-                    valueAddedTax = 15.0,
-                    totalAmount = num * 1.15,
-                    description = "SMALL: Demo Invoice at ${Date()}",
-                    dateRegistered = thisDate(cal.time),
-                    invoiceId = UUID.randomUUID().toString(),
-                    externalId = UUID.randomUUID().toString()
-            )
+        invoice = InvoiceDTO(
+                invoiceNumber = "INV_" + System.currentTimeMillis(),
+                supplier = supplier,
+                customer = accountInfo,
+                amount = num * 500.0,
+                valueAddedTax = 15.0,
+                totalAmount = num * 500.0 * 1.15,
+                description = "SMALL: Demo Invoice at ${Date()}",
+                dateRegistered = thisDate(cal.time),
+                invoiceId = UUID.randomUUID().toString(),
+                externalId = UUID.randomUUID().toString()
+        )
 
 
         return invoice
-
-
     }
 
     private val nodeInvoiceOffers: MutableList<InvoiceOfferDTO> = ArrayList()
+
     @Throws(Exception::class)
     private fun registerInvoiceOffer(proxy: CordaRPCOps, invoice: InvoiceDTO, supplier: AccountInfoDTO,
                                      investor: AccountInfoDTO, discount: Double, isAnchor: Boolean = false) {
@@ -573,16 +556,63 @@ class DemoDataService {
                 offerId = UUID.randomUUID().toString(), isAnchor = isAnchor
         )
         try {
-            val offer = workerBeeServiceService.startInvoiceOfferFlow(proxy, invoiceOffer)
+            val offer = workerBeeService.startInvoiceOfferFlow(proxy, invoiceOffer)
             nodeInvoiceOffers.add(offer)
         } catch (e: Exception) {
             logger.warn("Unable to add offer: ${e.message}")
         }
     }
 
+    val concat = " \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 "
+
+    private fun createCustomers(proxy: CordaRPCOps, stellarAnchorUrl: String) {
+        logger.info(concat
+                + "Start createCustomers .... createCustomers  \uD83D\uDECE  ")
+
+        doOneCustomer(proxy, stellarAnchorUrl, buildCustomerProfile("Pick & Pay"))
+        doOneCustomer(proxy, stellarAnchorUrl, buildCustomerProfile("Department of Public Works"))
+        doOneCustomer(proxy, stellarAnchorUrl, buildCustomerProfile("Department of Public Works"))
+        doOneCustomer(proxy, stellarAnchorUrl, buildCustomerProfile("Shoprite"))
+        doOneCustomer(proxy, stellarAnchorUrl, buildCustomerProfile("Ashanti Gold Mining"))
+        doOneCustomer(proxy, stellarAnchorUrl, buildCustomerProfile("Department of Transport"))
+
+
+    }
+
+    private fun buildCustomerProfile(name: String): CustomerProfileStateDTO {
+        val suffix = "@bfn.com"
+        val prefix = "cust_"
+
+        return CustomerProfileStateDTO(
+                AccountInfoDTO("TBD", "TBD",
+                        name),
+                5000.00,
+                120000000.00,
+                cellphone = "+27 99 999 9000",
+                email = "$prefix${System.currentTimeMillis()}$suffix",
+                dateRegistered = Date(),
+                stellarAccountId = "TBD",
+                rippleAccountId = "TBD"
+        )
+    }
+
+    private fun doOneCustomer(proxy: CordaRPCOps, stellarAnchorUrl: String, profile: CustomerProfileStateDTO) {
+        logger.info("\uD83D\uDD35 Creating Customer ${profile.account.name}")
+
+        val password = "pass123"
+        try {
+            val resultProfile = workerBeeService.createCustomer(proxy, stellarAnchorUrl, profile, password)
+            logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 Processed customerProfile returned: " + gson.toJson(resultProfile))
+
+
+        } catch (e: Exception) {
+            logger.info("\uD83D\uDD25 \uD83D\uDD25 \uD83D\uDD25 Customer creation failed , trying next one ...")
+            throw Exception("Customer creation failed")
+        }
+    }
+
     var names: MutableList<String> = ArrayList()
     var map = HashMap<String, String?>()
-
 
     fun getSomeName(): String {
         return randomName
@@ -695,6 +725,5 @@ class DemoDataService {
             }
             return name
         }
-    
-    
+
 }

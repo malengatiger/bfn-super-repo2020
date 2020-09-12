@@ -17,7 +17,8 @@ class CreateAccountFlow(
     override val progressTracker = ProgressTracker()
     @Suspendable
     override fun call(): AccountInfo {
-        logger.info(" \uD83C\uDF4E \uD83C\uDF4E CreateAccountFlow: call started")
+        logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
+                "... CreateAccountFlow: call started \uD83C\uDF4E \uD83C\uDF4E")
 
         val future = serviceHub.accountService.createAccount(account)
         val acctInfo = future.get().state.data
@@ -31,20 +32,21 @@ class CreateAccountFlow(
             if (me.legalIdentities[0].name == it.legalIdentities.first().name) {
                 logger.info("Ignore: account on this node, no need to share with self")
             } else {
-                if (it.legalIdentities.first().name.toString().contains("Notary")) {
-                    logger.info("Ignore: this is a Notary")
+                if (it.legalIdentities.first().name.toString().contains("Notary") ||
+                        it.legalIdentities.first().name.toString().contains("Regulator")) {
+                    logger.info("Ignore: this is a Notary or Regulator")
                 } else {
                     logger.info("Share with nodes ${it.legalIdentities.first().name}")
                     serviceHub.accountService.shareAccountInfoWithParty(
                             accountId = acctInfo.identifier.id, party = it.legalIdentities.first())
-                    logger.info(" \uD83C\uDF40  \uD83C\uDF40 Account ${acctInfo.name} " +
+                    logger.info(" \uD83C\uDF40  \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 Account ${acctInfo.name} " +
                             "shared with ${it.legalIdentities[0].name}")
                 }
             }
         }
 
         logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D  account : $acctInfo " +
-                "-   \uD83D\uDC9A created and shared across nodes \uD83D\uDC7D ")
+                "-   \uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A created and shared across nodes \uD83D\uDC7D ; returning account info")
         return acctInfo
 
     }

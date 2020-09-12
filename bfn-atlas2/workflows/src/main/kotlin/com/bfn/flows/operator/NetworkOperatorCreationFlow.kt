@@ -18,11 +18,11 @@ import org.slf4j.LoggerFactory
  */
 @InitiatingFlow
 @StartableByRPC
-class NetworkOperatorCreationFlow(private val anchor: NetworkOperatorState ) : FlowLogic<SignedTransaction>() {
+class NetworkOperatorCreationFlow(private val networkOperatorState: NetworkOperatorState ) : FlowLogic<SignedTransaction>() {
 
     @Suspendable
     override fun call(): SignedTransaction {
-        Companion.logger.info(pp + "NetworkOperatorCreationFlow started, name: ${anchor.name}" )
+        Companion.logger.info(pp + "NetworkOperatorCreationFlow started, name: ${networkOperatorState.name}" )
 
         val existingOperator = serviceHub.vaultService.queryBy(NetworkOperatorState::class.java).states.singleOrNull()
         if (existingOperator != null) {
@@ -34,12 +34,12 @@ class NetworkOperatorCreationFlow(private val anchor: NetworkOperatorState ) : F
 
         val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
         txBuilder.addCommand(command, serviceHub.ourIdentity.owningKey)
-        txBuilder.addOutputState(anchor)
+        txBuilder.addOutputState(networkOperatorState)
         txBuilder.verify(serviceHub)
 
         val tx = serviceHub.signInitialTransaction(txBuilder)
         subFlow(FinalityFlow(tx, listOf()))
-        Companion.logger.info("$pp Yebo Gogo!! - Anchor has been created: ${anchor.name} $pp")
+        Companion.logger.info("$pp Yebo Gogo!! - NetworkOperator has been created: ${networkOperatorState.name} $pp")
         return tx
     }
 

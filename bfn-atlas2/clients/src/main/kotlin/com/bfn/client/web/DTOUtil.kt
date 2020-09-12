@@ -54,8 +54,8 @@ object DTOUtil {
     fun getDTO(a: NetworkOperatorState): NetworkOperatorDTO {
 
         return NetworkOperatorDTO(
-                issuedBy = a.issuedBy.toString(),
-                accountId = a.account.identifier.toString(),
+
+                account = getDTO(a.account),
                 minimumInvoiceAmount = a.minimumInvoiceAmount,
                 maximumInvoiceAmount = a.maximumInvoiceAmount,
                 maximumInvestment = a.maximumInvestment,
@@ -64,9 +64,32 @@ object DTOUtil {
                 name = a.name,
                 cellphone = a.cellphone,
                 email = a.email,
-                tradeMatrixItems = a.tradeMatrixItems,
+                tradeMatrixItems = getDTO(a.tradeMatrixItems),
                 password = "",
-                date = a.date.toString()
+                date = a.date.toString(),
+                stellarAccountId = a.stellarAccountId,
+                rippleAccountId = a.rippleAccountId
+        )
+    }
+    @JvmStatic
+    fun getDTO(list: List<TradeMatrixItem> ): MutableList<TradeMatrixItemDTO> {
+        val mList: MutableList<TradeMatrixItemDTO> = mutableListOf()
+
+        for (item in list) {
+            mList.add(getDTO(item))
+        }
+
+        return mList
+    }
+
+    @JvmStatic
+    fun getDTO(a: TradeMatrixItem): TradeMatrixItemDTO {
+        return TradeMatrixItemDTO(
+                startInvoiceAmount = a.startInvoiceAmount,
+                endInvoiceAmount = a.endInvoiceAmount,
+                offerDiscount = a.offerDiscount,
+                date = a.date
+
         )
     }
 
@@ -93,32 +116,47 @@ object DTOUtil {
     @JvmStatic
     fun getDTO(a: AccountInfo): AccountInfoDTO {
         return AccountInfoDTO(
-                host = a.host.toString(),
-                identifier = a.identifier.id.toString(),
-                name = a.name, status = "")
+                a.identifier.id.toString(),
+                a.host.toString(),
+                a.name)
     }
 
     @JvmStatic
     fun getDTO(a: InvestorProfileState): InvestorProfileStateDTO {
         return InvestorProfileStateDTO(
-                issuedBy = a.issuedBy.toString(),
                 account = getDTO(a.account), date = a.date.toString(),
                 defaultDiscount = a.defaultDiscount,
                 maximumInvoiceAmount = a.maximumInvoiceAmount,
                 totalInvestment = a.totalInvestment,
                 minimumInvoiceAmount = a.minimumInvoiceAmount,
-                bank = a.bank, bankAccount = a.bankAccount
+                bank = a.bank, bankAccount = a.bankAccount,
+                stellarAccountId = a.stellarAccountId,
+                rippleAccountId = a.rippleAccountId
         )
     }
 
     @JvmStatic
     fun getDTO(a: SupplierProfileState): SupplierProfileStateDTO {
         return SupplierProfileStateDTO(
-                issuedBy = a.issuedBy.toString(),
                 account = getDTO(a.account), date = a.date.toString(),
                 maximumDiscount = a.maximumDiscount,
                 bankAccount = a.bankAccount,
-                bank = a.bank
+                bank = a.bank,
+                stellarAccountId = a.stellarAccountId,
+                rippleAccountId = a.rippleAccountId
+        )
+    }
+    @JvmStatic
+    fun getDTO(a: CustomerProfileState): CustomerProfileStateDTO {
+        return CustomerProfileStateDTO(
+                account = getDTO(a.account),
+                stellarAccountId = a.stellarAccountId,
+                rippleAccountId = a.rippleAccountId,
+                dateRegistered = a.dateRegistered,
+                minimumInvoiceAmount = a.minimumInvoiceAmount,
+                maximumInvoiceAmount = a.maximumInvoiceAmount,
+                email = a.email,
+                cellphone = a.cellphone
         )
     }
 

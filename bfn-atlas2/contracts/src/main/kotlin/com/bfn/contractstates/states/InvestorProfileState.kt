@@ -11,7 +11,7 @@ import java.util.*
 
 @CordaSerializable
 @BelongsToContract(InvestorProfileContract::class)
-class InvestorProfileState(var issuedBy: Party,
+class InvestorProfileState(
                            val account: AccountInfo,
                            val minimumInvoiceAmount: Double,
                            val maximumInvoiceAmount: Double,
@@ -19,10 +19,12 @@ class InvestorProfileState(var issuedBy: Party,
                            val defaultDiscount: Double,
                            val bank: String,
                            val bankAccount: String,
+                           val stellarAccountId: String,
+                           val rippleAccountId: String,
                            var date: Date
                    ) : ContractState {
 
     override val participants: List<AbstractParty>
-        get() = listOf(issuedBy)
+        get() = listOf(account.host)
 
 }

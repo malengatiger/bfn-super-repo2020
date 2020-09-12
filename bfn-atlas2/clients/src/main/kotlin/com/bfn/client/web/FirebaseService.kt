@@ -16,7 +16,10 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.Message
 import com.google.firebase.messaging.Notification
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonArray
 import net.corda.core.utilities.getOrThrow
+import org.json.JSONArray
+import org.json.JSONObject
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.util.ArrayList
@@ -106,6 +109,21 @@ class FirebaseService() {
         logger.info("\uD83D\uDE3C \uD83D\uDE3C NetworkOperator added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
 
+    @Throws(ExecutionException::class, InterruptedException::class)
+    fun addCustomerProfile(profile: CustomerProfileStateDTO) {
+        val future: ApiFuture<DocumentReference> = db.collection("customerProfiles").add(profile);
+        logger.info("\uD83D\uDE3C \uD83D\uDE3C CustomerProfileStateDTO added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+    }
+    @Throws(ExecutionException::class, InterruptedException::class)
+    fun addInvestorProfile(profile: InvestorProfileStateDTO) {
+        val future: ApiFuture<DocumentReference> = db.collection("investorProfiles").add(profile);
+        logger.info("\uD83D\uDE3C \uD83D\uDE3C InvestorProfileStateDTO added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+    }
+    @Throws(ExecutionException::class, InterruptedException::class)
+    fun addSupplierProfile(profile: SupplierProfileStateDTO) {
+        val future: ApiFuture<DocumentReference> = db.collection("supplierProfiles").add(profile);
+        logger.info("\uD83D\uDE3C \uD83D\uDE3C SupplierProfileStateDTO added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+    }
 
     @Throws(Exception::class)
     fun deleteNodes(springBootProfile: String) {
@@ -182,36 +200,71 @@ class FirebaseService() {
 
 
     @Throws(Exception::class)
-    fun getBFNAnchorByName(name: String): NetworkOperatorDTO? {
+    fun getNetworkOperator(): NetworkOperatorDTO? {
         var networkOperator: NetworkOperatorDTO? = null
         try {
-            val future = db.collection("bfnAnchors")
-                    .whereEqualTo("name", name)
+            val future = db.collection("networkOperator")
                     .limit(1)
                     .get()
             val qs: QuerySnapshot = future.get()
             qs.documents.forEach() {
 
-                networkOperator = NetworkOperatorDTO(issuedBy = it.data["issuedBy"] as String, accountId = it.data["accountId"] as String,
-                        cellphone = it.data["issuedBy"] as String, date = it.data["date"] as String, email = it.data["email"] as String,
-                        defaultOfferDiscount = it.data["defaultOfferDiscount"] as Double, maximumInvestment = it.data["maximumInvestment"] as Double,
-                        maximumInvoiceAmount = it.data["maximumInvoiceAmount"] as Double, minimumInvoiceAmount = it.data["minimumInvoiceAmount"] as Double,
-                        name = it.data["name"] as String, password = "", tradeFrequencyInMinutes = it.data["tradeFrequencyInMinutes"] as Int,
-                        tradeMatrixItems = mutableListOf(), uid = "")
+                networkOperator = NetworkOperatorDTO(
+                        account = gson.fromJson(it.data["account"] as String, AccountInfoDTO::class.java),
+                        cellphone = it.data["cellphone"] as String,
+                        date = it.data["date"] as String,
+                        email = it.data["email"] as String,
+                        defaultOfferDiscount = it.data["defaultOfferDiscount"] as Double,
+                        maximumInvestment = it.data["maximumInvestment"] as Double,
+                        maximumInvoiceAmount = it.data["maximumInvoiceAmount"] as Double,
+                        minimumInvoiceAmount = it.data["minimumInvoiceAmount"] as Double,
+                        name = it.data["name"] as String,
+                        password = "",
+                        tradeFrequencyInMinutes = it.data["tradeFrequencyInMinutes"] as Int,
+                        tradeMatrixItems = getMatrixes(it.data["tradeMatrixItems"] as JsonArray),
+                        uid = "",
+                        stellarAccountId = it.data["stellarAccountId"] as String,
+                        rippleAccountId = it.data["rippleAccountId"] as String)
             }
 
         } catch (e: Exception) {
-            logger.error("Failed to get nodes", e)
+            logger.error("Failed to get networkOperator", e)
             throw e
         }
         return networkOperator
     }
 
+    @Throws(Exception::class)
+    fun updateNetworkOperator(operator: NetworkOperatorDTO)  {
+        val future = db.collection("networkOperator")
+                .limit(1)
+                .get()
+        val qs: QuerySnapshot = future.get()
+        if (qs.documents.isNotEmpty()) {
+            val ref = qs.documents[0].reference
+            ref.set(operator)
+            //todo - update corda state .....
+            logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                    "NetworkOperator has been updated on Firestore ... should update Corda state")
+        } else {
+            throw Exception("NetworkOperator not found for update")
+        }
+    }
 
+    private fun getMatrixes(array: JsonArray): MutableList<TradeMatrixItemDTO> {
+        val mList:  MutableList<TradeMatrixItemDTO> = mutableListOf()
+        for (jsonElement in array) {
+            val item = gson.fromJson(jsonElement, TradeMatrixItemDTO::class.java)
+            mList.add(item)
+        }
+
+        return mList
+    }
     @Throws(FirebaseAuthException::class)
     fun createUser(name: String?, email: String?, password: String?,
                    uid: String?): UserRecord? {
-        logger.info("\uD83D\uDD37 \uD83D\uDD37 ..... createUser: writing to Firestore ... \uD83D\uDD37 $name $email $password $uid")
+        logger.info("\uD83D\uDD37 \uD83D\uDD37 ..... createUser: writing to Firestore " +
+                "... \uD83D\uDD37 $name $email $password $uid")
         val request = UserRecord.CreateRequest()
         request.setEmail(email)
         request.setDisplayName(name)
@@ -226,8 +279,12 @@ class FirebaseService() {
 
     @Throws(FirebaseAuthException::class)
     fun createBFNAccount(accountInfo: AccountInfoDTO): String? {
-        logger.info("\uD83D\uDD37 \uD83D\uDD37 ..... createBFNAccount: writing to Firestore ... \uD83D\uDD37 ")
-        val future = db.collection("bfnAccounts").add(accountInfo)
+        logger.info("\uD83D\uDD37 \uD83D\uDD37 ..... createBFNAccount: writing to Firestore " +
+                "Check the properties ... writing null WTF? ${gson.toJson(accountInfo)}... \uD83D\uDD37 ")
+        assert(accountInfo.host != null)
+        assert(accountInfo.name != null)
+        val future = db.collection("accounts").add(accountInfo)
+        logger.info("\uD83E\uDDE9 account added to Firestore path: " + future.get().path)
         return future?.get()?.path
     }
 

@@ -2,7 +2,7 @@ package com.bfn.flows.profile
 
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.contracts.InvestorProfileContract
-import com.bfn.contractstates.states.InvestorProfileState
+import com.bfn.contractstates.states.CustomerProfileState
 import com.r3.corda.lib.accounts.workflows.ourIdentity
 import net.corda.core.flows.FlowException
 import net.corda.core.flows.FlowLogic
@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory
 
 @InitiatingFlow
 @StartableByRPC
-class ProfileFlow(private val investorProfileState: InvestorProfileState, private val action: Int = 0) : FlowLogic<SignedTransaction?>() {
+class ProfileFlow(private val investorProfileState: CustomerProfileState, private val action: Int = 0) : FlowLogic<SignedTransaction?>() {
 
     @Suspendable
     @Throws(FlowException::class)
@@ -34,7 +34,7 @@ class ProfileFlow(private val investorProfileState: InvestorProfileState, privat
 
     @Suspendable
     private fun createProfile(notary: Party): SignedTransaction {
-        investorProfileState.issuedBy = serviceHub.ourIdentity
+
         val command = InvestorProfileContract.CreateProfile()
         val txBuilder = TransactionBuilder(notary)
                 .addOutputState(investorProfileState, InvestorProfileContract.ID)
@@ -46,7 +46,7 @@ class ProfileFlow(private val investorProfileState: InvestorProfileState, privat
     }
     @Suspendable
     private fun updateProfile(notary: Party): SignedTransaction {
-        investorProfileState.issuedBy = serviceHub.ourIdentity
+
         //todo - get RefAndState by accountId and consume old, create new
 //        val criteria = VaultQueryCriteria(StateStatus.UNCONSUMED)
 //        serviceHub.vaultService.queryBy( criteria,

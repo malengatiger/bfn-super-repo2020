@@ -3,14 +3,16 @@ package com.bfn.client.data
 import com.bfn.contractstates.states.TradeMatrixItem
 
 data class NetworkOperatorDTO(
-        var issuedBy: String,
-        var accountId: String,
+
+        var account: AccountInfoDTO,
         var minimumInvoiceAmount: Double,
         var maximumInvoiceAmount: Double,
         var maximumInvestment: Double,
         var tradeFrequencyInMinutes: Int,
         var defaultOfferDiscount: Double,
-        var tradeMatrixItems: MutableList<TradeMatrixItem>,
+        var tradeMatrixItems: MutableList<TradeMatrixItemDTO>,
+        var stellarAccountId: String,
+        var rippleAccountId: String,
         var date: String,
         var name: String,
         var email: String,

@@ -12,15 +12,17 @@ import java.util.*
 
 @CordaSerializable
 @BelongsToContract(SupplierProfileContract::class)
-class SupplierProfileState(val issuedBy: Party,
+class SupplierProfileState(
                            val account: AccountInfo,
                            val maximumDiscount: Double,
                            val bank: String,
                            val bankAccount: String,
+                           val stellarAccountId: String,
+                           val rippleAccountId: String,
                            val date: Date = Date()
                    ) : ContractState {
 
     override val participants: List<AbstractParty>
-        get() = listOf(issuedBy)
+        get() = listOf(account.host)
 
 }

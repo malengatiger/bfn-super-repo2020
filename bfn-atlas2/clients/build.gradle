@@ -31,6 +31,7 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
     // https://mvnrepository.com/artifact/joda-time/joda-time
     compile group: 'joda-time', name: 'joda-time', version: '2.10.6'
+    implementation 'com.github.stellar:java-stellar-sdk:0.18.0'
 
 }
 

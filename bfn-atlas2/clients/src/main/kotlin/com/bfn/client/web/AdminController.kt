@@ -26,6 +26,9 @@ class AdminController(rpc: NodeRPCConnection) {
     private val proxy: CordaRPCOps = rpc.proxy
     @Value("\${spring.profiles.active}")
     private lateinit var profile: String
+
+    @Value("\${stellarAnchorUrl}")
+    private lateinit var stellarAnchorUrl: String
     
     @Autowired
     private lateinit var  workerBeeService: WorkerBeeService
@@ -41,6 +44,9 @@ class AdminController(rpc: NodeRPCConnection) {
     @Autowired
     private lateinit var  crossNodeService:CrossNodeService
 
+    @Autowired
+    private lateinit var  networkService:NetworkOperatorService
+
 
     @GetMapping(value = ["/test"], produces = [MediaType.TEXT_PLAIN_VALUE])
     @Throws(Exception::class)
@@ -54,9 +60,13 @@ class AdminController(rpc: NodeRPCConnection) {
 
     @GetMapping(value = ["/demo"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
-    private fun buildDemo(@RequestParam numberOfAccounts: Int = 9): DemoSummary? {
-        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting DemoUtil: buildDemo ... \uD83C\uDF4F ")
-        val result = demoDataService.generateLocalNodeAccounts(proxy, numberOfAccounts)
+    private fun buildDemo(@RequestParam numberOfAccounts:String): DemoSummary? {
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting DemoDataService: buildDemo ... \uD83C\uDF4F number accts: $numberOfAccounts")
+        if (numberOfAccounts == null) {
+            throw Exception(" \uD83E\uDDE1  \uD83E\uDDE1 Where the fuck is numberOfAccounts")
+        }
+        val num = numberOfAccounts.toInt()
+        val result = demoDataService.generateLocalNodeAccounts(proxy, num)
         logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 DemoUtil result: " +
                 " \uD83C\uDF4F " + GSON.toJson(result)
                 + "    \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
@@ -130,19 +140,38 @@ class AdminController(rpc: NodeRPCConnection) {
 
     @PostMapping(value = ["/generateInvoices"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
-    private fun generateInvoices(@RequestBody customer:AccountInfoDTO): String? {
-        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 AdminController: generateInvoices ... \uD83C\uDF4F ")
-        val result = demoDataService.generateInvoices(proxy, count = 20, customer = customer)
+    private fun generateInvoices(@RequestBody account:AccountInfoDTO ): String? {
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 AdminController: ... generateInvoices ..." +
+                " account: \uD83C\uDF4F ${GSON.toJson(account)}")
+        val result = demoDataService.generateInvoices(proxy, count = 12, accountInfo = account)
         logger.info(result)
         return result
+    }
+
+    @PostMapping(value = ["/createStellarAccount"], produces = [MediaType.APPLICATION_JSON_VALUE])
+    @Throws(Exception::class)
+    private fun createStellarAccount(): StellarResponse? {
+        logger.info("\n\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E  " +
+                "Creating Stellar Account by calling Stellar anchor server $stellarAnchorUrl ")
+        val responseBag = networkService.createStellarAccount(proxy = proxy)
+
+        logger.info(" \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
+                "AdminController.createStellarAccount returns responseBag:  ${GSON.toJson(responseBag)}")
+
+        return responseBag;
     }
 
     @PostMapping(value = ["/createNetworkOperator"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun createNetworkOperator(@RequestBody networkOperator: NetworkOperatorDTO): NetworkOperatorDTO? {
-        logger.info(" \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E  " +
+        logger.info("\n\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E  " +
                 "Creating Network Operator:, check fields, tradeFrequencyInMinutes, defaultOfferDiscount ...  ${GSON.toJson(networkOperator)}")
-        return networkOperatorBeeService.createNetworkOperator(networkOperator = networkOperator, proxy = proxy)
+        val operator =  networkOperatorBeeService.createNetworkOperator(
+                networkOperator = networkOperator, proxy = proxy)
+        logger.info(" \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
+                "networkOperatorBeeService.createNetworkOperator returns operator:  ${GSON.toJson(operator)}")
+
+        return operator;
     }
     @PostMapping(value = ["/updateNetworkOperator"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
@@ -153,6 +182,8 @@ class AdminController(rpc: NodeRPCConnection) {
     @PostMapping(value = ["/startAccountRegistrationFlow"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun startAccountRegistrationFlow(@RequestBody user: UserDTO): AccountInfoDTO {
+        logger.info(" \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40" +
+                " startAccountRegistrationFlow ... ${user.name}")
         return workerBeeService.startAccountRegistrationFlow(proxy, user.name,
                 user.email, user.password!!)
     }

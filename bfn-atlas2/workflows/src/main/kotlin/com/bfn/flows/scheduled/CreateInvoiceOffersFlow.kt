@@ -3,6 +3,7 @@ package com.bfn.flows.scheduled
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.states.InvoiceOfferState
 import com.bfn.contractstates.states.InvoiceState
+import com.bfn.contractstates.states.CustomerProfileState
 import com.bfn.contractstates.states.InvestorProfileState
 import com.bfn.flows.services.InvoiceFinderService
 import com.bfn.flows.services.ProfileFinderService

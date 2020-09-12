@@ -18,7 +18,10 @@ import java.util.*
 @InitiatingFlow
 @StartableByRPC
 class NetworkOperatorUpdateFlow(
-        private val anchor: NetworkOperatorState) : FlowLogic<NetworkOperatorState>() {
+        private val anchor: NetworkOperatorState,
+        private val  stellarAccountId: String,
+        private val  rippleAccountId: String
+) : FlowLogic<NetworkOperatorState>() {
 
     @Suspendable
     override fun call(): NetworkOperatorState {
@@ -29,12 +32,13 @@ class NetworkOperatorUpdateFlow(
 
         val command = NetworkOperatorContract.Update()
         val newAnchor =
-            NetworkOperatorState(issuedBy = serviceHub.myInfo.legalIdentities.first(),
-                account = existingAnchor.state.data.account, minimumInvoiceAmount = anchor.minimumInvoiceAmount,
-                maximumInvoiceAmount = anchor.maximumInvoiceAmount, maximumInvestment = anchor.maximumInvestment,
-                defaultOfferDiscount = anchor.defaultOfferDiscount, tradeFrequencyInMinutes = anchor.tradeFrequencyInMinutes,
-                tradeMatrixItems = anchor.tradeMatrixItems, date = Date(), name = existingAnchor.state.data.name,
-                    email = anchor.email, cellphone = anchor.cellphone)
+            NetworkOperatorState(
+                    account = existingAnchor.state.data.account, minimumInvoiceAmount = anchor.minimumInvoiceAmount,
+                    maximumInvoiceAmount = anchor.maximumInvoiceAmount, maximumInvestment = anchor.maximumInvestment,
+                    defaultOfferDiscount = anchor.defaultOfferDiscount, tradeFrequencyInMinutes = anchor.tradeFrequencyInMinutes,
+                    tradeMatrixItems = anchor.tradeMatrixItems, date = Date(), name = existingAnchor.state.data.name,
+                    email = anchor.email, cellphone = anchor.cellphone, stellarAccountId = stellarAccountId,
+            rippleAccountId = rippleAccountId)
 
         val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
         txBuilder.addCommand(command, serviceHub.ourIdentity.owningKey)

@@ -1,5 +1,6 @@
 package com.bfn.contractstates.contracts
 
+import com.bfn.contractstates.states.CustomerProfileState
 import com.bfn.contractstates.states.InvestorProfileState
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.Contract
@@ -30,17 +31,17 @@ class InvestorProfileContract : Contract {
             }
             val investorProfileState = tx.outputStates.first() as InvestorProfileState
 
-            if (investorProfileState.defaultDiscount <= 0.0) {
-                throw IllegalArgumentException("\uD83D\uDC7F defaultDiscount should be > zero")
-            }
             if (investorProfileState.maximumInvoiceAmount <= 0.0) {
                 throw IllegalArgumentException("\uD83D\uDC7F maximumInvoiceAmount should be > zero")
             }
             if (investorProfileState.minimumInvoiceAmount <= 0.0) {
                 throw IllegalArgumentException("\uD83D\uDC7F minimumInvoiceAmount should be > zero")
             }
-            if (investorProfileState.totalInvestment <= 0.0) {
-                throw IllegalArgumentException("\uD83D\uDC7F totalInvestment should be > zero")
+            if (investorProfileState.totalInvestment <= 10000.0) {
+                throw IllegalArgumentException("\uD83D\uDC7F totalInvestment should be > 10000")
+            }
+            if (investorProfileState.defaultDiscount <= 0.0) {
+                throw IllegalArgumentException("\uD83D\uDC7F defaultDiscount should be > zero")
             }
 
 

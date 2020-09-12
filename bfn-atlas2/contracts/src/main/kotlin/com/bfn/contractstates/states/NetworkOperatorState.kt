@@ -11,7 +11,7 @@ import java.util.*
 
 @CordaSerializable
 @BelongsToContract(NetworkOperatorContract::class)
-class NetworkOperatorState(val issuedBy: Party,
+class NetworkOperatorState(
                            val account: AccountInfo,
                            val minimumInvoiceAmount: Double,
                            val maximumInvoiceAmount: Double,
@@ -22,10 +22,12 @@ class NetworkOperatorState(val issuedBy: Party,
                            val date: Date,
                            val name: String,
                            val email: String,
+                           val stellarAccountId: String,
+                           val rippleAccountId: String,
                            val cellphone: String
                    ) : ContractState {
 
     override val participants: List<AbstractParty>
-        get() = listOf(issuedBy)
+        get() = listOf(account.host)
 
 }

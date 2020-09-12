@@ -2,9 +2,7 @@ package com.bfn.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.contracts.InvestorProfileContract
-import com.bfn.contractstates.states.InvestorProfileState
 import com.bfn.contractstates.states.SupplierProfileState
-import com.bfn.flows.services.InvoiceFinderService
 import com.bfn.flows.services.ProfileFinderService
 import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.accounts.workflows.ourIdentity
