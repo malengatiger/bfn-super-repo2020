@@ -29,7 +29,7 @@ class NetworkOperatorBeeService {
     private lateinit var workerBeeService: WorkerBeeService
 
     @Autowired
-    private lateinit var networkService: NetworkOperatorService
+    private lateinit var stellarAccountService: StellarAccountService
 
     @PostConstruct
     fun init() {
@@ -134,9 +134,9 @@ class NetworkOperatorBeeService {
     @Throws(Exception::class)
     fun createNetworkOperator(proxy: CordaRPCOps,
                               networkOperator: NetworkOperatorDTO): NetworkOperatorDTO? {
-        logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to create NetworkOperator: BFN Head Honcho to " +
+        logger.info("\n\n\uD83C\uDFC0 \uD83C\uDFC0 Starting to create NetworkOperator: BFN Head Honcho to " +
                 "\uD83C\uDF88 Firebase auth, \uD83C\uDF88 Corda and \uD83C\uDF88 Firestore, " +
-                "check networkOperator.tradeFrequencyInMinutes  : ${gson.toJson(networkOperator)}")
+                "check networkOperator.tradeFrequencyInMinutes  : ${gson.toJson(networkOperator)}\n\n")
         if (networkOperator.tradeFrequencyInMinutes <= 0) {
             throw Exception("Bad tradeFrequencyInMinutes ${networkOperator.tradeFrequencyInMinutes}")
         }
@@ -157,14 +157,18 @@ class NetworkOperatorBeeService {
             }
         }
         // get Stellar and Ripple accounts
+        //todo - integrate Ripple - call to create Ripple account
         try {
             logger.info("$xx1 requesting new Stellar account from  Anchor server ... ")
-            val stellarResponse = networkService.createStellarAccount(proxy = proxy)
+            val stellarResponse = stellarAccountService.createStellarAccount(proxy = proxy)
             if (stellarResponse != null) {
                 networkOperator.stellarAccountId = stellarResponse.accountId
                 logger.info("\uD83E\uDD6C\uD83E\uDD6C\uD83E\uDD6C\uD83E\uDD6C " +
                         "Stellar account created on Anchor server. Kudos!! " +
                         "${stellarResponse.accountId} ${stellarResponse.secretSeed}")
+                logger.info("$xx1 about to update network operator on ledger and firebase ... ")
+                updateNetworkOperator(networkOperator = networkOperator, proxy = proxy)
+                firebaseService.updateNetworkOperator(operator = networkOperator)
             } else {
                 logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 " +
                         "Stellar account NOT created on Anchor server. Error!!")
@@ -172,24 +176,25 @@ class NetworkOperatorBeeService {
 
         } catch (e: Exception) {
             logger.error("\uD83D\uDE21 \uD83D\uDC7F \uD83D\uDE21 " +
-                    "Stellar account creation failed. Will still continue ... \uD83D\uDE21", e)
+                    "Stellar account creation or operator update failed. Will still continue ... \uD83D\uDE21", e)
         }
         var accountInfoDTO: AccountInfoDTO? = null
         try {
             if (account == null) {
-                logger.info("\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 ..... " +
-                        "Creating NetworkOperator BFN Corda account ................ ")
-                accountInfoDTO = workerBeeService.startAccountRegistrationFlow(
+                logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 ..... " +
+                        "Creating BRAND NEW NetworkOperator BFN Corda account ................ ")
+                val user = workerBeeService.startAccountRegistrationFlow(
                         proxy,
                         networkOperator.name,
                         networkOperator.email,
+                        networkOperator.cellphone,
                         networkOperator.password)
 
+                accountInfoDTO = user.accountInfo
                 if (accountInfoDTO.identifier != null) {
                     account = getAccountInfo(proxy = proxy,
                             identifier = accountInfoDTO.identifier)
                     logger.info(" \uD83D\uDD35 \uD83D\uDD35 ACCOUNT INFO: ${gson.toJson(accountInfoDTO)}")
-
                 } else {
                     val msg = "\uD83D\uDE21 \uD83D\uDE21 Account creation failed"
                     logger.info(msg)
@@ -259,10 +264,10 @@ class NetworkOperatorBeeService {
                 "about to add BFN Network Operator to Firestore .... ")
 
         firebaseService.addNetworkOperator(DTOUtil.getDTO(anc))
-        firebaseService.createBFNAccount(accountInfo = AccountInfoDTO(
-                mAccount.host.name.toString(),
-                mAccount.identifier.id.toString(),
-                mAccount.name))
+        val user = UserDTO(accountInfo = DTOUtil.getDTO(mAccount),
+                email = networkOperator.email, password = networkOperator.password, cellphone = networkOperator.cellphone,
+                uid = UUID.randomUUID().toString(), stellarAccountId = networkOperator.stellarAccountId, rippleAccountId = networkOperator.rippleAccountId)
+        firebaseService.createBFNUser(user = user)
 
         val msg = "\uD83C\uDF3A ....... NetworkOperatorState set up, added to Firestore. DONE!: " +
                 "${networkOperator.name} - ${networkOperator.email} \uD83C\uDF3A " +
@@ -272,8 +277,8 @@ class NetworkOperatorBeeService {
 
     }
 
-    private fun getItems(list:MutableList<TradeMatrixItemDTO>): MutableList<TradeMatrixItem> {
-        val mList : MutableList<TradeMatrixItem> = mutableListOf()
+    private fun getItems(list: MutableList<TradeMatrixItemDTO>): MutableList<TradeMatrixItem> {
+        val mList: MutableList<TradeMatrixItem> = mutableListOf()
         for (dto in list) {
             mList.add(TradeMatrixItem(
                     startInvoiceAmount = dto.startInvoiceAmount,

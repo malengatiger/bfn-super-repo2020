@@ -105,12 +105,12 @@ class SupplierController(rpc: NodeRPCConnection) {
                 + " \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A")
         logger.info(msg)
         val accounts = workerBeeService.getNodeAccounts(proxy)
-        val users = firebaseService.getUsers()
+        val users = firebaseService.getBFNUsers()
         accounts.forEach {
             logger.info("ping  \uD83D\uDC9A  Node Account: ${it.host} ${it.name} ${it.identifier}")
         }
         users.forEach {
-            logger.info("ping  \uD83D\uDC9A  Auth User: ${it.displayName} ${it.email}")
+            logger.info("ping  \uD83D\uDC9A  Auth User: ${it.accountInfo.name} ${it.email}")
         }
         val nodeInfo = proxy.nodeInfo()
         logger.info("\uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0 node pinged: "

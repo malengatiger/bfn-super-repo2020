@@ -4,9 +4,6 @@ package com.bfn.client.web
 //}
 
 //
-import com.bfn.client.TesterBee
-import com.bfn.client.data.*
-import com.google.firebase.auth.UserRecord
 import com.google.gson.GsonBuilder
 import net.corda.core.messaging.CordaRPCOps
 import org.slf4j.LoggerFactory
@@ -45,7 +42,7 @@ class DemoDataController(rpc: NodeRPCConnection) {
     private lateinit var  crossNodeService:CrossNodeService
 
     @Autowired
-    private lateinit var  networkService:NetworkOperatorService
+    private lateinit var  networkService:StellarAccountService
 
 
 
@@ -55,9 +52,7 @@ class DemoDataController(rpc: NodeRPCConnection) {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
                 "starting DemoDataController: generateAnchorNodeData " +
                 "... \uD83C\uDF4F number accts: $numberOfAccounts")
-        if (numberOfAccounts == null) {
-            throw Exception(" \uD83E\uDDE1  \uD83E\uDDE1 Where the fuck is numberOfAccounts")
-        }
+
         val num = numberOfAccounts.toInt()
         val result = demoDataService.generateAnchorNodeData(proxy, num)
         logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 DemoDataController:generateAnchorNodeData result: " +
@@ -75,7 +70,7 @@ class DemoDataController(rpc: NodeRPCConnection) {
             throw Exception(" \uD83E\uDDE1  \uD83E\uDDE1 Where the fuck is numberOfAccounts")
         }
         val num = numberOfAccounts.toInt()
-        val result = demoDataService.generateAccounts(proxy = proxy, count = num)
+        val result = demoDataService.generateAccounts(proxy = proxy, numberOfAccounts = num)
         logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 DemoDataController:generateAnchorNodeAccounts result: " +
                 " \uD83C\uDF4F " + GSON.toJson(result)
                 + "    \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
@@ -121,8 +116,8 @@ class DemoDataController(rpc: NodeRPCConnection) {
                 nodeInfo.legalIdentities[0].name.toString() +
                 " \uD83C\uDF3A \uD83C\uDF3A \uD83C\uDF3A \uD83C\uDF3A " +
                 proxy.networkParameters.toString()
-        for (user in firebaseService.getUsers()) {
-            logger.info("\uD83D\uDC9B Firebase auth user: \uD83D\uDE21 ${user.displayName} ${user.email}")
+        for (user in firebaseService.getBFNUsers()) {
+            logger.info("\uD83D\uDC9B Firebase auth user: \uD83D\uDE21 ${user.accountInfo.name} ${user.email}")
         }
 
         ResponseTimer.writeResponse(start = start,

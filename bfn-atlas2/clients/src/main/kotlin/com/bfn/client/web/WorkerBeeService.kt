@@ -36,6 +36,9 @@ class WorkerBeeService {
     @Autowired
     private lateinit var firebaseService: FirebaseService
 
+    @Autowired
+    private lateinit var stellarAccountService: StellarAccountService
+
     @PostConstruct
     fun init() {
         logger.info("\uD83C\uDF3C \uD83C\uDF3C  WorkerBee service has been constructed")
@@ -75,7 +78,6 @@ class WorkerBeeService {
                 "$ms1 milliseconds elapsed, ${accounts.size} accounts gotten \uD83D\uDD37 ${accounts.size} accounts ...")
         var cnt = 0
         val list: MutableList<AccountInfoDTO> = mutableListOf()
-        val node = proxy.nodeInfo().legalIdentities.first().toString()
         val start2 = Date()
         for ((state) in accounts) {
             cnt++
@@ -106,7 +108,6 @@ class WorkerBeeService {
         var cnt = 0
         var account: AccountInfo? = null
 
-        val node = proxy.nodeInfo().legalIdentities.first().toString()
         val start2 = Date()
         for ((state) in accounts) {
             cnt++
@@ -339,9 +340,11 @@ class WorkerBeeService {
             val acctInfo1 = startAccountRegistrationFlow(proxy = proxy,
                     accountName = customerProfile.account.name,
                     email = customerProfile.email,
-                    password = password)
+                    password = password, cellphone = customerProfile.cellphone
+            )
 
-            customerProfile.account = acctInfo1
+            customerProfile.account = acctInfo1.accountInfo
+
             //todo -  🍎 get Stellar and Ripple accounts from the Anchor Server
             val suffix1 = "createStellarAccount"
             val response = post(
@@ -692,11 +695,18 @@ class WorkerBeeService {
 
     private val em1 = "\uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0 "
     private val em2 = "\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 "
+
+    /**
+     * Create Corda Account on the Ledger using AccountRegistrationFlow
+     * Request Stellar account from Anchor Server
+     */
     @Throws(Exception::class)
     fun startAccountRegistrationFlow(proxy: CordaRPCOps,
-                                     accountName: String, email: String,
-                                     password: String): AccountInfoDTO {
-         try {
+                                     accountName: String,
+                                     email: String,
+                                     cellphone: String,
+                                     password: String): UserDTO {
+        try {
             val criteria: QueryCriteria = VaultQueryCriteria(StateStatus.UNCONSUMED)
             val page = proxy.vaultQueryByWithPagingSpec(
                     AccountInfo::class.java, criteria,
@@ -712,43 +722,66 @@ class WorkerBeeService {
                     }
                 }
             }
-            logger.info("\n.................  " +
-                    "Starting the startAccountRegistrationFlow ...................... " +
+            logger.info("\n$em2 .................  " +
+                    "Starting the AccountRegistrationFlow ...................... " +
                     "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35")
-            val accountInfoCordaFuture = proxy.startTrackedFlowDynamic(
-                    CreateAccountFlow::class.java, accountName).returnValue
 
             try {
+                val accountInfoCordaFuture = proxy.startTrackedFlowDynamic(
+                        CreateAccountFlow::class.java, accountName).returnValue
                 logger.info("\uDD35 \uD83D\uDD35 accountInfoCordaFuture ... returned from Corda ..." +
                         " see if account InfoCordaFuture.get( null)")
-                val acctInfo = accountInfoCordaFuture.get() ?: throw Exception("Account creation failed on ledger \uD83D\uDE21")
+                val acctInfo = accountInfoCordaFuture.get()
+                        ?: throw Exception("Account creation failed on ledger \uD83D\uDE21")
                 logger.info("\uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F" +
                         " Flow completed... \uD83D\uDC4C accountInfo returned: " +
                         "\uD83E\uDD4F name: ${acctInfo.name} identifier: ${acctInfo.identifier.id} host: ${acctInfo.host.name.toString()}")
 
+                //get stellar account from Anchor server
+                var mStellarId = "tbd"
+                val mRippleId = "tbd"
+                try {
+                    val stellarResponse = stellarAccountService.createStellarAccount(proxy = proxy)
+                    if (stellarResponse != null) {
+                        logger.info("\uD83E\uDD6C\uD83E\uDD6C\uD83E\uDD6C\uD83E\uDD6C " +
+                                "Stellar account created on Anchor server. Kudos!! " +
+                                "${stellarResponse.accountId} ${stellarResponse.secretSeed}")
+                        mStellarId = stellarResponse.accountId
+                    } else {
+                        logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 " +
+                                "Stellar account NOT created on Anchor server. Error!!")
+                    }
 
-                return saveToDatabase(host = acctInfo.host.name.toString(),
+                } catch (e: Exception) {
+                    logger.warn("\uD83D\uDE21 Stellar account creation failed \uD83D\uDE21", e)
+                }
+
+                return createBFNUser(host = acctInfo.host.name.toString(),
                         identifier = acctInfo.identifier.id.toString(),
                         accountName = accountName,
                         email = email,
-                        password = password)
+                        password = password,
+                        cellphone = cellphone,
+                        stellarAccountId = mStellarId,
+                        rippleAccountId = mRippleId)
 
             } catch (e: Exception) {
-                logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D " +
-                        "Houston, we have fallen over! Account creation failed: ${e.message}")
+                logger.info(em3  +
+                        "Houston, we have fallen over! Corda Account creation failed: ${e.message}")
                 logger.error(e.message)
                 throw e
             }
 
 
         } catch (e: Exception) {
-            logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D " +
+            logger.info(em3 +
                     "Houston, we have fallen over! Account creation failed:  ${e.message}")
             logger.error(e.message)
             throw e
         }
     }
 
+    private val em3 = "\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D "
     @Throws(Exception::class)
     fun startCustomerProfileFlow(proxy: CordaRPCOps,
                                  profile: CustomerProfileStateDTO): String {
@@ -810,22 +843,35 @@ class WorkerBeeService {
         }
     }
 
-    private fun saveToDatabase(host: String, identifier: String, accountName: String,
-                               email: String, password: String): AccountInfoDTO {
-        //create user record in firebase
-        val user = firebaseService.createUser(accountName, email, password, identifier)
+    private fun createBFNUser(host: String, identifier: String, accountName: String,
+                              stellarAccountId: String,
+                              rippleAccountId: String,
+                              email: String, cellphone: String, password: String): UserDTO {
+        //create auth user record in firebase
+        val user = firebaseService.createAuthUser(accountName, email, password, identifier)
         val dto = AccountInfoDTO(
                 identifier,
                 host,
                 accountName)
 
         logger.info("\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 " +
-                "about to save account on Firestore and send FCM message: ${gson.toJson(dto)} check properties")
-        firebaseService.createBFNAccount(dto)
+                "about to save account on Firestore and send FCM message: " +
+                "${gson.toJson(dto)} check properties")
+
+        val bfnUser = UserDTO(
+                accountInfo = dto,
+                email = email,
+                cellphone = cellphone,
+                uid = user!!.uid,
+                stellarAccountId = stellarAccountId,
+                rippleAccountId = rippleAccountId,
+                password = password
+        )
+        firebaseService.createBFNUser(bfnUser)
         firebaseService.sendAccountMessage(dto)
 
 
-        return dto
+        return bfnUser
     }
 
     @Throws(Exception::class)

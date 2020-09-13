@@ -4,15 +4,12 @@ import com.bfn.client.data.*
 import com.bfn.contractstates.states.NetworkOperatorState
 import com.bfn.flows.thisDate
 import com.bfn.flows.todaysDate
-import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
-import khttp.post
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.internal.Emoji
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.node.NodeInfo
-import org.json.JSONObject
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -57,6 +54,12 @@ class DemoDataService {
     fun generateAnchorNodeData(mProxy: CordaRPCOps, numberOfAccounts: Int): String {
         logger.info("\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
                 "Generating data for the main anchor Node: NetworkOperator + Suppliers + Investors")
+
+        firebaseService.deleteCollection(collectionName = "accounts")
+        firebaseService.deleteCollection(collectionName = "networkOperator")
+        firebaseService.deleteCollection(collectionName = "bfnUsers")
+        firebaseService.deleteCollection(collectionName = "responseTimes")
+
         createNetworkOperator(mProxy)
         generateLocalNodeAccounts(mProxy, numberOfAccounts)
 
@@ -156,8 +159,9 @@ class DemoDataService {
         }
 
         val operator = getNetworkOperatorObject()
+        operator.password = "pass123"
         val result = networkOperatorService.createNetworkOperator(mProxy, operator)
-        logger.info("\uD83E\uDD6E \uD83E\uDD6E \uD83E\uDD6E Demo createNetworkOperator result: " +
+        logger.info("\uD83E\uDD6E \uD83E\uDD6E \uD83E\uDD6E DemoDataService: createNetworkOperator result: " +
                 gson.toJson(result) + " \uD83E\uDD6E \uD83E\uDD6E")
         return result
     }
@@ -169,31 +173,31 @@ class DemoDataService {
                 "will generate data 🧩🧩 ")
 
         myNode = mProxy!!.nodeInfo()
-        logger.info(" \uD83D\uDD0B  \uD83D\uDD0B current node: ${myNode!!.addresses[0]}  \uD83D\uDD0B ")
+        logger.info(" \uD83D\uDD0B  \uD83D\uDD0B current node: ${myNode!!.legalIdentities[0].name.commonName}  \uD83D\uDD0B ")
         if (myNode!!.legalIdentities[0].name.organisation.contains("Notary")) {
             throw Exception("Cannot add demo data to Notary")
         }
         if (myNode!!.legalIdentities[0].name.organisation.contains("Regulator")) {
             throw Exception("Cannot add demo data to Regulator")
         }
-        logger.info("${Emoji.CODE_COOL_GUY} my node is: ${myNode!!.addresses[0]}")
+        logger.info("${Emoji.CODE_COOL_GUY} my node is: ${myNode!!.legalIdentities[0].name}")
         suppliers = mutableListOf()
         customers = mutableListOf()
         investors = mutableListOf()
 
 
         logger.info("👽 👽 👽 👽 start data generation:  numberOfAccounts $numberOfAccounts 👽 👽 👽 👽  ")
-        firebaseService.deleteCollection(collectionName = "accounts")
+
         generateAccounts(mProxy, numberOfAccounts)
         //
         val list = workerBeeService.getNodeAccounts(mProxy)
         var cnt = 0
         logger.info(" \uD83C\uDF4E  \uD83C\uDF4E Total Number of Accounts on Node after sharing:" +
                 " \uD83C\uDF4E  \uD83C\uDF4E " + list.size)
-        val userRecords = firebaseService.getUsers()
+        val userRecords = firebaseService.getBFNUsers()
         for (userRecord in userRecords) {
             cnt++
-            logger.info("🔵 🔵 userRecord 😡 #" + cnt + " - " + userRecord.displayName + " 😡 " + userRecord.email)
+            logger.info("🔵 🔵 BFN UserDTO: 😡 #" + cnt + " - " + userRecord.accountInfo.name + " 😡 " + userRecord.email)
         }
         val end = Date().time;
         demoSummary.numberOfAccounts = list.size
@@ -201,19 +205,21 @@ class DemoDataService {
         return demoSummary
     }
     @Throws(Exception::class)
-    fun generateAccounts(proxy: CordaRPCOps, count: Int = 10): String {
-        logger.info("\n\n$em1 generateAccounts started ...  " +
-                "\uD83D\uDD06 \uD83D\uDD06 ................. generating: $count")
+    fun generateAccounts(proxy: CordaRPCOps, numberOfAccounts: Int = 10): String {
+        logger.info("\n\n$em1 ..... generateAccounts started ...  " +
+                "\uD83D\uDD06 \uD83D\uDD06 ................. generating: $numberOfAccounts")
         var cnt = 0
-        for (x in 0..count) {
+        for (x in 1..numberOfAccounts) {
             val prefix = "account" + System.currentTimeMillis()
             try {
                 val mName = randomName
-                logger.info("$em1 Starting AccountRegistrationFlow for $mName")
+                logger.info("$em1 ..... Starting AccountRegistrationFlow for $mName")
                 workerBeeService.startAccountRegistrationFlow(proxy,
                         mName,
                         "$prefix@gmail.com",
+                        "099 999 9003",
                         "pass123")
+
                 cnt++
             } catch (e1: Exception) {
                 logger.warn("\uD83D\uDE21 \uD83D\uDE21 Unable to add account - probable duplicate name")
@@ -226,13 +232,27 @@ class DemoDataService {
                 "  \uD83D\uDD06 \uD83D\uDD06 found  ${accountInfos.size} ... " +
                 "adding investor and supplier profiles and generating invoices for all accounts ........")
 
+        //add profiles and generate invoices
         val page = proxy.vaultQuery(AccountInfo::class.java)
+        val em = "\uD83D\uDE21\uD83D\uDE21\uD83D\uDE21\uD83D\uDE21"
         for (state in page.states) {
-            addInvestorProfile(account = state, proxy = proxy)
-            addSupplierProfile(account = state, proxy = proxy)
-            generateInvoices(proxy = proxy, accountInfo = DTOUtil.getDTO(state.state.data), count = 3)
+            try {
+                addInvestorProfile(account = state, proxy = proxy)
+            } catch (e:Exception) {
+                logger.error("$em addInvestorProfile failed", e)
+            }
+            try {
+                addSupplierProfile(account = state, proxy = proxy)
+            } catch (e:Exception) {
+                logger.error("$em addSupplierProfile failed", e)
+            }
+            try {
+                generateInvoices(proxy = proxy, accountInfo = DTOUtil.getDTO(state.state.data), count = 3)
+            } catch (e:Exception) {
+                logger.error("$em generateInvoices failed", e)
+            }
         }
-        val msg = "\uD83C\uDF3A \uD83C\uDF3A Generate accounts with profiles completed! \uD83C\uDF3A"
+        val msg = "$em1 Generate accounts with profiles completed! \uD83C\uDF3A"
         logger.info(msg)
         return msg
     }

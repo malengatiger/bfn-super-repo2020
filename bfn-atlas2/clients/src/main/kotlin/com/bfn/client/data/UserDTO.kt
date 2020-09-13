@@ -1,10 +1,12 @@
 package com.bfn.client.data
 
 data class UserDTO (
-    var name: String,
+    var accountInfo: AccountInfoDTO,
     var email: String,
-    var password: String? = null,
-    var cellphone: String? = null,
-    var uid: String? = null
+    var password: String,
+    var cellphone: String,
+    var uid: String,
+    var stellarAccountId: String? = null,
+    var rippleAccountId: String? = null
 
 )

@@ -1,5 +1,6 @@
 package com.bfn.client.web;
 
+import com.bfn.client.data.UserDTO;
 import com.google.firebase.auth.UserRecord;
 import net.corda.core.node.NodeInfo;
 import org.slf4j.Logger;
@@ -30,10 +31,10 @@ public class TestJavaController {
     private FirebaseService firebaseService;
 
     @GetMapping(value = "/ping", produces = APPLICATION_JSON_VALUE)
-    private  List<UserRecord>  ping() throws Exception {
-        List<UserRecord> mList = firebaseService.getUsers();
-        for (UserRecord userRecord : firebaseService.getUsers()) {
-            LOGGER.info("\uD83D\uDD37 Firebase auth User: \uD83D\uDD37 " + userRecord.getDisplayName()
+    private  List<UserDTO>  ping() throws Exception {
+        List<UserDTO> mList = firebaseService.getBFNUsers();
+        for (UserDTO userRecord : mList) {
+            LOGGER.info("\uD83D\uDD37 Firebase auth User: \uD83D\uDD37 " + userRecord.getAccountInfo().getName()
             + " email: " + userRecord.getEmail() + " \uD83C\uDF4E uid: " + userRecord.getUid());
         }
         LOGGER.info("\uD83C\uDFC0 \uD83C\uDFC0 NodeInfo via NodeRPCConnection: "

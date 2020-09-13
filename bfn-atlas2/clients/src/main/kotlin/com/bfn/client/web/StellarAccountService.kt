@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
 
-private val logx = LoggerFactory.getLogger(NetworkOperatorService::class.java)
+private val logx = LoggerFactory.getLogger(StellarAccountService::class.java)
 private val gson = GsonBuilder().setPrettyPrinting().create()
 @Autowired
 private lateinit var firebaseService: FirebaseService
@@ -20,7 +20,7 @@ private lateinit var firebaseService: FirebaseService
 private lateinit var networkOperatorBeeService: NetworkOperatorBeeService
 
 @Service
-class NetworkOperatorService {
+class StellarAccountService {
 
     @Value("\${stellarAnchorUrl}")
     private lateinit var stellarAnchorUrl: String
@@ -55,24 +55,29 @@ class NetworkOperatorService {
                 throw Exception("Stellar account creation request FAILED ")
 
             }
-            val operator = firebaseService.getNetworkOperator()
-            //todo - handle the seed from Stellar - store it encrypted on cloud storage ??? Done on stellar anchor server
-            if (operator != null) {
-                operator.stellarAccountId = stellarResponse.accountId
+            //update existing network operator
+            try {
+                val operator = firebaseService.getNetworkOperator()
+                //todo - handle the seed from Stellar - store it encrypted on cloud storage ??? Done on stellar anchor server
+                if (operator != null) {
+                    operator.stellarAccountId = stellarResponse.accountId
+                    logx.info("\uD83D\uDC99 \uD83D\uDC9C Stellar Account added from Anchor server. " +
+                            "Update Account stellar data locally ... "
+                            + gson.toJson(stellarResponse) + "\uD83D\uDC99 \uD83D\uDC9C")
 
-            }
-            logx.info("\uD83D\uDC99 \uD83D\uDC9C Stellar Account added from Anchor server. " +
-                    "Update Account stellar data locally ... "
-                    + gson.toJson(stellarResponse) + "\uD83D\uDC99 \uD83D\uDC9C")
-            if (operator != null) {
-                logx.info("\uD83C\uDF4E \uD83C\uDF4E Update NetworkOperator on Ledger and Firestore ..... ")
-                networkOperatorBeeService.updateNetworkOperator(proxy = proxy, networkOperator = operator)
-                firebaseService.updateNetworkOperator(operator = operator)
+                    logx.info("\uD83C\uDF4E \uD83C\uDF4E Update NetworkOperator on Ledger and Firestore ..... ")
+                    networkOperatorBeeService.updateNetworkOperator(proxy = proxy, networkOperator = operator)
+                    firebaseService.updateNetworkOperator(operator = operator)
+                }
 
+            } catch (e: Exception) {
+                logger.warn("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21" +
+                        " Network Operator query failed", e)
             }
+
         } catch (e:Exception) {
-            logx.info(Emoji.CODE_NO_ENTRY+Emoji.CODE_NO_ENTRY +
-                    " Stellar account creation for the BFN Network Operator failed. No Biggie! ... for now")
+            logx.error(Emoji.CODE_NO_ENTRY+Emoji.CODE_NO_ENTRY +
+                    " Stellar account creation for the BFN Network Operator failed. No Biggie! ... for now", e)
         }
         return stellarResponse
     }

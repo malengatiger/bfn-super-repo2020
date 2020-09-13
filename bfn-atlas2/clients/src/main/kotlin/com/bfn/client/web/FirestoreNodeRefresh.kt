@@ -1,7 +1,6 @@
 package com.bfn.client.web
 
 import com.bfn.client.data.NodeInfoDTO
-import com.bfn.client.web.FirebaseService
 import com.google.cloud.firestore.Firestore
 import com.google.firebase.FirebaseApp
 import com.google.firebase.cloud.FirestoreClient
@@ -111,16 +110,16 @@ class FirestoreNodeRefresh {
 
 
     private fun listAccountsFromFirebase() {
-        val users = firebaseService.getUsers()
+        val users = firebaseService.getBFNUsers()
         logger.info("\n⚽️ Accounts on Firebase Auth:  \uD83D\uDC9A \uD83D\uDC99 ${users.size}")
         if (users.isEmpty()) {
             return
         }
         var cnt = 0;
-        val sorted = users.sortedBy { it.displayName }
+        val sorted = users.sortedBy { it.accountInfo.name }
         sorted.forEach() {
             cnt++
-            logger.info("⚽️ Account: #$cnt \uD83D\uDC9A \uD83D\uDC99 ${it.displayName} - \uD83D\uDD06 ${it.email}")
+            logger.info("⚽️ Account: #$cnt \uD83D\uDC9A \uD83D\uDC99 ${it.accountInfo.name} - \uD83D\uDD06 ${it.email}")
         }
     }
 }

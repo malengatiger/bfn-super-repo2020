@@ -45,7 +45,7 @@ class AdminController(rpc: NodeRPCConnection) {
     private lateinit var  crossNodeService:CrossNodeService
 
     @Autowired
-    private lateinit var  networkService:NetworkOperatorService
+    private lateinit var  stellarAccountService:StellarAccountService
 
 
     @GetMapping(value = ["/test"], produces = [MediaType.TEXT_PLAIN_VALUE])
@@ -62,9 +62,7 @@ class AdminController(rpc: NodeRPCConnection) {
     @Throws(Exception::class)
     private fun buildDemo(@RequestParam numberOfAccounts:String): DemoSummary? {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting DemoDataService: buildDemo ... \uD83C\uDF4F number accts: $numberOfAccounts")
-        if (numberOfAccounts == null) {
-            throw Exception(" \uD83E\uDDE1  \uD83E\uDDE1 Where the fuck is numberOfAccounts")
-        }
+
         val num = numberOfAccounts.toInt()
         val result = demoDataService.generateLocalNodeAccounts(proxy, num)
         logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 DemoUtil result: " +
@@ -153,12 +151,13 @@ class AdminController(rpc: NodeRPCConnection) {
     private fun createStellarAccount(): StellarResponse? {
         logger.info("\n\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E  " +
                 "Creating Stellar Account by calling Stellar anchor server $stellarAnchorUrl ")
-        val responseBag = networkService.createStellarAccount(proxy = proxy)
+        val stellarResponse
+                = stellarAccountService.createStellarAccount(proxy = proxy)
 
         logger.info(" \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
-                "AdminController.createStellarAccount returns responseBag:  ${GSON.toJson(responseBag)}")
+                "AdminController.createStellarAccount returns responseBag:  ${GSON.toJson(stellarResponse)}")
 
-        return responseBag;
+        return stellarResponse;
     }
 
     @PostMapping(value = ["/createNetworkOperator"], produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -181,11 +180,11 @@ class AdminController(rpc: NodeRPCConnection) {
 
     @PostMapping(value = ["/startAccountRegistrationFlow"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
-    private fun startAccountRegistrationFlow(@RequestBody user: UserDTO): AccountInfoDTO {
+    private fun startAccountRegistrationFlow(@RequestBody user: UserDTO): UserDTO {
         logger.info(" \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40" +
-                " startAccountRegistrationFlow ... ${user.name}")
-        return workerBeeService.startAccountRegistrationFlow(proxy, user.name,
-                user.email, user.password!!)
+                " startAccountRegistrationFlow ... ${user.accountInfo.name}")
+        return workerBeeService.startAccountRegistrationFlow(proxy, user.accountInfo.name,
+                user.email, user.cellphone, user.password)
     }
     @PostMapping(value = ["/startAccountInfoQueryFlow"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
@@ -292,25 +291,13 @@ class AdminController(rpc: NodeRPCConnection) {
 
 
     @GetMapping(value = ["/getUsers"])
-    fun getUsersFromFirestore() : List<UserDTO> {
+    fun getUsersFromFirestore() : MutableList<UserDTO> {
         val start = Date()
-        val users: MutableList<UserDTO> = mutableListOf()
-        try {
-            val userRecords = firebaseService.getUsers()
-            for (userRecord in userRecords!!) {
-                logger.info("🔵 🔵 userRecord 😡 " + userRecord.displayName + " 😡 " + userRecord.email)
-                val user = UserDTO(
-                        name = userRecord.displayName,
-                        email = userRecord.email,
-                        uid = userRecord.uid
-                )
-                users.add(user)
-            }
+
+            val users = firebaseService.getBFNUsers()
             ResponseTimer.writeResponse(start = start,
                     callName = "getUsersFromFirestore", profile = profile)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+
         return users
     }
 
@@ -343,8 +330,8 @@ class AdminController(rpc: NodeRPCConnection) {
                 nodeInfo.legalIdentities[0].name.toString() +
                 " \uD83C\uDF3A \uD83C\uDF3A \uD83C\uDF3A \uD83C\uDF3A " +
                 proxy.networkParameters.toString()
-        for (user in firebaseService.getUsers()) {
-            logger.info("\uD83D\uDC9B Firebase auth user: \uD83D\uDE21 ${user.displayName} ${user.email}")
+        for (user in firebaseService.getBFNUsers()) {
+            logger.info("\uD83D\uDC9B Firebase auth user: \uD83D\uDE21 ${user.accountInfo.name} ${user.email}")
         }
 
         ResponseTimer.writeResponse(start = start,

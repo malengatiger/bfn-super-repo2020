@@ -7,7 +7,6 @@ import com.google.cloud.firestore.DocumentReference
 import com.google.cloud.firestore.Firestore
 import com.google.cloud.firestore.QuerySnapshot
 import com.google.firebase.FirebaseApp
-import com.google.firebase.auth.ExportedUserRecord
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.UserRecord
@@ -18,13 +17,9 @@ import com.google.firebase.messaging.Notification
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import net.corda.core.utilities.getOrThrow
-import org.json.JSONArray
-import org.json.JSONObject
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import java.util.ArrayList
 import java.util.concurrent.ExecutionException
-import java.util.function.Consumer
 import javax.annotation.PostConstruct
 
 @Service
@@ -181,14 +176,8 @@ class FirebaseService() {
             val future = db.collection("nodes").get()
             val qs: QuerySnapshot = future.get()
             qs.documents.forEach() {
-                mList.add(NodeInfoDTO(
-                        webServerAddress = it.data["webAPIUrl"] as String?,
-                        addresses = it.data["addresses"] as List<String>?,
-                        platformVersion = it.data["platformVersion"] as Long,
-                        serial = it.data["serial"] as Long,
-                        host = it.data["host"] as String?,
-                        port = it.data["port"] as Long?
-                ))
+                mList.add(it.toObject(NodeInfoDTO::class.java))
+
             }
 
         } catch (e: Exception) {
@@ -201,41 +190,26 @@ class FirebaseService() {
 
     @Throws(Exception::class)
     fun getNetworkOperator(): NetworkOperatorDTO? {
-        var networkOperator: NetworkOperatorDTO? = null
         try {
             val future = db.collection("networkOperator")
                     .limit(1)
                     .get()
             val qs: QuerySnapshot = future.get()
-            qs.documents.forEach() {
-
-                networkOperator = NetworkOperatorDTO(
-                        account = gson.fromJson(it.data["account"] as String, AccountInfoDTO::class.java),
-                        cellphone = it.data["cellphone"] as String,
-                        date = it.data["date"] as String,
-                        email = it.data["email"] as String,
-                        defaultOfferDiscount = it.data["defaultOfferDiscount"] as Double,
-                        maximumInvestment = it.data["maximumInvestment"] as Double,
-                        maximumInvoiceAmount = it.data["maximumInvoiceAmount"] as Double,
-                        minimumInvoiceAmount = it.data["minimumInvoiceAmount"] as Double,
-                        name = it.data["name"] as String,
-                        password = "",
-                        tradeFrequencyInMinutes = it.data["tradeFrequencyInMinutes"] as Int,
-                        tradeMatrixItems = getMatrixes(it.data["tradeMatrixItems"] as JsonArray),
-                        uid = "",
-                        stellarAccountId = it.data["stellarAccountId"] as String,
-                        rippleAccountId = it.data["rippleAccountId"] as String)
+            if (qs.documents.isEmpty()) {
+                logger.warn("\uD83D\uDE21 \uD83D\uDE21 Firebase could not find Network Operator, returning null")
+                return null
             }
+            return qs.documents[0].toObject(NetworkOperatorDTO::class.java)
 
         } catch (e: Exception) {
             logger.error("Failed to get networkOperator", e)
             throw e
         }
-        return networkOperator
     }
 
     @Throws(Exception::class)
     fun updateNetworkOperator(operator: NetworkOperatorDTO)  {
+        logger.info("\uD83D\uDD06 \uD83D\uDD06 about to update NetworkOperator, check properties: ${gson.toJson(operator)}")
         val future = db.collection("networkOperator")
                 .limit(1)
                 .get()
@@ -261,10 +235,10 @@ class FirebaseService() {
         return mList
     }
     @Throws(FirebaseAuthException::class)
-    fun createUser(name: String?, email: String?, password: String?,
-                   uid: String?): UserRecord? {
+    fun createAuthUser(name: String, email: String, password: String,
+                       uid: String): UserRecord? {
         logger.info("\uD83D\uDD37 \uD83D\uDD37 ..... createUser: writing to Firestore " +
-                "... \uD83D\uDD37 $name $email $password $uid")
+                "... \uD83D\uDD37 name: $name email: $email password: $password uid: $uid")
         val request = UserRecord.CreateRequest()
         request.setEmail(email)
         request.setDisplayName(name)
@@ -278,13 +252,18 @@ class FirebaseService() {
 
 
     @Throws(FirebaseAuthException::class)
-    fun createBFNAccount(accountInfo: AccountInfoDTO): String? {
+    fun createBFNUser(user: UserDTO): String? {
         logger.info("\uD83D\uDD37 \uD83D\uDD37 ..... createBFNAccount: writing to Firestore " +
-                "Check the properties ... writing null WTF? ${gson.toJson(accountInfo)}... \uD83D\uDD37 ")
-        assert(accountInfo.host != null)
-        assert(accountInfo.name != null)
-        val future = db.collection("accounts").add(accountInfo)
-        logger.info("\uD83E\uDDE9 account added to Firestore path: " + future.get().path)
+                "Check the properties ... writing null WTF? ${gson.toJson(user)}... \uD83D\uDD37 ")
+
+        val userRecord = createAuthUser(name = user.accountInfo.name,email = user.email, password = user.password,uid = user.uid)
+        if (userRecord != null) {
+            user.uid = userRecord.uid
+        }
+        val future = db.collection("bfnUsers").add(user)
+        logger.info("\n\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 " +
+                " BFN user record  added to Firestore path: " + future.get().path)
+        logger.info(gson.toJson(user))
         return future?.get()?.path
     }
 
@@ -330,13 +309,16 @@ class FirebaseService() {
 
 
     @Throws(FirebaseAuthException::class)
-    fun getUsers(): List<UserRecord> {
-        logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 Getting Firebase auth users ...")
-        val records: MutableList<UserRecord> = ArrayList()
+    fun getBFNUsers(): MutableList<UserDTO> {
+        logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 Getting  users ...")
+        val records: MutableList<UserDTO> = mutableListOf()
         try {
-            val page = auth.listUsers(null)
-            val m = page.values
-            m.forEach(Consumer { e: ExportedUserRecord -> records.add(e) })
+            val page = db.collection("bfnUsers").get()
+            val m = page.get()
+            m.documents.forEach {
+                records.add(it.toObject(UserDTO::class.java))
+            }
+
         } catch (e: Exception) {
             logger.error(e.message)
         }
