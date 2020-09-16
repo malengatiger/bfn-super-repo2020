@@ -168,7 +168,6 @@ class FirebaseService() {
         }
     }
 
-
     @Throws(Exception::class)
     fun getCordaNodes(): List<NodeInfoDTO> {
         val mList: MutableList<NodeInfoDTO> = mutableListOf()
@@ -256,14 +255,16 @@ class FirebaseService() {
         logger.info("\uD83D\uDD37 \uD83D\uDD37 ..... createBFNAccount: writing to Firestore " +
                 "Check the properties ... writing null WTF? ${gson.toJson(user)}... \uD83D\uDD37 ")
 
-        val userRecord = createAuthUser(name = user.accountInfo.name,email = user.email, password = user.password,uid = user.uid)
-        if (userRecord != null) {
-            user.uid = userRecord.uid
-        }
+        createAuthUser(
+                name = user.accountInfo.name,
+                email = user.email,
+                password = user.password,
+                uid = user.uid)
+
         val future = db.collection("bfnUsers").add(user)
         logger.info("\n\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 " +
                 " BFN user record  added to Firestore path: " + future.get().path)
-        logger.info(gson.toJson(user))
+        logger.info("\uD83E\uDD6C \uD83E\uDD6C BFN user record : " + gson.toJson(user))
         return future?.get()?.path
     }
 

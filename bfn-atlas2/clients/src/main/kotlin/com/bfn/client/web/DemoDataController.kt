@@ -60,15 +60,38 @@ class DemoDataController(rpc: NodeRPCConnection) {
                 + "    \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
         return result
     }
+    @GetMapping(value = ["/generateProfiles"], produces = [MediaType.TEXT_PLAIN_VALUE])
+    @Throws(Exception::class)
+    private fun generateProfiles(): String? {
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                "starting DemoDataController: generateProfiles " +
+                "... \uD83C\uDF4F ")
+
+        val result = demoDataService.generateProfiles(proxy)
+        logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                "DemoDataController:generateProfiles result: " +
+                 "    \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
+        return result
+    }
+    @GetMapping(value = ["/generateInvoices"], produces = [MediaType.TEXT_PLAIN_VALUE])
+    @Throws(Exception::class)
+    private fun generateInvoices(count:Int): String? {
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                "starting DemoDataController: generateInvoices " +
+                "... \uD83C\uDF4F ")
+
+        val result = demoDataService.generateInvoices(proxy, numberOfInvoicesPerAccount = count)
+        logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                "DemoDataController:generateInvoices result: " +
+                "    \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
+        return result
+    }
     @GetMapping(value = ["/generateAnchorNodeAccounts"], produces = [MediaType.TEXT_PLAIN_VALUE])
     @Throws(Exception::class)
     private fun generateAnchorNodeAccounts(numberOfAccounts:String): String? {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
                 "starting DemoDataController: generateAnchorNodeAccounts " +
                 "... \uD83C\uDF4F number accts: $numberOfAccounts")
-        if (numberOfAccounts == null) {
-            throw Exception(" \uD83E\uDDE1  \uD83E\uDDE1 Where the fuck is numberOfAccounts")
-        }
         val num = numberOfAccounts.toInt()
         val result = demoDataService.generateAccounts(proxy = proxy, numberOfAccounts = num)
         logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 DemoDataController:generateAnchorNodeAccounts result: " +

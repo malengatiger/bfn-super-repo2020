@@ -2,7 +2,6 @@ package com.bfn.client.web
 
 import com.bfn.client.data.*
 import com.bfn.contractstates.states.NetworkOperatorState
-import com.bfn.flows.thisDate
 import com.bfn.flows.todaysDate
 import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
@@ -34,6 +33,9 @@ class DemoDataService {
     @Value("\${stellarAnchorUrl}")
     private lateinit var stellarAnchorUrl: String
 
+    @Value("\${customerNodeUrl}")
+    private lateinit var customerNodeUrl: String
+
     @PostConstruct
     fun init() {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 DemoUtil service has been initialized ...")
@@ -47,6 +49,9 @@ class DemoDataService {
 
     @Autowired
     private lateinit var networkOperatorService: NetworkOperatorBeeService
+
+    @Autowired
+    private lateinit var customerNodeService: CustomerNodeService
 
     /**
      * Generate data for the main anchor node : NetworkOperator is created here as well as Accounts
@@ -72,13 +77,20 @@ class DemoDataService {
      * Generate data for the customer node : Accounts are created for several customers
      */
     fun generateCustomerNodeData(mProxy: CordaRPCOps):String {
-        logger.info("\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
-                "Generating data for the Customer Node: Customers only")
+        logger.info("\n\n\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
+                "Generating data for the Customer Node: Customers only, Boss!")
+        //todo - delete existing customers from bfnUsers ....
+        val users = firebaseService.getBFNUsers()
+        users.forEach {
+            logger.info("\uD83C\uDF4E \uD83C\uDF4E Existing BFN User: " +
+                    it.accountInfo.name)
+        }
         createCustomers(mProxy, stellarAnchorUrl = stellarAnchorUrl)
         val msg = "\n\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
                 "DemoDataService: generateCustomerNodeData COMPLETE! " +
                 "\uD83E\uDD6E \uD83E\uDD6E \uD83E\uDD6E\n"
         logger.info(msg)
+        logger.info("\n\n\n\n")
         return msg
     }
 
@@ -165,12 +177,13 @@ class DemoDataService {
                 gson.toJson(result) + " \uD83E\uDD6E \uD83E\uDD6E")
         return result
     }
+    private val em4 = "\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 "
     @Throws(Exception::class)
     fun generateLocalNodeAccounts(mProxy: CordaRPCOps?, numberOfAccounts: Int = 10): DemoSummary {
         val start = Date().time;
-        logger.info("\n\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 " +
-                "DemoDataService started, proxy: ${mProxy.toString()}...  \uD83D\uDD06 \uD83D\uDD06 " +
-                "will generate data 🧩🧩 ")
+        logger.info(em4 +
+                "DemoDataService started, proxy: ${mProxy.toString()}...   " +
+                "will generate data $em4 ")
 
         myNode = mProxy!!.nodeInfo()
         logger.info(" \uD83D\uDD0B  \uD83D\uDD0B current node: ${myNode!!.legalIdentities[0].name.commonName}  \uD83D\uDD0B ")
@@ -209,11 +222,11 @@ class DemoDataService {
         logger.info("\n\n$em1 ..... generateAccounts started ...  " +
                 "\uD83D\uDD06 \uD83D\uDD06 ................. generating: $numberOfAccounts")
         var cnt = 0
-        for (x in 1..numberOfAccounts) {
+        for (x in 0..numberOfAccounts) {
             val prefix = "account" + System.currentTimeMillis()
             try {
                 val mName = randomName
-                logger.info("$em1 ..... Starting AccountRegistrationFlow for $mName")
+                logger.info("\n\n\n$em1 ..... Starting AccountRegistrationFlow for $mName ...........\n")
                 workerBeeService.startAccountRegistrationFlow(proxy,
                         mName,
                         "$prefix@gmail.com",
@@ -225,34 +238,42 @@ class DemoDataService {
                 logger.warn("\uD83D\uDE21 \uD83D\uDE21 Unable to add account - probable duplicate name")
             }
         }
-        logger.info("$em1 generateAccounts complete ..." +
-                "  \uD83D\uDD06 \uD83D\uDD06 added $cnt accounts")
+        logger.info("\n\n$em1 generateAccounts complete ..." +
+                "  \uD83D\uDD06 \uD83D\uDD06 added $cnt accounts\n\n")
+        generateProfiles(proxy)
+        val msg = "$em1 Generate accounts with profiles completed! \uD83C\uDF3A"
+        logger.info(msg)
+        return msg
+    }
+
+    fun generateProfiles(proxy: CordaRPCOps): String {
         val accountInfos = workerBeeService.getNodeAccounts(proxy = proxy)
         logger.info("$em1 getNodeAccounts complete ..." +
                 "  \uD83D\uDD06 \uD83D\uDD06 found  ${accountInfos.size} ... " +
                 "adding investor and supplier profiles and generating invoices for all accounts ........")
-
         //add profiles and generate invoices
         val page = proxy.vaultQuery(AccountInfo::class.java)
-        val em = "\uD83D\uDE21\uD83D\uDE21\uD83D\uDE21\uD83D\uDE21"
+        val err = "\uD83D\uDE21\uD83D\uDE21\uD83D\uDE21\uD83D\uDE21"
         for (state in page.states) {
             try {
                 addInvestorProfile(account = state, proxy = proxy)
-            } catch (e:Exception) {
-                logger.error("$em addInvestorProfile failed", e)
+            } catch (e: Exception) {
+                logger.error("$err Unable to add InvestorProfile for account", e)
             }
             try {
                 addSupplierProfile(account = state, proxy = proxy)
-            } catch (e:Exception) {
-                logger.error("$em addSupplierProfile failed", e)
+            } catch (e: Exception) {
+                logger.error("$err Unable to add SupplierProfile for account", e)
             }
             try {
-                generateInvoices(proxy = proxy, accountInfo = DTOUtil.getDTO(state.state.data), count = 3)
-            } catch (e:Exception) {
-                logger.error("$em generateInvoices failed", e)
+                logger.info("\n$em1 Start the Demo data invoice generation for accounts \n\n")
+                generateInvoices(proxy = proxy, numberOfInvoicesPerAccount = 4)
+            } catch (e: Exception) {
+                logger.error("$err generateInvoices failed", e)
             }
         }
-        val msg = "$em1 Generate accounts with profiles completed! \uD83C\uDF3A"
+        val msg = "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35" +
+                "DemoDataService: generateProfiles: Account profile generation complete"
         logger.info(msg)
         return msg
     }
@@ -342,7 +363,7 @@ class DemoDataService {
 
     private fun addInvestorProfile(proxy: CordaRPCOps, account: StateAndRef<AccountInfo>) {
         logger.info(" \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 addInvestorProfile ..." +
-                "  \uD83D\uDD06 \uD83D\uDD06 found  ${account.state.data.name} ... ")
+                "  \uD83D\uDD06 \uD83D\uDD06 for account:  ${account.state.data.name} ... ")
         var disc = random.nextInt(10) * 1.5
         if (disc < 3.0) {
             disc = 3.5
@@ -372,13 +393,14 @@ class DemoDataService {
                 account = account.state.data,
                 profile = investorProfile)
 
-        logger.info("\uD83D\uDE0E Create INVESTOR profile  \uD83C\uDF3A ${account.state.data.name} " +
-                "- RESPONSE: statusCode: \uD83C\uDF0D \uD83C\uDF0D \n")
+        logger.info("\uD83D\uDE0E \uD83D\uDE0E \uD83D\uDE0E " +
+                " Yup! Created INVESTOR profile for account:  \uD83C\uDF3A ${account.state.data.name} " +
+                gson.toJson(investorProfile) + " \uD83C\uDF0D \uD83C\uDF0D \n\n")
     }
 
     private fun addSupplierProfile(proxy: CordaRPCOps, account: StateAndRef<AccountInfo>) {
-        logger.info(" \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 addSupplierProfile ..." +
-                "  \uD83D\uDD06 \uD83D\uDD06 found  ${account.state.data.name} ... ")
+        logger.info("\n\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 addSupplierProfile ..." +
+                "  \uD83D\uDD06 \uD83D\uDD06 for account:  ${account.state.data.name} ... ")
         var disc = random.nextInt(5) * 2.5
         if (disc < 2.0) {
             disc = 6.5
@@ -397,8 +419,9 @@ class DemoDataService {
                 account = account.state.data,
                 profile = prof)
 
-        logger.info("\uD83E\uDD8A Created SUPPLIER profile for \uD83C\uDF3A ${account.state.data.name} " +
-                "- RESPONSE: statusCode: \uD83C\uDF0D \uD83C\uDF0D")
+        logger.info("\uD83E\uDD8A \uD83E\uDD8A \uD83E\uDD8A " +
+                "Yebo! Created SUPPLIER profile for account: \uD83C\uDF3A ${account.state.data.name} " +
+                gson.toJson(prof) +" \uD83C\uDF0D \uD83C\uDF0D")
     }
 
     @Throws(Exception::class)
@@ -441,77 +464,101 @@ class DemoDataService {
     private val cal: Calendar = GregorianCalendar.getInstance()
     private var invoiceCnt = 0
 
-    fun generateInvoices(proxy: CordaRPCOps, accountInfo: AccountInfoDTO, count: Int): String {
-        this.accountInfo = accountInfo
+
+    fun generateInvoices(proxy: CordaRPCOps, numberOfInvoicesPerAccount: Int): String {
+        logger.info("\n\n \uD83C\uDF4E \uD83C\uDF4E ...... generateInvoices: " +
+                " Invoices to be generated for all accounts except for Network Operator \n\n")
+
         val page = proxy.vaultQuery(NetworkOperatorState::class.java)
         if (page.states.isEmpty()) {
             throw Exception("Missing NetworkOperator")
+        } else {
+            logger.info("\uD83C\uDF4E \uD83C\uDF4E We have found the network operator: "
+                    + page.states[0].state.data.account.name)
         }
-        val networkOperator = page.states[0].state.data
-        logger.info("\uD83C\uDF4E \uD83C\uDF4E Network Operator: ${gson.toJson(networkOperator)}")
-        val accounts = workerBeeService.getNodeAccounts(proxy).shuffled()
+        val networkOperatorState = page.states[0].state.data
+        val accounts = workerBeeService.getNodeAccounts(proxy)
         if (accounts.isEmpty()) {
-            throw Exception("Failed. \uD83D\uDD06 \uD83D\uDD06 generateInvoices could not find Accounts on the Node")
+            throw Exception("Invoice generation Failed. \uD83D\uDD06 \uD83D\uDD06 " +
+                    "generateInvoices could not find Accounts on the Node")
         }
-        logger.info("\n\uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C number of invoices to generate for each account: $count " +
+        logger.info("\n\uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C " +
                 "\uD83D\uDC9C node accounts: ${accounts.size}")
-        repeatCount = 0
+        logger.info("\n\uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C " +
+                "number of invoices to generate for each account: $numberOfInvoicesPerAccount ")
         invoiceCnt = 0
 
-        //todo - generate monthly invoices starting jan 2019
-        cal.set(2020, 8, 1)
-        var cnt3 = 0
-        for (i in 1..count) {
-            logger.info("⏰ ⏰ ⏰ create invoices for month:  ⏰ ${cal.time}  ⏰ \n")
-            cnt3 = 0;
-            accounts.forEach() {
-                if (it.identifier == networkOperator.account.identifier.toString()) {
-                    logger.info("\uD83C\uDF4E Ignoring invoice generation for ${networkOperator.account.name}")
-                } else {
-                    startInvoiceFlow(proxy, it)
-                    invoiceCnt++
-                    cnt3++
-                }
+        val customers = customerNodeService.getCustomers()
+        for (acct in accounts) {
+            cal.set(2020, 6, 1)
+            if (acct.identifier == networkOperatorState.account.identifier.toString()) {
+                logger.info("\uD83D\uDD35 \uD83D\uDD35  \uD83D\uDD35 \uD83D\uDD35" +
+                        "Invoice generation ignored for the Network Operator "
+                        + networkOperatorState.account.name)
+                continue
             }
-            cal.add(Calendar.MONTH, 1)
-            logger.info("\n\n⏰ ⏰ ⏰ created $invoiceCnt invoices this month; \uD83D\uDD35 " +
-                    "roll over to the next month:  ⏰ ${cal.time}  ⏰ \n\n")
-        }
+            logger.info("\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                    "Generating invoices for account: " + acct.name)
+            logger.info( "getting customer list from the Customer Node .... ")
 
+            if (customers.isEmpty()) {
+               val m = "\uD83D\uDE1D\uD83D\uDE1D\uD83D\uDE1D No customers found, quiting ..."
+                logger.info(m)
+                return m
+            } else {
+                logger.info("\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40  We have customers from the node! theres are ${customers.size}")
+            }
+            for (x in 0..numberOfInvoicesPerAccount) {
+                startInvoiceFlow(proxy, customers, acct, cal.time)
+                invoiceCnt++
+                cal.add(Calendar.MONTH, 1)
+                logger.info("\uD83E\uDDE9 \uD83E\uDDE9 created $invoiceCnt " +
+                        "invoices this month; \uD83D\uDD35 " +
+                        "roll over to the next month:  ⏰ ${cal.time}  ⏰")
+            }
+
+        }
         demoSummary.numberOfInvoices = invoiceCnt
         return "\uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A :: Total Invoices generated on Node: $invoiceCnt \uD83D\uDC9C"
     }
-
-    private fun startInvoiceFlow(proxy: CordaRPCOps, accountInfoDTO: AccountInfoDTO) {
-        logger.info("startInvoiceFlow: \uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C account: ${gson.toJson(accountInfoDTO)}")
-        val invoice = buildInvoice(accountInfoDTO)
-        val smallInvoice = buildSmallInvoice(accountInfoDTO)
+    private fun startInvoiceFlow(proxy: CordaRPCOps, customers: List<AccountInfoDTO>,
+                                 accountInfo: AccountInfoDTO, date: Date) {
+        logger.info("...... startInvoiceFlow: \uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C " +
+                "account: ${gson.toJson(accountInfo)}")
+        val invoice = buildInvoice(customers,accountInfo, date)
+        val smallInvoice = buildSmallInvoice(customers,accountInfo, date)
 
         if (invoice != null) {
             val result = workerBeeService.startInvoiceRegistrationFlow(proxy, invoice)
             logger.info("\uD83D\uDC9C LARGE startInvoiceRegistrationFlow: " +
                     "generated, result: ${result.totalAmount} ${result.invoiceId}")
         } else {
-            logger.info("\uD83D\uDC9C LARGE startInvoiceRegistrationFlow: \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 invoice is NULL");
+            logger.info("\uD83D\uDC9C LARGE startInvoiceRegistrationFlow: " +
+                    "\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 invoice is NULL");
         }
         if (smallInvoice != null) {
             val result = workerBeeService.startInvoiceRegistrationFlow(proxy, smallInvoice)
             logger.info("\uD83D\uDC9C SMALL startInvoiceRegistrationFlow: " +
                     "generated, result: ${result.totalAmount} ${result.invoiceId}")
         } else {
-            logger.info("\uD83D\uDC9C SMALL startInvoiceRegistrationFlow: \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 smallInvoice is NULL");
+            logger.info("\uD83D\uDC9C SMALL startInvoiceRegistrationFlow: " +
+                    "\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 smallInvoice is NULL");
         }
     }
 
     private var repeatCount = 0
-    private fun buildInvoice(supplier: AccountInfoDTO): InvoiceDTO? {
+    private fun buildInvoice(customers: List<AccountInfoDTO>,
+                             supplier: AccountInfoDTO, date: Date): InvoiceDTO? {
+
+        var num = random.nextInt(1000)
+        if (num >= 700) num = 2000
+        val index = random.nextInt(customers.size - 1)
+        accountInfo = customers[index]
 
         if (supplier.name == accountInfo.name) {
             logger.info("Supplier Name is the same as CustomerName: ${supplier.name} customer: ${accountInfo.name}")
-            throw Exception("Supplier Name is the same as CustomerName: ${supplier.name} customer: ${accountInfo.name}");
+        return null
         }
-        var num = random.nextInt(1000)
-        if (num >= 700) num = 2000
 
         return InvoiceDTO(
                 invoiceNumber = "INV_" + System.currentTimeMillis(),
@@ -521,7 +568,7 @@ class DemoDataService {
                 valueAddedTax = 15.0,
                 totalAmount = num * 1200.0 * 1.15,
                 description = "LARGE : Demo Invoice at ${Date()}",
-                dateRegistered = thisDate(cal.time),
+                dateRegistered = date.toString(),
                 invoiceId = UUID.randomUUID().toString(),
                 externalId = UUID.randomUUID().toString()
         )
@@ -529,7 +576,8 @@ class DemoDataService {
 
     }
 
-    private fun buildSmallInvoice(supplier: AccountInfoDTO): InvoiceDTO? {
+    private fun buildSmallInvoice(customers: List<AccountInfoDTO>,
+                                 supplier: AccountInfoDTO, date: Date): InvoiceDTO? {
 
         if (supplier.name == accountInfo.name) {
             return null
@@ -537,6 +585,14 @@ class DemoDataService {
         val invoice: InvoiceDTO?
         var num = random.nextInt(200)
         if (num <= 50) num = 1000
+
+        val index = random.nextInt(customers.size - 1)
+        accountInfo = customers[index]
+
+        if (supplier.name == accountInfo.name) {
+            logger.info("Supplier Name is the same as CustomerName: ${supplier.name} customer: ${accountInfo.name}")
+            return null
+        }
 
         invoice = InvoiceDTO(
                 invoiceNumber = "INV_" + System.currentTimeMillis(),
@@ -546,7 +602,7 @@ class DemoDataService {
                 valueAddedTax = 15.0,
                 totalAmount = num * 500.0 * 1.15,
                 description = "SMALL: Demo Invoice at ${Date()}",
-                dateRegistered = thisDate(cal.time),
+                dateRegistered = date.toString(),
                 invoiceId = UUID.randomUUID().toString(),
                 externalId = UUID.randomUUID().toString()
         )
@@ -586,29 +642,64 @@ class DemoDataService {
     val concat = " \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 "
 
     private fun createCustomers(proxy: CordaRPCOps, stellarAnchorUrl: String) {
+        logger.info("\n\n\n\n")
         logger.info(concat
                 + "Start createCustomers .... createCustomers  \uD83D\uDECE  ")
 
-        doOneCustomer(proxy, stellarAnchorUrl, buildCustomerProfile("Pick & Pay"))
-        doOneCustomer(proxy, stellarAnchorUrl, buildCustomerProfile("Department of Public Works"))
-        doOneCustomer(proxy, stellarAnchorUrl, buildCustomerProfile("Department of Public Works"))
-        doOneCustomer(proxy, stellarAnchorUrl, buildCustomerProfile("Shoprite"))
-        doOneCustomer(proxy, stellarAnchorUrl, buildCustomerProfile("Ashanti Gold Mining"))
-        doOneCustomer(proxy, stellarAnchorUrl, buildCustomerProfile("Department of Transport"))
+        doOneCustomer(proxy, stellarAnchorUrl, buildCustomerProfile(
+                "Pick & Pay",
+                minimumInvoiceAmount = 5000.00,
+                maximumInvoiceAmount = 100000.00))
+        logger.info("\n\n\n\n")
+        doOneCustomer(proxy, stellarAnchorUrl, buildCustomerProfile(
+                "Department of Public Works",
+                minimumInvoiceAmount = 50000.00,
+                maximumInvoiceAmount = 100000000.00))
+        logger.info("\n\n\n\n")
+        doOneCustomer(proxy, stellarAnchorUrl, buildCustomerProfile(
+                "Department of Health",
+                minimumInvoiceAmount = 10000.00,
+                maximumInvoiceAmount = 1000000.00))
+        logger.info("\n\n\n\n")
+        doOneCustomer(proxy, stellarAnchorUrl, buildCustomerProfile(
+                "Shoprite",
+                minimumInvoiceAmount = 15000.00,
+                maximumInvoiceAmount = 300000.00))
+        logger.info("\n\n\n\n")
+        doOneCustomer(proxy, stellarAnchorUrl, buildCustomerProfile(
+                "Ashanti Gold Mining",
+                minimumInvoiceAmount = 500000.00,
+                maximumInvoiceAmount = 60000000.00))
+        logger.info("\n\n\n\n")
+        doOneCustomer(proxy, stellarAnchorUrl, buildCustomerProfile(
+                "Department of Transport",
+                minimumInvoiceAmount = 5000.00,
+                maximumInvoiceAmount = 8000000.00))
+        logger.info("\n\n\n\n")
+        doOneCustomer(proxy, stellarAnchorUrl, buildCustomerProfile(
+                "Standard Bank",
+                minimumInvoiceAmount = 5000.00,
+                maximumInvoiceAmount = 900000000.00))
+        logger.info("\n\n\n\n")
+        doOneCustomer(proxy, stellarAnchorUrl, buildCustomerProfile(
+                "BMW South Africa Limited",
+                minimumInvoiceAmount = 5000.00, maximumInvoiceAmount = 40000000.00))
+        logger.info("\n\n\n\n")
 
 
     }
 
-    private fun buildCustomerProfile(name: String): CustomerProfileStateDTO {
+    private fun buildCustomerProfile(name: String, minimumInvoiceAmount: Double,
+                                     maximumInvoiceAmount: Double): CustomerProfileStateDTO {
         val suffix = "@bfn.com"
-        val prefix = "cust_"
+        val prefix = "cust"
 
         return CustomerProfileStateDTO(
                 AccountInfoDTO("TBD", "TBD",
                         name),
-                5000.00,
-                120000000.00,
-                cellphone = "+27 99 999 9000",
+                minimumInvoiceAmount,
+                maximumInvoiceAmount,
+                cellphone = phone,
                 email = "$prefix${System.currentTimeMillis()}$suffix",
                 dateRegistered = Date(),
                 stellarAccountId = "TBD",
@@ -616,18 +707,17 @@ class DemoDataService {
         )
     }
 
-    private fun doOneCustomer(proxy: CordaRPCOps, stellarAnchorUrl: String, profile: CustomerProfileStateDTO) {
-        logger.info("\uD83D\uDD35 Creating Customer ${profile.account.name}")
+    private fun doOneCustomer(proxy: CordaRPCOps, stellarAnchorUrl: String,
+                              customerProfile: CustomerProfileStateDTO) {
+        logger.info("\n\uD83D\uDD35 ........... Creating Customer ${customerProfile.account.name}")
 
         val password = "pass123"
         try {
-            val resultProfile = workerBeeService.createCustomer(proxy, stellarAnchorUrl, profile, password)
-            logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 Processed customerProfile returned: " + gson.toJson(resultProfile))
-
-
+            val resultProfile = workerBeeService.createCustomer(proxy, stellarAnchorUrl, customerProfile, password)
+            logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                    "Processed customerProfile returned: " + gson.toJson(resultProfile))
         } catch (e: Exception) {
             logger.info("\uD83D\uDD25 \uD83D\uDD25 \uD83D\uDD25 Customer creation failed , trying next one ...")
-            throw Exception("Customer creation failed")
         }
     }
 

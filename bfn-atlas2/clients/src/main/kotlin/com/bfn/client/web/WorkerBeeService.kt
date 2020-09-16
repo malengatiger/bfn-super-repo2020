@@ -82,7 +82,7 @@ class WorkerBeeService {
         for ((state) in accounts) {
             cnt++
             val acct = state.data
-            logger.info("\uD83C\uDF50️ \uD83C\uDF50 ️Processing account  \uD83C\uDF50️ " +
+            logger.info("\uD83C\uDF50️ \uD83C\uDF50 Listing account  \uD83C\uDF50️ " +
                     "#$cnt \uD83C\uDF3A ${state.data.name} \uD83C\uDF50️ ")
             val dto = AccountInfoDTO(acct.identifier.id.toString(),
                     acct.host.toString(), acct.name)
@@ -766,7 +766,7 @@ class WorkerBeeService {
                         rippleAccountId = mRippleId)
 
             } catch (e: Exception) {
-                logger.info(em3  +
+                logger.info(em3 +
                         "Houston, we have fallen over! Corda Account creation failed: ${e.message}")
                 logger.error(e.message)
                 throw e
@@ -782,6 +782,7 @@ class WorkerBeeService {
     }
 
     private val em3 = "\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D "
+
     @Throws(Exception::class)
     fun startCustomerProfileFlow(proxy: CordaRPCOps,
                                  profile: CustomerProfileStateDTO): String {
@@ -848,28 +849,23 @@ class WorkerBeeService {
                               rippleAccountId: String,
                               email: String, cellphone: String, password: String): UserDTO {
         //create auth user record in firebase
-        val user = firebaseService.createAuthUser(accountName, email, password, identifier)
-        val dto = AccountInfoDTO(
-                identifier,
-                host,
-                accountName)
-
-        logger.info("\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 " +
-                "about to save account on Firestore and send FCM message: " +
-                "${gson.toJson(dto)} check properties")
-
         val bfnUser = UserDTO(
-                accountInfo = dto,
-                email = email,
-                cellphone = cellphone,
-                uid = user!!.uid,
-                stellarAccountId = stellarAccountId,
-                rippleAccountId = rippleAccountId,
-                password = password
+                AccountInfoDTO(
+                        identifier,
+                        host,
+                        accountName),
+                email,
+                cellphone,
+                UUID.randomUUID().toString(),
+                stellarAccountId,
+                rippleAccountId,
+                password
         )
-        firebaseService.createBFNUser(bfnUser)
-        firebaseService.sendAccountMessage(dto)
 
+        val result = firebaseService.createBFNUser(bfnUser)
+        logger.info("\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 " +
+                "Saved BFN UserDTO3 account on Firestore and send FCM message: " +
+                "${gson.toJson(bfnUser)}  \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 result: " + result)
 
         return bfnUser
     }

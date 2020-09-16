@@ -138,10 +138,9 @@ class AdminController(rpc: NodeRPCConnection) {
 
     @PostMapping(value = ["/generateInvoices"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
-    private fun generateInvoices(@RequestBody account:AccountInfoDTO ): String? {
-        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 AdminController: ... generateInvoices ..." +
-                " account: \uD83C\uDF4F ${GSON.toJson(account)}")
-        val result = demoDataService.generateInvoices(proxy, count = 12, accountInfo = account)
+    private fun generateInvoices(numberOfInvoicesPerAccount:Int ): String? {
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 AdminController: ... generateInvoices ...")
+        val result = demoDataService.generateInvoices(proxy, numberOfInvoicesPerAccount = 5)
         logger.info(result)
         return result
     }

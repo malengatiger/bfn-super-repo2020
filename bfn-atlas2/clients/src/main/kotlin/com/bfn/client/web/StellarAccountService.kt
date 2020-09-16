@@ -41,44 +41,46 @@ class StellarAccountService {
 
             val result = post(url = "$stellarAnchorUrl$suffix",  timeout = 990000000.0, headers = headers)
 
-            logx.info("\uD83C\uDF4E \uD83C\uDF4E RESPONSE: statusCode: ${result.statusCode}  ")
-            logx.info("\uD83C\uDF4E \uD83C\uDF4E RESPONSE: result text: ${result.text}  ")
+            logx.info("$good createStellarAccount RESPONSE: statusCode: ${result.statusCode}  ")
+            logx.info("$good createStellarAccount RESPONSE: result text: ${result.text}  ")
             stellarResponse = gson.fromJson<StellarResponse>(result.text, StellarResponse::class.java)
 
             if (result.statusCode == 200) {
-                logx.info("\uD83C\uDF51 \uD83C\uDF51 result status is KOOL! " +
+                logx.info("$good result status is KOOL! " +
                         "Stellar account has been successfully requested!" +
-                        " \uD83C\uDF51 \uD83C\uDF51")
+                        " \uD83C\uDF51 \uD83C\uDF51 ${gson.toJson(stellarResponse)}")
             } else {
-                logx.info("\uD83C\uDF4E  \uD83C\uDF4E NetworkOperatorService:createStellarAccount fucked up! : " +
-                        "${result.text}  \uD83C\uDF4E  \uD83C\uDF4E")
-                throw Exception("Stellar account creation request FAILED ")
+                logx.info("$err  NetworkOperatorService:createStellarAccount fucked up! : " +
+                        "statusCode: ${result.statusCode} text: ${result.text}  \uD83C\uDF4E  \uD83C\uDF4E")
+                stellarResponse = null
 
             }
             //update existing network operator
-            try {
-                val operator = firebaseService.getNetworkOperator()
-                //todo - handle the seed from Stellar - store it encrypted on cloud storage ??? Done on stellar anchor server
-                if (operator != null) {
-                    operator.stellarAccountId = stellarResponse.accountId
-                    logx.info("\uD83D\uDC99 \uD83D\uDC9C Stellar Account added from Anchor server. " +
-                            "Update Account stellar data locally ... "
-                            + gson.toJson(stellarResponse) + "\uD83D\uDC99 \uD83D\uDC9C")
-
-                    logx.info("\uD83C\uDF4E \uD83C\uDF4E Update NetworkOperator on Ledger and Firestore ..... ")
-                    networkOperatorBeeService.updateNetworkOperator(proxy = proxy, networkOperator = operator)
-                    firebaseService.updateNetworkOperator(operator = operator)
-                }
-
-            } catch (e: Exception) {
-                logger.warn("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21" +
-                        " Network Operator query failed", e)
-            }
+//            try {
+//                val operator = firebaseService.getNetworkOperator()
+//                //todo - handle the seed from Stellar - store it encrypted on cloud storage ??? Done on stellar anchor server
+//                if (operator != null && stellarResponse != null) {
+//                    operator.stellarAccountId = stellarResponse.accountId
+//                    logx.info("\uD83D\uDC99 \uD83D\uDC9C Stellar Account added from Anchor server. " +
+//                            "Update Account stellar data locally ... "
+//                            + gson.toJson(stellarResponse) + "\uD83D\uDC99 \uD83D\uDC9C")
+//
+//                    logx.info("\uD83C\uDF4E \uD83C\uDF4E Update NetworkOperator on Ledger and Firestore ..... ")
+//                    networkOperatorBeeService.updateNetworkOperator(proxy = proxy, networkOperator = operator)
+//                    firebaseService.updateNetworkOperator(operator = operator)
+//                }
+//
+//            } catch (e: Exception) {
+//                logger.warn(err +
+//                        " Network Operator query failed", e)
+//            }
 
         } catch (e:Exception) {
-            logx.error(Emoji.CODE_NO_ENTRY+Emoji.CODE_NO_ENTRY +
+            logx.error(err +
                     " Stellar account creation for the BFN Network Operator failed. No Biggie! ... for now", e)
         }
         return stellarResponse
     }
+    private val good = "\uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C"
+    private val err = "\uD83D\uDC7F \uD83D\uDE21 \uD83D\uDC7F \uD83D\uDE21 \uD83D\uDC7F \uD83D\uDE21"
 }

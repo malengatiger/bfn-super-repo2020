@@ -3,6 +3,7 @@ package com.bfn.flows
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.contracts.InvestorProfileContract
 import com.bfn.contractstates.states.CustomerProfileState
+import com.bfn.contractstates.states.InvestorProfileState
 import com.bfn.flows.services.ProfileFinderService
 import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.accounts.workflows.ourIdentity
@@ -18,7 +19,7 @@ import java.util.*
 
 @InitiatingFlow
 @StartableByRPC
-class InvestorProfileFlow(private val investorProfile: CustomerProfileState) : FlowLogic<SignedTransaction>() {
+class InvestorProfileFlow(private val investorProfile: InvestorProfileState) : FlowLogic<SignedTransaction>() {
 
     @Suspendable
     override fun call(): SignedTransaction {

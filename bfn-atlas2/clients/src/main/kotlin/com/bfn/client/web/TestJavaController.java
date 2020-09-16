@@ -1,7 +1,6 @@
 package com.bfn.client.web;
 
 import com.bfn.client.data.UserDTO;
-import com.google.firebase.auth.UserRecord;
 import net.corda.core.node.NodeInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
