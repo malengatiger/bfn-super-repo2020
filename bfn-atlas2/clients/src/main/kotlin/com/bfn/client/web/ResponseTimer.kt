@@ -56,7 +56,7 @@ class ResponseTimer {
                     profile = profile)
             try {
                 val db = FirestoreClient.getFirestore()
-                db.collection("responseTimes").add(resp)
+                db.collection(BFN_RESPONSE_TIMES).add(resp)
                 logger.info("\n\uD83C\uDF50  \uD83C\uDF50  \uD83C\uDF50 Response time added to Firestore: " +
                         "\uD83C\uDF4E elapsed: $elapsed milliseconds " +
                         " \uD83C\uDF4E callName: $callName \uD83C\uDF4E")

@@ -3,16 +3,18 @@ package com.bfn.client.web
 import com.bfn.client.data.*
 import com.bfn.contractstates.states.*
 import com.bfn.flows.*
+import com.bfn.flows.customer.CustomerProfileFlow
+import com.bfn.flows.investor.InvestorProfileFlow
 import com.bfn.flows.invoices.InvoiceOfferFlow
 import com.bfn.flows.invoices.InvoiceRegistrationFlow
 import com.bfn.flows.queries.AccountInfoQueryFlow
 import com.bfn.flows.queries.InvoiceOfferQueryFlow
 import com.bfn.flows.queries.InvoiceQueryFlow
 import com.bfn.flows.scheduled.CreateInvoiceOffersFlow
+import com.bfn.flows.supplier.SupplierProfileFlow
 import com.google.firebase.cloud.FirestoreClient
 import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
-import khttp.post
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.messaging.CordaRPCOps
@@ -21,7 +23,6 @@ import net.corda.core.node.services.vault.PageSpecification
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.node.services.vault.QueryCriteria.VaultQueryCriteria
 import net.corda.core.utilities.getOrThrow
-import org.json.JSONObject
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
@@ -167,7 +168,6 @@ class WorkerBeeService {
         logger.info(msg)
         return dto
     }
-
 
     @Throws(Exception::class)
     fun getSupplierProfile(proxy: CordaRPCOps, accountId: String?): SupplierProfileStateDTO? {
@@ -333,8 +333,11 @@ class WorkerBeeService {
         return m
     }
 
-    fun createCustomer(proxy: CordaRPCOps, stellarAnchorUrl: String, customerProfile: CustomerProfileStateDTO, password: String): CustomerProfileStateDTO {
-        logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E Creating Customer ${customerProfile.account.name} .............")
+    fun createCustomerProfile(proxy: CordaRPCOps,
+                              customerProfile: CustomerProfileStateDTO,
+                              password: String): CustomerProfileStateDTO {
+        logger.info("\n\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
+                "Creating Customer ${customerProfile.account.name} .............")
 
         try {
             val acctInfo1 = startAccountRegistrationFlow(proxy = proxy,
@@ -343,59 +346,22 @@ class WorkerBeeService {
                     password = password, cellphone = customerProfile.cellphone
             )
 
-            customerProfile.account = acctInfo1.accountInfo
-
-            //todo -  🍎 get Stellar and Ripple accounts from the Anchor Server
-            val suffix1 = "createStellarAccount"
-            val response = post(
-                    timeout = 990000000.0,
-                    url = "$stellarAnchorUrl$suffix1")
-
-            logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E createStellarAccount; RESPONSE: statusCode: " +
-                    "🌍 ${response.statusCode} 🌍  - ${response.text}")
-
-            if (response.statusCode == 200) {
-                val json = JSONObject(response.text); // 🍎 there should be a ResponseBag in here ....
-                val bag = gson.fromJson(json.toString(), AccountResponseBag::class.java)
-                customerProfile.stellarAccountId = bag.accountResponse.accountId
-
-            } else {
-                logger.info("\uD83C\uDF4E  create Customer Account; RESPONSE failed: " +
-                        " 🌍 $response 🌍   ")
-                throw Exception("Customer creation failed: statusCode: \uD83D\uDD35 ${response.statusCode} ${response.text}")
+            if (acctInfo1 != null) {
+                customerProfile.account = acctInfo1.accountInfo
             }
-            //todo -  🔵 add customerProfile to BFN platform .......
-            startCustomerProfileFlow(proxy, profile = customerProfile)
+
+            val txId = startCustomerProfileFlow(proxy, profile = customerProfile)
             firebaseService.addCustomerProfile(customerProfile)
-            logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E  Customer created: ${customerProfile.account.name}")
+            logger.info("\n\n\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
+                    "WorkerBee: CustomerProfile has been created: " +
+                    "${customerProfile.account.name} \uD83C\uDF4F txId: $txId \n\n")
             return customerProfile
         } catch (e: Exception) {
             logger.info("\uD83D\uDD25 \uD83D\uDD25 \uD83D\uDD25 Customer creation failed ")
+            e.printStackTrace()
             throw Exception("Customer creation failed")
         }
     }
-
-    @Throws(Exception::class)
-    fun createCustomerProfile(proxy: CordaRPCOps, profile: CustomerProfileStateDTO, account: AccountInfo): String {
-
-        val state = CustomerProfileState(
-                account = account,
-                stellarAccountId = profile.stellarAccountId,
-                rippleAccountId = profile.rippleAccountId,
-                dateRegistered = profile.dateRegistered,
-                maximumInvoiceAmount = profile.maximumInvoiceAmount,
-                minimumInvoiceAmount = profile.minimumInvoiceAmount,
-                email = profile.email,
-                cellphone = profile.cellphone
-        )
-        val fut = proxy.startTrackedFlowDynamic(
-                CustomerProfileFlow::class.java, state).returnValue
-        val tx = fut.get()
-        val m = "\uD83C\uDF3A createCustomerProfile, DONE!:  \uD83C\uDF3A ${tx.id}"
-        logger.info(m)
-        return m
-    }
-
 
     @Throws(Exception::class)
     fun makeInvoiceOffers(proxy: CordaRPCOps, investorId: String): List<InvoiceOfferDTO> {
@@ -658,7 +624,7 @@ class WorkerBeeService {
             try {
                 firebaseService.sendInvoiceMessage(dto)
                 val db = FirestoreClient.getFirestore()
-                val reference = db.collection("invoices").add(dto)
+                val reference = db.collection(BFN_INVOICES).add(dto)
                 logger.info("\uD83E\uDDE9" +
                         "Firestore path: " + reference.get().path)
             } catch (e: Exception) {
@@ -687,7 +653,7 @@ class WorkerBeeService {
 
         } catch (e: Exception) {
             logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D " +
-                    "Houston, we have fallen over! Account query failed")
+                    "Houston, we have fallen over a fucking query?? WTF!  \uD83D\uDD35 \uD83D\uDD35 Account query failed")
             logger.error(e.message)
             throw e
         }
@@ -705,7 +671,7 @@ class WorkerBeeService {
                                      accountName: String,
                                      email: String,
                                      cellphone: String,
-                                     password: String): UserDTO {
+                                     password: String): UserDTO? {
         try {
             val criteria: QueryCriteria = VaultQueryCriteria(StateStatus.UNCONSUMED)
             val page = proxy.vaultQueryByWithPagingSpec(
@@ -722,20 +688,19 @@ class WorkerBeeService {
                     }
                 }
             }
-            logger.info("\n$em2 .................  " +
+            logger.info("\n\n\n$em2 .................  " +
                     "Starting the AccountRegistrationFlow ...................... " +
-                    "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35")
+                    "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35\n")
 
             try {
                 val accountInfoCordaFuture = proxy.startTrackedFlowDynamic(
                         CreateAccountFlow::class.java, accountName).returnValue
-                logger.info("\uDD35 \uD83D\uDD35 accountInfoCordaFuture ... returned from Corda ..." +
-                        " see if account InfoCordaFuture.get( null)")
                 val acctInfo = accountInfoCordaFuture.get()
                         ?: throw Exception("Account creation failed on ledger \uD83D\uDE21")
-                logger.info("\uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F" +
-                        " Flow completed... \uD83D\uDC4C accountInfo returned: " +
-                        "\uD83E\uDD4F name: ${acctInfo.name} identifier: ${acctInfo.identifier.id} host: ${acctInfo.host.name.toString()}")
+                logger.info("\n\n\n\uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F" +
+                        " CreateAccountFlow completed... \uD83D\uDC4C accountInfo returned: " +
+                        "\uD83E\uDD4F name: ${acctInfo.name} identifier: ${acctInfo.identifier.id}" +
+                        " host: ${acctInfo.host.name} \n\n")
 
                 //get stellar account from Anchor server
                 var mStellarId = "tbd"
@@ -756,7 +721,8 @@ class WorkerBeeService {
                     logger.warn("\uD83D\uDE21 Stellar account creation failed \uD83D\uDE21", e)
                 }
 
-                return createBFNUser(host = acctInfo.host.name.toString(),
+                return createBFNUser(
+                        host = acctInfo.host.name.toString(),
                         identifier = acctInfo.identifier.id.toString(),
                         accountName = accountName,
                         email = email,
@@ -767,15 +733,15 @@ class WorkerBeeService {
 
             } catch (e: Exception) {
                 logger.info(em3 +
-                        "Houston, we have fallen over! Corda Account creation failed: ${e.message}")
+                        "Houston, we are fucked! Corda Account creation failed: " +
+                        " \uD83D\uDD35 \uD83D\uDD35 ${e.message}")
                 logger.error(e.message)
                 throw e
             }
-
-
         } catch (e: Exception) {
             logger.info(em3 +
-                    "Houston, we have fallen over! Account creation failed:  ${e.message}")
+                    "Houston, there is some shit on the floor! " +
+                    " \uD83D\uDD35 \uD83D\uDD35 Account creation failed:  ${e.message}")
             logger.error(e.message)
             throw e
         }
@@ -786,68 +752,54 @@ class WorkerBeeService {
     @Throws(Exception::class)
     fun startCustomerProfileFlow(proxy: CordaRPCOps,
                                  profile: CustomerProfileStateDTO): String {
-        return try {
-            val criteria: QueryCriteria = VaultQueryCriteria(StateStatus.UNCONSUMED)
-            val page = proxy.vaultQueryByWithPagingSpec(
-                    AccountInfo::class.java, criteria,
-                    PageSpecification(1, 5000))
-            logger.info("\uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0 Accounts found on network:  " +
-                    "\uD83E\uDD6C " + page.states.size + " ... about to run into trouble with page states ????")
-            var account: AccountInfo? = null
-            if (page.states.isNotEmpty()) {
-                for ((state) in page.states) {
-                    val info = state.data
-                    if (info.identifier.toString().equals(profile.account.identifier, ignoreCase = true)) {
-                        logger.info("Account ${profile.account.name} \uD83D\uDC7F \uD83D\uDC7F already exists on the network")
-                        account = info
-                    }
-                }
-            }
-            if (account == null) {
-                throw Exception("Account Missing for CustomerProfile")
-            }
-            logger.info("\n................. \uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
-                    "Starting the startAccountRegistrationFlow ...................... " +
-                    "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35")
+        var tranxId = "tbd"
+         try {
+            val account = getAccount(proxy,accountId = profile.account.identifier)
+            logger.info("\n\n................. \uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                    "Starting the CustomerProfileFlow ...................... " +
+                    "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35\n\n")
+             val mAccount = getNodeAccount(proxy, profile.account.identifier)
+             if (mAccount != null) {
+                 val profileState = CustomerProfileState(
+                         account = mAccount,
+                         cellphone = profile.cellphone,
+                         dateRegistered = Date(),
+                         email = profile.email,
+                         maximumInvoiceAmount = profile.maximumInvoiceAmount,
+                         minimumInvoiceAmount = profile.minimumInvoiceAmount,
+                         rippleAccountId = profile.rippleAccountId,
+                         stellarAccountId = profile.stellarAccountId
 
-            val mProfile = CustomerProfileState(
-                    account = account, cellphone = profile.cellphone, email = profile.email,
-                    minimumInvoiceAmount = profile.minimumInvoiceAmount,
-                    maximumInvoiceAmount = profile.maximumInvoiceAmount,
-                    dateRegistered = profile.dateRegistered,
-                    stellarAccountId = profile.stellarAccountId,
-                    rippleAccountId = profile.rippleAccountId)
+                 )
 
-//            try {
-            logger.info("\uDD35 \uD83D\uDD35 accountInfoCordaFuture ... returned from Corda ..." +
-                    " see if  account InfoCordaFuture.get( null)")
-            val accountInfoCordaFuture = proxy.startTrackedFlowDynamic(
-                    CustomerProfileFlow::class.java, mProfile).returnValue
+                 val profileCordaFuture = proxy.startFlowDynamic(
+                         CustomerProfileFlow::class.java, profileState).returnValue
 
-            accountInfoCordaFuture.get().toString()
-//                logger.info("\uD83C\uDF4F Flow completed... \uD83D\uDC4C accountInfo returned: " +
-//                        "\uD83E\uDD4F ${account.name}")
+                 tranxId = profileCordaFuture.get().toString()
 
-//            } catch (e: Exception) {
-//                logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D " +
-//                        "Houston, we have fallen over! Account creation failed: ${e.message}")
-//                logger.error(e.message)
-//                throw e
-//            }
+                 logger.info("\uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F " +
+                         " CustomerProfileFlow completed ... " +
+                         "\uD83D\uDC4C signedTx: " + tranxId +
+                         ";  \uD83D\uDD35 \uD83D\uDD35 customerProfile now connected to account: ${account.name} \n\n")
+             } else {
+                 throw Exception("\uD83D\uDE21 \uD83D\uDE21 Corda accountInfo not found for CustomerProfile")
+             }
 
-
-        } catch (e: Exception) {
-            logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D " +
-                    "Houston, we have fallen over! Account creation failed:  ${e.message}")
+         } catch (e: Exception) {
+            logger.error(
+                    "\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D" +
+                    " \uD83D\uDC7D \uD83D\uDC7D " +
+                    "Houston, we fucked, like royally, Boss! CustomerProfileFlow failed:  ${e.message}")
             logger.error(e.message)
             throw e
         }
+        return tranxId
     }
 
     private fun createBFNUser(host: String, identifier: String, accountName: String,
                               stellarAccountId: String,
                               rippleAccountId: String,
-                              email: String, cellphone: String, password: String): UserDTO {
+                              email: String, cellphone: String, password: String): UserDTO? {
         //create auth user record in firebase
         val bfnUser = UserDTO(
                 AccountInfoDTO(
@@ -855,19 +807,23 @@ class WorkerBeeService {
                         host,
                         accountName),
                 email,
+                password,
                 cellphone,
-                UUID.randomUUID().toString(),
+               "tbd",
                 stellarAccountId,
-                rippleAccountId,
-                password
+                rippleAccountId
+
         )
 
         val result = firebaseService.createBFNUser(bfnUser)
-        logger.info("\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 " +
-                "Saved BFN UserDTO3 account on Firestore and send FCM message: " +
-                "${gson.toJson(bfnUser)}  \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 result: " + result)
+        if (result != null) {
+            logger.info("\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 " +
+                    "WorkerBee: Saved BFN UserDTO account on Firestore: check stellarAccountId " +
+                    " \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 result stellarAccountId " +
+                    result.stellarAccountId)
+        }
 
-        return bfnUser
+        return result
     }
 
     @Throws(Exception::class)
@@ -942,7 +898,7 @@ class WorkerBeeService {
         val offerDTO = DTOUtil.getDTO(invoiceOfferState)
         try {
             val db = FirestoreClient.getFirestore()
-            val reference = db.collection("invoiceOffers").add(offerDTO)
+            val reference = db.collection(BFN_INVOICE_OFFERS).add(offerDTO)
             logger.info("\uD83E\uDDE9 " +
                     "Firestore invoiceOffers path: " + reference.get().path)
         } catch (e: Exception) {

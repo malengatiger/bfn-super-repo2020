@@ -1,9 +1,8 @@
-package com.bfn.flows
+package com.bfn.flows.customer
 
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.contracts.InvestorProfileContract
 import com.bfn.contractstates.states.CustomerProfileState
-import com.bfn.contractstates.states.InvestorProfileState
 import com.bfn.flows.services.ProfileFinderService
 import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.accounts.workflows.ourIdentity
@@ -19,43 +18,44 @@ import java.util.*
 
 @InitiatingFlow
 @StartableByRPC
-class InvestorProfileFlow(private val investorProfile: InvestorProfileState) : FlowLogic<SignedTransaction>() {
+class CustomerProfileFlow(private val customerProfile: CustomerProfileState) : FlowLogic<SignedTransaction>() {
 
     @Suspendable
     override fun call(): SignedTransaction {
-        Companion.logger.info("\uD83D\uDE39 \uD83D\uDE39 \uD83D\uDE39  \uD83C\uDFC8 \uD83C\uDFC8 \uD83C\uDFC8 \uD83C\uDFC8 \uD83C\uDFC8 \uD83C\uDFC8 " +
-                "InvestorProfileFlow started, accountId: ${investorProfile.account.identifier} " )
+        Companion.logger.info("\uD83D\uDE39 \uD83D\uDE39 \uD83D\uDE39  \uD83C\uDFC8 \uD83C\uDFC8 " +
+                "\uD83C\uDFC8 \uD83C\uDFC8 \uD83C\uDFC8 \uD83C\uDFC8 " +
+                "CustomerProfileFlow started, accountId: ${customerProfile.account.identifier} " )
         val command = InvestorProfileContract.CreateProfile()
-        val account = serviceHub.accountService.accountInfo(UUID.fromString(investorProfile.account.identifier.toString()))
-                ?: throw IllegalArgumentException("InvestorProfileFlow: \uD83D\uDC4E\uD83C\uDFFD Account not found: ${investorProfile.account.identifier}")
+        val account = serviceHub.accountService.accountInfo(UUID.fromString(customerProfile.account.identifier.toString()))
+                ?: throw IllegalArgumentException("CustomerProfileFlow: \uD83D\uDC4E\uD83C\uDFFD Account not found: ${customerProfile.account.identifier}")
 
         val profile = serviceHub.cordaService(ProfileFinderService::class.java)
-                .findInvestorProfile(investorProfile.account.identifier.toString())
-        if (profile == null) {
-            Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 will create new profile ... ")
-        } else {
-            Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 will update profile ... ")
-        }
+                .findCustomerProfile(customerProfile.account.identifier.toString())
+//        if (profile == null) {
+//            Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 will create new customer profile ... ")
+//        } else {
+//            Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 will update customer profile ... ")
+//        }
         Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95  build tx ...")
         val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
         txBuilder.addCommand(command, serviceHub.ourIdentity.owningKey)
         if (profile != null) {
             txBuilder.addInputState(profile)
         }
-        txBuilder.addOutputState(investorProfile)
+        txBuilder.addOutputState(customerProfile)
         txBuilder.verify(serviceHub)
 
         Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95  Signing transaction ... ")
         val tx = serviceHub.signInitialTransaction(txBuilder)
         val signedTx = subFlow(FinalityFlow(tx, listOf()))
         Companion.logger.info("\uD83D\uDE39 \uD83D\uDE39 \uD83D\uDE39  " +
-                "Investor Profile has been created for: " +
+                "Customer Profile has been created on the ledger for: " +
                 "${account.state.data.name} \uD83E\uDD8A \uD83E\uDD8A")
         return signedTx
     }
 
     companion object {
-        private val logger = LoggerFactory.getLogger(InvestorProfileFlow::class.java)
+        private val logger = LoggerFactory.getLogger(CustomerProfileFlow::class.java)
     }
 
 }

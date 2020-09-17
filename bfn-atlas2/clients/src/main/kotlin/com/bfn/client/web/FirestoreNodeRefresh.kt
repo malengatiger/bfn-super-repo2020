@@ -63,12 +63,12 @@ class FirestoreNodeRefresh {
             val nodes: List<NodeInfoDTO> = buildFirebase(file, stringIndex.toInt())
             logger.info("\uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C Nodes from JSON File: ${nodes.size}" )
             val db: Firestore = FirestoreClient.getFirestore()
-            val nodesFromFB = db.collection("nodes").whereEqualTo(
+            val nodesFromFB = db.collection(BFN_NODES).whereEqualTo(
                     "springBootProfile", profile).get().get().documents
             if (nodesFromFB.isEmpty()) {
                 nodes.forEach {
                     it.date = Date().time
-                    db.collection("nodes").add(it)
+                    db.collection(BFN_NODES).add(it)
                     logger.info("⚽ ⚽ ⚽ ⚽ ⚽ ⚽ ⚽ Node added to Firestore: \uD83D\uDD35 \uD83D\uDD35 " +
                             "${gson.toJson(it)} \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83C\uDF4E ")
                 }
@@ -78,7 +78,7 @@ class FirestoreNodeRefresh {
                     firebaseService.deleteNodes(profile)
                     nodes.forEach {
                         it.date = Date().time
-                        db.collection("nodes").add(it)
+                        db.collection(BFN_NODES).add(it)
                         logger.info("⚽ ⚽ ⚽ ⚽ ⚽ ⚽ ⚽ Node added to Firestore: \uD83D\uDD35 \uD83D\uDD35 " +
                                 "${gson.toJson(it)} \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83C\uDF4E ")
                     }
@@ -90,7 +90,7 @@ class FirestoreNodeRefresh {
             
             try {
                 val start = WebServerStart(date = Date(), profile = profile, numberOfNodes = nodes.size)
-                db.collection("webServerStarts").add(start)
+                db.collection(BFN_WEBSERVER_STARTS).add(start)
                 logger.info("\uD83C\uDF50 \uD83C\uDF50 \uD83C\uDF50 WebServerStart data added to Firestore:  \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E ")
             } catch (e: Exception) {
                 logger.error("\uD83D\uDE21 WebServerStart addition to Firestore is fucked.", e)

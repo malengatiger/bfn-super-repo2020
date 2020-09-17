@@ -179,7 +179,7 @@ class AdminController(rpc: NodeRPCConnection) {
 
     @PostMapping(value = ["/startAccountRegistrationFlow"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
-    private fun startAccountRegistrationFlow(@RequestBody user: UserDTO): UserDTO {
+    private fun startAccountRegistrationFlow(@RequestBody user: UserDTO): UserDTO? {
         logger.info(" \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40" +
                 " startAccountRegistrationFlow ... ${user.accountInfo.name}")
         return workerBeeService.startAccountRegistrationFlow(proxy, user.accountInfo.name,

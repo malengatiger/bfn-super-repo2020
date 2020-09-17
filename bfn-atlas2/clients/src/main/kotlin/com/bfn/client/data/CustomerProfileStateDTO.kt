@@ -1,5 +1,6 @@
 package com.bfn.client.data
 
+import net.corda.core.serialization.CordaSerializable
 import java.util.*
 
 data class CustomerProfileStateDTO (

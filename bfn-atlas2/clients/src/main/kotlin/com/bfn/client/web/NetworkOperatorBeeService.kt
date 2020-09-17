@@ -169,15 +169,19 @@ class NetworkOperatorBeeService {
                         networkOperator.cellphone,
                         networkOperator.password)
 
-                accountInfoDTO = user.accountInfo
-                if (accountInfoDTO.identifier != null) {
-                    account = getAccountInfo(proxy = proxy,
-                            identifier = accountInfoDTO.identifier)
-                    logger.info("\uD83D\uDD35 \uD83D\uDD35 ACCOUNT INFO: ${gson.toJson(accountInfoDTO)}")
-                } else {
-                    val msg = "\uD83D\uDE21 \uD83D\uDE21 Account creation failed"
-                    logger.info(msg)
-                    throw Exception(msg)
+                if (user != null) {
+                    accountInfoDTO = user.accountInfo
+                }
+                if (accountInfoDTO != null) {
+                    if (accountInfoDTO.identifier != null) {
+                        account = getAccountInfo(proxy = proxy,
+                                identifier = accountInfoDTO.identifier)
+                        logger.info("\uD83D\uDD35 \uD83D\uDD35 ACCOUNT INFO: ${gson.toJson(accountInfoDTO)}")
+                    } else {
+                        val msg = "\uD83D\uDE21 \uD83D\uDE21 Account creation failed"
+                        logger.info(msg)
+                        throw Exception(msg)
+                    }
                 }
 
             } else {

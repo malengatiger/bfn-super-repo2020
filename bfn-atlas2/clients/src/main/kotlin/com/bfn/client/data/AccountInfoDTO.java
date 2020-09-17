@@ -1,5 +1,7 @@
 package com.bfn.client.data;
 
+import net.corda.core.serialization.CordaSerializable;
+
 public class AccountInfoDTO {
     String identifier,
             host,

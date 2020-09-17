@@ -86,3 +86,16 @@ fun getThisNode(resourceLoader: ResourceLoader, springBootProfile: String, nodeI
 
 
 }
+
+const val BFN_USERS:String = "bfnUsers"
+const val ANCHORS:String = "anchors"
+const val NETWORK_OPERATOR:String = "networkOperator"
+const val BFN_CUSTOMERS:String = "bfnCustomerProfiles"
+const val BFN_SUPPLIERS:String = "bfnSupplierProfiles"
+const val BFN_INVESTORS:String = "bfnInvestorProfiles"
+const val BFN_NODES:String = "bfnNodes"
+const val BFN_INVOICES:String = "bfnInvoices"
+const val BFN_INVOICE_OFFERS:String = "bfnInvoiceOffers"
+const val BFN_TOKENS:String = "bfnTokens"
+const val BFN_WEBSERVER_STARTS:String = "bfnWebServerStarts"
+const val BFN_RESPONSE_TIMES:String = "bfnResponseTimes"

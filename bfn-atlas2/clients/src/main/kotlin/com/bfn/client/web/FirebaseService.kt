@@ -94,36 +94,36 @@ class FirebaseService() {
 
     @Throws(ExecutionException::class, InterruptedException::class)
     fun addToken(token: TokenDTO) {
-        val future: ApiFuture<DocumentReference> = db.collection("tokens").add(token);
+        val future: ApiFuture<DocumentReference> = db.collection(BFN_TOKENS).add(token);
         logger.info("\uD83D\uDE3C \uD83D\uDE3C Token added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
 
     @Throws(ExecutionException::class, InterruptedException::class)
     fun addNetworkOperator(operator: NetworkOperatorDTO) {
-        val future: ApiFuture<DocumentReference> = db.collection("networkOperator").add(operator);
+        val future: ApiFuture<DocumentReference> = db.collection(NETWORK_OPERATOR).add(operator);
         logger.info("\uD83D\uDE3C \uD83D\uDE3C NetworkOperator added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
 
     @Throws(ExecutionException::class, InterruptedException::class)
     fun addCustomerProfile(profile: CustomerProfileStateDTO) {
-        val future: ApiFuture<DocumentReference> = db.collection("customerProfiles").add(profile);
-        logger.info("\uD83D\uDE3C \uD83D\uDE3C CustomerProfileStateDTO added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+        val future: ApiFuture<DocumentReference> = db.collection(BFN_CUSTOMERS).add(profile);
+        logger.info("\uD83D\uDE3C \uD83D\uDE3C CustomerProfileState added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
     @Throws(ExecutionException::class, InterruptedException::class)
     fun addInvestorProfile(profile: InvestorProfileStateDTO) {
-        val future: ApiFuture<DocumentReference> = db.collection("investorProfiles").add(profile);
-        logger.info("\uD83D\uDE3C \uD83D\uDE3C InvestorProfileStateDTO added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+        val future: ApiFuture<DocumentReference> = db.collection(BFN_INVESTORS).add(profile);
+        logger.info("\uD83D\uDE3C \uD83D\uDE3C InvestorProfileState added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
     @Throws(ExecutionException::class, InterruptedException::class)
     fun addSupplierProfile(profile: SupplierProfileStateDTO) {
-        val future: ApiFuture<DocumentReference> = db.collection("supplierProfiles").add(profile);
-        logger.info("\uD83D\uDE3C \uD83D\uDE3C SupplierProfileStateDTO added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+        val future: ApiFuture<DocumentReference> = db.collection(BFN_SUPPLIERS).add(profile);
+        logger.info("\uD83D\uDE3C \uD83D\uDE3C SupplierProfileState added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
 
     @Throws(Exception::class)
     fun deleteNodes(springBootProfile: String) {
         try {
-            val collectionRef = db.collection("nodes")
+            val collectionRef = db.collection(BFN_NODES)
                     .whereEqualTo("springBootProfile", springBootProfile).get()
             logger.info("\uD83C\uDF4E Found ${collectionRef.get().documents.size} nodes to delete on Firestore")
             collectionRef.get().documents.forEach() {
@@ -140,7 +140,7 @@ class FirebaseService() {
     @Throws(Exception::class)
     fun deleteBFNAnchor() {
         try {
-            val collectionRef = db.collection("bfn_anchors").get()
+            val collectionRef = db.collection(ANCHORS).get()
             logger.info("\uD83C\uDF4E Found ${collectionRef.get().documents.size} bfn_anchors to delete on Firestore")
             collectionRef.get().documents.forEach() {
                 it.reference.delete()
@@ -152,11 +152,22 @@ class FirebaseService() {
         }
     }
 
+    @Throws(Exception::class)
+    fun deleteAuthUser(uid:String) {
+        try {
+            auth.deleteUser(uid)
+            logger.info("\uD83C\uDF4E Deleted auth user on Firebase Auth: $uid")
+
+        } catch (e: Exception) {
+            logger.error("Failed to delete Auth user", e)
+            throw e
+        }
+    }
 
     @Throws(Exception::class)
     fun deleteCustomers() {
         try {
-            val collectionRef = db.collection("bfn_customers").get()
+            val collectionRef = db.collection(BFN_CUSTOMERS).get()
             logger.info("\uD83C\uDF4E Found ${collectionRef.get().documents.size} BFN Customers to delete on Firestore")
             collectionRef.get().documents.forEach() {
                 it.reference.delete()
@@ -172,7 +183,7 @@ class FirebaseService() {
     fun getCordaNodes(): List<NodeInfoDTO> {
         val mList: MutableList<NodeInfoDTO> = mutableListOf()
         try {
-            val future = db.collection("nodes").get()
+            val future = db.collection(BFN_NODES).get()
             val qs: QuerySnapshot = future.get()
             qs.documents.forEach() {
                 mList.add(it.toObject(NodeInfoDTO::class.java))
@@ -190,7 +201,7 @@ class FirebaseService() {
     @Throws(Exception::class)
     fun getNetworkOperator(): NetworkOperatorDTO? {
         try {
-            val future = db.collection("networkOperator")
+            val future = db.collection(NETWORK_OPERATOR)
                     .limit(1)
                     .get()
             val qs: QuerySnapshot = future.get()
@@ -209,7 +220,7 @@ class FirebaseService() {
     @Throws(Exception::class)
     fun updateNetworkOperator(operator: NetworkOperatorDTO)  {
         logger.info("\uD83D\uDD06 \uD83D\uDD06 about to update NetworkOperator, check properties: ${gson.toJson(operator)}")
-        val future = db.collection("networkOperator")
+        val future = db.collection(NETWORK_OPERATOR)
                 .limit(1)
                 .get()
         val qs: QuerySnapshot = future.get()
@@ -234,38 +245,38 @@ class FirebaseService() {
         return mList
     }
     @Throws(FirebaseAuthException::class)
-    fun createAuthUser(name: String, email: String, password: String,
-                       uid: String): UserRecord? {
-        logger.info("\uD83D\uDD37 \uD83D\uDD37 ..... createUser: writing to Firestore " +
-                "... \uD83D\uDD37 name: $name email: $email password: $password uid: $uid")
+    fun createAuthUser(name: String, email: String, password: String): UserRecord? {
+        logger.info("\uD83D\uDD37 \uD83D\uDD37 ..... createAuthUser: writing to Firestore " +
+                "... \uD83D\uDD37 name: $name email: $email password: $password ")
         val request = UserRecord.CreateRequest()
         request.setEmail(email)
         request.setDisplayName(name)
         request.setPassword(password)
-        request.setUid(uid)
         val userRecord = auth.createUser(request)
         logger.info("\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C \uD83E\uDD66 \uD83E\uDD66 " +
-                "Auth User record created in Firebase:  \uD83E\uDD66 " + userRecord.email)
+                "Auth User record created in Firebase:  \uD83E\uDD66 " + userRecord.email +
+        " uid: " + userRecord.uid)
         return userRecord
     }
 
 
     @Throws(FirebaseAuthException::class)
-    fun createBFNUser(user: UserDTO): String? {
-        logger.info("\uD83D\uDD37 \uD83D\uDD37 ..... createBFNAccount: writing to Firestore " +
-                "Check the properties ... writing null WTF? ${gson.toJson(user)}... \uD83D\uDD37 ")
+    fun createBFNUser(user: UserDTO): UserDTO? {
+        logger.info("\uD83D\uDD37 \uD83D\uDD37 ..... FirebaseService:createBFNUser: " +
+                " \uD83C\uDF4E \uD83C\uDF4E writing to Firestore; " +
+                "Check the properties of this user record; uid not set yet ... ${gson.toJson(user)}... \uD83D\uDD37 ")
 
-        createAuthUser(
+        val userRecord = createAuthUser(
                 name = user.accountInfo.name,
                 email = user.email,
-                password = user.password,
-                uid = user.uid)
-
-        val future = db.collection("bfnUsers").add(user)
+                password = user.password)
+        if (userRecord != null) {
+            user.uid = userRecord.uid
+        }
+        val future = db.collection(BFN_USERS).add(user)
         logger.info("\n\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 " +
-                " BFN user record  added to Firestore path: " + future.get().path)
-        logger.info("\uD83E\uDD6C \uD83E\uDD6C BFN user record : " + gson.toJson(user))
-        return future?.get()?.path
+                " BFN user record added to Firestore; path: " + future.get().path)
+        return user
     }
 
 
@@ -275,9 +286,6 @@ class FirebaseService() {
         var page = FirebaseAuth.getInstance().listUsers(null)
         while (page != null) {
             for (user in page.values) {
-                if (user.email != null && user.email.contains("aubrey")) {
-                    continue
-                }
                 auth.deleteUser(user.uid)
                 cnt++
                 logger.info("\uD83C\uDF4A  User deleted: 🔵 #$cnt")
@@ -286,10 +294,7 @@ class FirebaseService() {
         }
         page = auth.listUsers(null)
         for (user in page.iterateAll()) {
-            if (user.email != null && user.email.contains("aubrey")) {
-                continue
-            }
-            logger.info("\uD83C\uDF4A \uD83C\uDF4A \uD83C\uDF4A User delete .....: ")
+            logger.info("\uD83C\uDF4A \uD83C\uDF4A \uD83C\uDF4A FirebaseAuth: deleting this auth user.....: ${user.displayName}")
             auth.deleteUser(user.uid)
             cnt++
             logger.info("🔆 🔆 🔆 user deleted: 🔵 #$cnt ${user.displayName}")
@@ -311,10 +316,10 @@ class FirebaseService() {
 
     @Throws(FirebaseAuthException::class)
     fun getBFNUsers(): MutableList<UserDTO> {
-        logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 Getting  users ...")
+        logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 Getting BFN users, look out for data parsing error ...")
         val records: MutableList<UserDTO> = mutableListOf()
         try {
-            val page = db.collection("bfnUsers").get()
+            val page = db.collection(BFN_USERS).get()
             val m = page.get()
             m.documents.forEach {
                 records.add(it.toObject(UserDTO::class.java))
@@ -323,7 +328,7 @@ class FirebaseService() {
         } catch (e: Exception) {
             logger.error(e.message)
         }
-
+        logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 Found ${records.size} BFN users")
         return records
     }
 

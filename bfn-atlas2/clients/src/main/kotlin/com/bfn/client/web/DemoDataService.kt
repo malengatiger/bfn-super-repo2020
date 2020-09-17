@@ -60,11 +60,7 @@ class DemoDataService {
         logger.info("\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
                 "Generating data for the main anchor Node: NetworkOperator + Suppliers + Investors")
 
-        firebaseService.deleteCollection(collectionName = "accounts")
-        firebaseService.deleteCollection(collectionName = "networkOperator")
-        firebaseService.deleteCollection(collectionName = "bfnUsers")
-        firebaseService.deleteCollection(collectionName = "responseTimes")
-
+        deleteFirebaseShit()
         createNetworkOperator(mProxy)
         generateLocalNodeAccounts(mProxy, numberOfAccounts)
 
@@ -73,18 +69,49 @@ class DemoDataService {
         logger.info(msg)
         return msg
     }
+
+    private fun deleteFirebaseShit() {
+        val users = firebaseService.getBFNUsers()
+        users.forEach {
+            firebaseService.deleteAuthUser(it.uid)
+        }
+        firebaseService.deleteCollection(collectionName = BFN_SUPPLIERS)
+        firebaseService.deleteCollection(collectionName = NETWORK_OPERATOR)
+        firebaseService.deleteCollection(collectionName = BFN_USERS)
+        firebaseService.deleteCollection(collectionName = BFN_RESPONSE_TIMES)
+        firebaseService.deleteCollection(collectionName = BFN_INVOICES)
+        firebaseService.deleteCollection(collectionName = BFN_INVOICE_OFFERS)
+        firebaseService.deleteCollection(collectionName = BFN_TOKENS)
+        firebaseService.deleteCollection(collectionName = BFN_CUSTOMERS)
+        firebaseService.deleteCollection(collectionName = BFN_INVESTORS)
+       logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E Firebase clean up completed")
+    }
+
     /**
      * Generate data for the customer node : Accounts are created for several customers
      */
     fun generateCustomerNodeData(mProxy: CordaRPCOps):String {
         logger.info("\n\n\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
                 "Generating data for the Customer Node: Customers only, Boss!")
-        //todo - delete existing customers from bfnUsers ....
-        val users = firebaseService.getBFNUsers()
-        users.forEach {
-            logger.info("\uD83C\uDF4E \uD83C\uDF4E Existing BFN User: " +
-                    it.accountInfo.name)
+
+        val accts = workerBeeService.getNodeAccounts(proxy = mProxy)
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                "Accounts found on the current node: " + accts.size)
+        val node = mProxy.nodeInfo()
+        var cnt = 0
+        accts.forEach {
+            logger.info(" \uD83C\uDF4E Account found on node: ${it.name} ${it.host}")
+            if (it.host == node.addresses[0].host) {
+                cnt++
+            }
         }
+        if (cnt > 0) {
+            throw Exception("\uD83D\uDE1D \uD83D\uDE1D ${accts.size} " +
+                    "Accounts exist on the node. Should we close down shop?")
+        }
+
+        firebaseService.deleteCollection(BFN_CUSTOMERS)
+
         createCustomers(mProxy, stellarAnchorUrl = stellarAnchorUrl)
         val msg = "\n\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
                 "DemoDataService: generateCustomerNodeData COMPLETE! " +
@@ -647,7 +674,7 @@ class DemoDataService {
                 + "Start createCustomers .... createCustomers  \uD83D\uDECE  ")
 
         doOneCustomer(proxy, stellarAnchorUrl, buildCustomerProfile(
-                "Pick & Pay",
+                "Pick & Pay Supermarkets",
                 minimumInvoiceAmount = 5000.00,
                 maximumInvoiceAmount = 100000.00))
         logger.info("\n\n\n\n")
@@ -662,7 +689,7 @@ class DemoDataService {
                 maximumInvoiceAmount = 1000000.00))
         logger.info("\n\n\n\n")
         doOneCustomer(proxy, stellarAnchorUrl, buildCustomerProfile(
-                "Shoprite",
+                "Shoprite Supermarkets",
                 minimumInvoiceAmount = 15000.00,
                 maximumInvoiceAmount = 300000.00))
         logger.info("\n\n\n\n")
@@ -713,11 +740,13 @@ class DemoDataService {
 
         val password = "pass123"
         try {
-            val resultProfile = workerBeeService.createCustomer(proxy, stellarAnchorUrl, customerProfile, password)
+            val resultProfile = workerBeeService.createCustomerProfile(proxy, customerProfile, password)
             logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
-                    "Processed customerProfile returned: " + gson.toJson(resultProfile))
+                    "Processed customerProfile returned from workerBeeService.createCustomer: "
+                    + gson.toJson(resultProfile))
         } catch (e: Exception) {
-            logger.info("\uD83D\uDD25 \uD83D\uDD25 \uD83D\uDD25 Customer creation failed , trying next one ...")
+            logger.info("\uD83D\uDD25 \uD83D\uDD25 \uD83D\uDD25 " +
+                    "Customer creation failed , trying next one ...")
         }
     }
 
