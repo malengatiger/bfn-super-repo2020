@@ -3,15 +3,19 @@ package com.bfn.client.web
 
 import com.bfn.client.data.AccountInfoDTO
 import com.google.gson.GsonBuilder
+import com.google.gson.stream.JsonReader
 import khttp.post
-import net.corda.core.messaging.CordaRPCOps
+import khttp.get
+import org.json.JSONArray
+import org.json.JSONObject
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
+import java.io.StringReader
 
-private val logx = LoggerFactory.getLogger(StellarAccountService::class.java)
+private val logx = LoggerFactory.getLogger(CustomerNodeService::class.java)
 private val gson = GsonBuilder().setPrettyPrinting().create()
 
 @Autowired
@@ -31,7 +35,7 @@ class CustomerNodeService {
         logx.info("\n\uD83C\uDF30 Sending HTTP call to the Customer  node to get a list of customers" +
                 ": \uD83E\uDDE9 } \uD83C\uDF30 $customerNodeUrl$suffix")
 
-        var customers: List<AccountInfoDTO> = mutableListOf()
+        var customers: MutableList<AccountInfoDTO> = mutableListOf()
 
         logx.info("\uD83C\uDF4E call the Customer server and obtain a list of accounts ")
         val headers = mapOf("Content-Type" to MediaType.APPLICATION_JSON_VALUE)
@@ -40,16 +44,16 @@ class CustomerNodeService {
                 "... Request for accounts to be sent over the wire: sent to " +
                 "\uD83C\uDF4E $customerNodeUrl$suffix \uD83C\uDF4E")
 
-        val result = post(url = "$customerNodeUrl$suffix", timeout = 990000000.0, headers = headers)
+        val result = get(url = "$customerNodeUrl$suffix", timeout = 990000000.0, headers = headers)
 
         logx.info("$good getCustomers RESPONSE: statusCode: ${result.statusCode}  ")
         logx.info("$good getCustomers RESPONSE: result text: ${result.text}  ")
 
         if (result.statusCode == 200) {
-            customers = gson.fromJson<List<AccountInfoDTO>>(result.text, AccountInfoDTO::class.java)
+            customers = getAccountsFromJson(result.text)
             logx.info("$good result status is KOOL! " +
                     "Customer accounts has been successfully requested!" +
-                    " \uD83C\uDF51 \uD83C\uDF51 ${gson.toJson(customers)}")
+                    " \uD83C\uDF51 \uD83C\uDF51 found: ${customers.size}")
             return customers
         } else {
             logx.info("$err  CustomerNodeService:getCustomers fucked up! : " +
@@ -58,6 +62,15 @@ class CustomerNodeService {
                     " statusCode: ${result.statusCode}")
         }
 
+    }
+    private fun getAccountsFromJson(jsonStr: String): MutableList<AccountInfoDTO> {
+
+        val stringReader = StringReader(jsonStr)
+        val mList: MutableList<AccountInfoDTO> = gson.fromJson(
+                stringReader , Array<AccountInfoDTO>::class.java).toMutableList()
+
+        logger.info(" \uD83D\uDD35 Result list from JSON string has ${mList.size} customers")
+        return mList
     }
 
     private val good = "\uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C"

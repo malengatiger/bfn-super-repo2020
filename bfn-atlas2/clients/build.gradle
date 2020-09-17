@@ -1,3 +1,5 @@
+import org.springframework.boot.gradle.tasks.run.BootRun
+
 apply plugin: 'org.springframework.boot'
 apply plugin: 'java'
 sourceSets {
@@ -35,29 +37,33 @@ dependencies {
 
 }
 
-
 springBoot {
     mainClassName = "com.bfn.client.web.ServerKt"
+}
+
+bootRun {
+    description "Run Spring boot application with profile"
+    environment('spring.aubrey', 'dad63')
+    environment('spring.malabie', 'm63')
 }
 
 task runClient(type: JavaExec, dependsOn: assemble) {
     classpath = sourceSets.main.runtimeClasspath
     main = 'com.bfn.client.local.ClientKt'
 }
-
+// 🏀   BFN Anchor Web Server for the NetworkOperator
 task runAnchor(type: JavaExec, dependsOn: assemble) {
     classpath = sourceSets.main.runtimeClasspath
     main = 'com.bfn.client.web.ServerKt'
-    args '--server.port=10050', '--config.rpc.host=localhost', '--config.rpc.port=10006', '--config.rpc.username=user1', '--config.rpc.password=test'
 }
 
+// 🏀   Customer Node Web Server
 task runCustomer(type: JavaExec, dependsOn: assemble) {
     classpath = sourceSets.main.runtimeClasspath
     main = 'com.bfn.client.web.ServerKt'
-    args '--server.port=10053', '--config.rpc.host=localhost', '--config.rpc.port=10009', '--config.rpc.username=user1', '--config.rpc.password=test'
 }
 
-
+// 🏀   Regulator Web Server
 task runRegulator(type: JavaExec, dependsOn: assemble) {
     classpath = sourceSets.main.runtimeClasspath
     main = 'com.bfn.client.web.ServerKt'
@@ -73,3 +79,11 @@ task runGeneric(type: JavaExec, dependsOn: assemble) {
     classpath = sourceSets.main.runtimeClasspath
     main = 'com.bfn.client.web.ServerKt'
 }
+// 🏀  Command line arguments for each of the network web servers connected to Corda nodes
+tasks.named('runAnchor') {
+    args('--server.port=10050',' --config.rpc.host=localhost', '--config.rpc.port=10006', '--config.rpc.username=user1', '--config.rpc.password=test')
+}
+tasks.named('runCustomer') {
+    args('--server.port=10053',' --config.rpc.host=localhost', '--config.rpc.port=10009', '--config.rpc.username=user1', '--config.rpc.password=test')
+}
+

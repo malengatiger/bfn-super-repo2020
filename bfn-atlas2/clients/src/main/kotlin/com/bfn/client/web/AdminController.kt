@@ -132,11 +132,11 @@ class AdminController(rpc: NodeRPCConnection) {
     @GetMapping(value = ["/getAccounts"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun getAccounts(): List<AccountInfoDTO> {
-        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting getAccounts signIn ... \uD83C\uDF4F ")
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting getAccounts ... \uD83C\uDF4F ")
         return workerBeeService.getNodeAccounts(proxy)
     }
 
-    @PostMapping(value = ["/generateInvoices"], produces = [MediaType.APPLICATION_JSON_VALUE])
+    @GetMapping(value = ["/generateInvoices"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun generateInvoices(numberOfInvoicesPerAccount:Int ): String? {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 AdminController: ... generateInvoices ...")

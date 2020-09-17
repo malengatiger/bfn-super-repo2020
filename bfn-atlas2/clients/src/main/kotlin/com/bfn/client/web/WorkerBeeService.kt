@@ -2,7 +2,7 @@ package com.bfn.client.web
 
 import com.bfn.client.data.*
 import com.bfn.contractstates.states.*
-import com.bfn.flows.*
+import com.bfn.flows.CreateAccountFlow
 import com.bfn.flows.customer.CustomerProfileFlow
 import com.bfn.flows.investor.InvestorProfileFlow
 import com.bfn.flows.invoices.InvoiceOfferFlow
@@ -12,6 +12,7 @@ import com.bfn.flows.queries.InvoiceOfferQueryFlow
 import com.bfn.flows.queries.InvoiceQueryFlow
 import com.bfn.flows.scheduled.CreateInvoiceOffersFlow
 import com.bfn.flows.supplier.SupplierProfileFlow
+import com.bfn.flows.todaysDate
 import com.google.firebase.cloud.FirestoreClient
 import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
@@ -70,31 +71,41 @@ class WorkerBeeService {
 
     fun getNodeAccounts(proxy: CordaRPCOps): List<AccountInfoDTO> {
         val start = Date()
+        val node = proxy.nodeInfo()
+        logger.info("\uD83C\uDF50 \uD83C\uDF50 Current Node: ${node.legalIdentities[0].name}")
         val accounts = proxy.vaultQuery(AccountInfo::class.java).states
-        logger.info("\uD83C\uDF3A \uD83C\uDF3A \uD83C\uDF3A Total Accounts in Node: " +
-                "${accounts.size} \uD83C\uDF3A THIS Node: ${proxy.nodeInfo().addresses[0]}")
+        logger.info("\uD83C\uDF3A \uD83C\uDF3A \uD83C\uDF3A " +
+                "Total Accounts in Node (\uD83D\uDD35 \uD83D\uDD35 including accounts from other Corda node): " +
+                "${accounts.size} \uD83C\uDF3A THIS Node: ${proxy.nodeInfo().legalIdentities[0].name}")
+        var cnt = 0
+        for (account in accounts) {
+            cnt++
+            logger.info("\uD83C\uDF40 Account from query:  \uD83C\uDF50" +
+                    " name: ${account.state.data.host.name} \uD83C\uDF50 " +
+                    "identifier: ${account.state.data.identifier.id}")
+        }
         var end = Date()
         val ms1 = (end.time - start.time)
         logger.info("\uD83D\uDD37 \uD83D\uDD37 \uD83D\uDD37 vault query: " +
                 "$ms1 milliseconds elapsed, ${accounts.size} accounts gotten \uD83D\uDD37 ${accounts.size} accounts ...")
-        var cnt = 0
+        cnt = 0
         val list: MutableList<AccountInfoDTO> = mutableListOf()
         val start2 = Date()
         for ((state) in accounts) {
             cnt++
             val acct = state.data
-            logger.info("\uD83C\uDF50️ \uD83C\uDF50 Listing account  \uD83C\uDF50️ " +
-                    "#$cnt \uD83C\uDF3A ${state.data.name} \uD83C\uDF50️ ")
-            val dto = AccountInfoDTO(acct.identifier.id.toString(),
-                    acct.host.toString(), acct.name)
-            list.add(dto)
+            if (acct.host.name.toString() == proxy.nodeInfo().legalIdentities[0].name.toString()) {
+                val dto = AccountInfoDTO(acct.identifier.id.toString(),
+                        acct.host.toString(), acct.name)
+                list.add(dto)
+            }
 
         }
         end = Date()
         val ms = (end.time - start2.time)
-        val msg = "\uD83C\uDF3A \uD83C\uDF3A done listing \uD83D\uDC9A ${list.size} " +
+        val msg = "\uD83C\uDF3A \uD83C\uDF3A done filtered listing; found accounts for node: \uD83D\uDC9A ${list.size} " +
                 "\uD83D\uDC9A accounts on Node: \uD83C\uDF3A : \uD83D\uDD37 $ms milliseconds elapsed \uD83D\uDD37 " +
-                proxy.nodeInfo().legalIdentities.first().toString()
+                proxy.nodeInfo().legalIdentities.first().name.toString()
         logger.info(msg)
         return list
     }
@@ -576,9 +587,17 @@ class WorkerBeeService {
 
     @Throws(Exception::class)
     fun startInvoiceRegistrationFlow(proxy: CordaRPCOps, invoice: InvoiceDTO): InvoiceDTO {
-        logger.info("startInvoiceRegistrationFlow: \uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C account: ${gson.toJson(invoice)}")
+        logger.info("startInvoiceRegistrationFlow: \uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C " +
+                "account: check customer and supplier available ${gson.toJson(invoice)}")
+        if (invoice.customer.host == null) {
+            throw Exception("\uD83D\uDE21 Customer object is missing data")
+        }
+        if (invoice.supplier.host == null) {
+            throw Exception("\uD83D\uDE21 Customer object is missing data")
+        }
         return try {
             val accounts = proxy.vaultQuery(AccountInfo::class.java).states
+            logger.info("\uD83D\uDD35 \uD83D\uDD35 Vault Query for Accounts returned ${accounts.size} from the ledger")
             var supplierInfo: AccountInfo? = null
             var customerInfo: AccountInfo? = null
             for ((state) in accounts) {
@@ -628,16 +647,18 @@ class WorkerBeeService {
                 logger.info("\uD83E\uDDE9" +
                         "Firestore path: " + reference.get().path)
             } catch (e: Exception) {
+                e.printStackTrace()
                 logger.error(e.message)
             }
             dto
         } catch (e: Exception) {
+            e.printStackTrace()
             if (e.message != null) {
                 throw Exception("Failed to register invoice. " + e.message)
             } else {
-                e.printStackTrace()
                 throw Exception("Failed to register invoice. Unknown bloody cause!!")
             }
+
         }
     }
 
@@ -753,43 +774,43 @@ class WorkerBeeService {
     fun startCustomerProfileFlow(proxy: CordaRPCOps,
                                  profile: CustomerProfileStateDTO): String {
         var tranxId = "tbd"
-         try {
-            val account = getAccount(proxy,accountId = profile.account.identifier)
+        try {
+            val account = getAccount(proxy, accountId = profile.account.identifier)
             logger.info("\n\n................. \uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
                     "Starting the CustomerProfileFlow ...................... " +
                     "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35\n\n")
-             val mAccount = getNodeAccount(proxy, profile.account.identifier)
-             if (mAccount != null) {
-                 val profileState = CustomerProfileState(
-                         account = mAccount,
-                         cellphone = profile.cellphone,
-                         dateRegistered = Date(),
-                         email = profile.email,
-                         maximumInvoiceAmount = profile.maximumInvoiceAmount,
-                         minimumInvoiceAmount = profile.minimumInvoiceAmount,
-                         rippleAccountId = profile.rippleAccountId,
-                         stellarAccountId = profile.stellarAccountId
+            val mAccount = getNodeAccount(proxy, profile.account.identifier)
+            if (mAccount != null) {
+                val profileState = CustomerProfileState(
+                        account = mAccount,
+                        cellphone = profile.cellphone,
+                        dateRegistered = Date(),
+                        email = profile.email,
+                        maximumInvoiceAmount = profile.maximumInvoiceAmount,
+                        minimumInvoiceAmount = profile.minimumInvoiceAmount,
+                        rippleAccountId = profile.rippleAccountId,
+                        stellarAccountId = profile.stellarAccountId
 
-                 )
+                )
 
-                 val profileCordaFuture = proxy.startFlowDynamic(
-                         CustomerProfileFlow::class.java, profileState).returnValue
+                val profileCordaFuture = proxy.startFlowDynamic(
+                        CustomerProfileFlow::class.java, profileState).returnValue
 
-                 tranxId = profileCordaFuture.get().toString()
+                tranxId = profileCordaFuture.get().toString()
 
-                 logger.info("\uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F " +
-                         " CustomerProfileFlow completed ... " +
-                         "\uD83D\uDC4C signedTx: " + tranxId +
-                         ";  \uD83D\uDD35 \uD83D\uDD35 customerProfile now connected to account: ${account.name} \n\n")
-             } else {
-                 throw Exception("\uD83D\uDE21 \uD83D\uDE21 Corda accountInfo not found for CustomerProfile")
-             }
+                logger.info("\uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F " +
+                        " CustomerProfileFlow completed ... " +
+                        "\uD83D\uDC4C signedTx: " + tranxId +
+                        ";  \uD83D\uDD35 \uD83D\uDD35 customerProfile now connected to account: ${account.name} \n\n")
+            } else {
+                throw Exception("\uD83D\uDE21 \uD83D\uDE21 Corda accountInfo not found for CustomerProfile")
+            }
 
-         } catch (e: Exception) {
+        } catch (e: Exception) {
             logger.error(
                     "\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D" +
-                    " \uD83D\uDC7D \uD83D\uDC7D " +
-                    "Houston, we fucked, like royally, Boss! CustomerProfileFlow failed:  ${e.message}")
+                            " \uD83D\uDC7D \uD83D\uDC7D " +
+                            "Houston, we fucked, like royally, Boss! CustomerProfileFlow failed:  ${e.message}")
             logger.error(e.message)
             throw e
         }
@@ -809,7 +830,7 @@ class WorkerBeeService {
                 email,
                 password,
                 cellphone,
-               "tbd",
+                "tbd",
                 stellarAccountId,
                 rippleAccountId
 

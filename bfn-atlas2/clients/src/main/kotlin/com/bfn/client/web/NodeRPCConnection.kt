@@ -45,27 +45,42 @@ open class NodeRPCConnection(
     @Autowired
     private val resourceLoader: ResourceLoader? = null
 
+
     @PostConstruct
     fun initialiseNodeRPCConnection() {
-        logger.info("\n\uD83D\uDD37\uD83D\uDD37\uD83D\uDD37\uD83D\uDD37 initialiseNodeRPCConnection: Node Access Properties: " +
-                "\uD83D\uDD37 node index: $stringIndex :  \uD83C\uDF4E - to get node from json file by this index")
+        logger.info("\n\n\n\uD83D\uDD37\uD83D\uDD37\uD83D\uDD37\uD83D\uDD37 initialiseNodeRPCConnection: Node Access Properties: " +
+                "\uD83D\uDD37 node index: $stringIndex :  \uD83C\uDF4E - to get node from json file by this index\n\n")
 
         try {
-            val pair: Pair<NodeInfoDTO, File> = getThisNode(resourceLoader = resourceLoader!!,
-                    springBootProfile = springBootProfile, nodeIndex = stringIndex.toInt())
-            val rpcAddress = NetworkHostAndPort(pair.first.host!!, pair.first.port!!.toInt())
-            val rpcClient = CordaRPCClient(rpcAddress)
-            val rpcConnection = rpcClient.start(pair.first.username!!, pair.first.password!!)
+
+            val rpcConnection = connectToNode(
+                    host = CONFIG_RPC_HOST,
+                    rpcPort = Integer.parseInt(CONFIG_RPC_PORT),
+                    username = USERNAME,
+                    password = PASSWORD)
             proxy = rpcConnection.proxy
+            val node = proxy.nodeInfo()
+            logger.info("\n\n\n\uD83D\uDD35 \uD83D\uDD35 initialiseNodeRPCConnection  \uD83C\uDF4E " +
+                    "initialization completed \uD83D\uDD35 \uD83D\uDD35")
+            logger.info("\uD83D\uDD35 \uD83D\uDD35 initialiseNodeRPCConnection: our Corda Node is: " +
+                    "${node.legalIdentities[0].name}  \uD83C\uDF4E \uD83D\uDD35 \uD83D\uDD35\n\n\n")
 
-            logger.info("\uD83D\uDD35 \uD83D\uDD35 initialiseNodeRPCConnection  \uD83C\uDF4E completed \uD83D\uDD35 \uD83D\uDD35")
-
-        } catch (e: IOException) {
-            logger.warn("IOException", e)
+        } catch (e: Exception) {
+            logger.error("IOException: Node may not be available", e)
+            throw e
         }
 
     }
-
+    private fun connectToNode(
+            host: String ,
+            rpcPort: Int,
+            username: String,
+            password: String
+    ): CordaRPCConnection {
+        val rpcAddress = NetworkHostAndPort(host, rpcPort)
+        val rpcClient = CordaRPCClient(rpcAddress)
+        return rpcClient.start(username, password)
+    }
 
 
     @PreDestroy

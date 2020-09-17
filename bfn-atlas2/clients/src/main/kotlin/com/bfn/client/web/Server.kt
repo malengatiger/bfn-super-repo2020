@@ -21,21 +21,58 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.reflect.full.declaredFunctions
 
+var CONFIG_RPC_HOST = ""
+var CONFIG_RPC_PORT = ""
+var SERVER_PORT = ""
+var USERNAME = ""
+var PASSWORD = ""
 
 /**
- * BFN Web Backend API - Spring Boot application.
- */
+ * BFN Web Backend API - Kotlin Spring Boot application.
+ * */
 
 fun main(args: Array<String>) {
-    println("\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 " +
-            "BFN Web Backend API (Kotlin) ......... starting  ... Senor! ...");
+    logger.info("\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 " +
+            "BFN Web Backend API (Kotlin) ......... starting  ... Senor! ...")
+    logger.info("\n\n\n \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 command line arguments \uD83D\uDD06 ")
+    for (arg in args) {
+
+        val index = arg.indexOf("=")
+        if (arg.contains("server.port")) {
+            val serverPort = arg.substring(index + 1)
+            SERVER_PORT = serverPort
+            logger.info("\uD83D\uDD35  command line argument: $arg \uD83C\uDF4E server.port: $SERVER_PORT")
+        }
+        if (arg.contains("config.rpc.host")) {
+            val host = arg.substring(index + 1)
+            CONFIG_RPC_HOST = host
+            logger.info("\uD83D\uDD35 command line argument: $arg \uD83C\uDF4E config.rpc.host: $CONFIG_RPC_HOST")
+        }
+        if (arg.contains("config.rpc.port")) {
+            val rpcPort = arg.substring(index + 1)
+            CONFIG_RPC_PORT = rpcPort
+            logger.info("\uD83D\uDD35 command line argument: $arg \uD83C\uDF4E config.rpc.port: $CONFIG_RPC_PORT")
+        }
+        if (arg.contains("username")) {
+            val user = arg.substring(index + 1)
+            USERNAME = user
+            logger.info("\uD83D\uDD35 command line argument: $arg \uD83C\uDF4E username: $USERNAME")
+        }
+        if (arg.contains("password")) {
+            val password = arg.substring(index + 1)
+            PASSWORD = password
+            logger.info("\uD83D\uDD35 command line argument: $arg \uD83C\uDF4E password: $PASSWORD")
+        }
+
+    }
+    logger.info("\n\n\n")
     val p = SpringApplicationBuilder().sources(
             ApiApp::class.java)
             .bannerMode(Banner.Mode.OFF)
             .web(WebApplicationType.SERVLET)
             .run(*args)
 
-    println("\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 " +
+    logger.info("\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 " +
             "BFN Web Backend API (Kotlin) ............ started .............." +
             "\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83C\uDF50️ " +
             "isRunning: ${p.isRunning} \uD83C\uDF50️")
@@ -51,8 +88,8 @@ private open class ApiApp : ApplicationListener<ApplicationReadyEvent> {
     @Autowired
     private lateinit var context: ApplicationContext
 
-    @Value("\${interval}")
-    private var interval: String = "900"
+//    @Value("\${interval}")
+//    private var interval: String = "900"
 
     @Value("\${spring.profiles.active}")
     private var profile: String = ""

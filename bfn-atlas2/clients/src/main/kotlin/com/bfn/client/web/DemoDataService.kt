@@ -516,34 +516,43 @@ class DemoDataService {
         invoiceCnt = 0
 
         val customers = customerNodeService.getCustomers()
+        if (customers.isEmpty()) {
+            val m = "\uD83D\uDE1D\uD83D\uDE1D\uD83D\uDE1D No customers found, quiting ..."
+            logger.info(m)
+            return m
+        } else {
+            logger.info("\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40  We have customers from the node! theres are ${customers.size}")
+        }
+        logger.info("\uD83C\uDF50 \uD83C\uDF50 CustomerNodeService returned ${customers.size} customers")
+        for (customer in customers) {
+            logger.info("\uD83C\uDF50 Customer from CustomerNode1: ${gson.toJson(customer)}")
+        }
+        val node = proxy.nodeInfo();
         for (acct in accounts) {
-            cal.set(2020, 6, 1)
-            if (acct.identifier == networkOperatorState.account.identifier.toString()) {
-                logger.info("\uD83D\uDD35 \uD83D\uDD35  \uD83D\uDD35 \uD83D\uDD35" +
-                        "Invoice generation ignored for the Network Operator "
-                        + networkOperatorState.account.name)
-                continue
+            if (acct.host == node.addresses[0].host) { //pick accounts from the node only
+                cal.set(2020, 6, 1)
+                if (acct.identifier == networkOperatorState.account.identifier.toString()) {
+                    logger.info("\uD83D\uDD35 \uD83D\uDD35  \uD83D\uDD35 \uD83D\uDD35" +
+                            "Invoice generation ignored for the Network Operator "
+                            + networkOperatorState.account.name)
+                    continue
+                }
+                logger.info("\n\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                        "Generating invoices for account: " + acct.name)
+                for (x in 0..numberOfInvoicesPerAccount) {
+                    try {
+                        startInvoiceFlow(proxy, customers, acct, cal.time)
+                        invoiceCnt++
+                        cal.add(Calendar.MONTH, 1)
+                        logger.info("\uD83E\uDDE9 \uD83E\uDDE9 created $invoiceCnt " +
+                                "invoices this month; \uD83D\uDD35 " +
+                                "roll over to the next month:  ⏰ ${cal.time}  ⏰")
+                    } catch (e: Exception) {
+                        logger.error("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 " +
+                                "Invoice failed to generate for account ${gson.toJson(acct)}")
+                    }
+                }
             }
-            logger.info("\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
-                    "Generating invoices for account: " + acct.name)
-            logger.info( "getting customer list from the Customer Node .... ")
-
-            if (customers.isEmpty()) {
-               val m = "\uD83D\uDE1D\uD83D\uDE1D\uD83D\uDE1D No customers found, quiting ..."
-                logger.info(m)
-                return m
-            } else {
-                logger.info("\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40  We have customers from the node! theres are ${customers.size}")
-            }
-            for (x in 0..numberOfInvoicesPerAccount) {
-                startInvoiceFlow(proxy, customers, acct, cal.time)
-                invoiceCnt++
-                cal.add(Calendar.MONTH, 1)
-                logger.info("\uD83E\uDDE9 \uD83E\uDDE9 created $invoiceCnt " +
-                        "invoices this month; \uD83D\uDD35 " +
-                        "roll over to the next month:  ⏰ ${cal.time}  ⏰")
-            }
-
         }
         demoSummary.numberOfInvoices = invoiceCnt
         return "\uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A :: Total Invoices generated on Node: $invoiceCnt \uD83D\uDC9C"
@@ -573,21 +582,22 @@ class DemoDataService {
         }
     }
 
-    private var repeatCount = 0
     private fun buildInvoice(customers: List<AccountInfoDTO>,
                              supplier: AccountInfoDTO, date: Date): InvoiceDTO? {
 
         var num = random.nextInt(1000)
         if (num >= 700) num = 2000
+
         val index = random.nextInt(customers.size - 1)
         accountInfo = customers[index]
+        logger.info("Customer randomly selected is : ${gson.toJson(accountInfo)}")
 
         if (supplier.name == accountInfo.name) {
             logger.info("Supplier Name is the same as CustomerName: ${supplier.name} customer: ${accountInfo.name}")
         return null
         }
 
-        return InvoiceDTO(
+        val invoice = InvoiceDTO(
                 invoiceNumber = "INV_" + System.currentTimeMillis(),
                 supplier = supplier,
                 customer = accountInfo,
@@ -597,10 +607,11 @@ class DemoDataService {
                 description = "LARGE : Demo Invoice at ${Date()}",
                 dateRegistered = date.toString(),
                 invoiceId = UUID.randomUUID().toString(),
-                externalId = UUID.randomUUID().toString()
+                externalId = "tbd"
         )
+        logger.info("\uD83D\uDD06 buildInvoice returns; check customer and supplier: ${gson.toJson(invoice)}")
 
-
+        return invoice
     }
 
     private fun buildSmallInvoice(customers: List<AccountInfoDTO>,
@@ -609,7 +620,6 @@ class DemoDataService {
         if (supplier.name == accountInfo.name) {
             return null
         }
-        val invoice: InvoiceDTO?
         var num = random.nextInt(200)
         if (num <= 50) num = 1000
 
@@ -621,7 +631,7 @@ class DemoDataService {
             return null
         }
 
-        invoice = InvoiceDTO(
+        val invoice = InvoiceDTO(
                 invoiceNumber = "INV_" + System.currentTimeMillis(),
                 supplier = supplier,
                 customer = accountInfo,
@@ -631,10 +641,10 @@ class DemoDataService {
                 description = "SMALL: Demo Invoice at ${Date()}",
                 dateRegistered = date.toString(),
                 invoiceId = UUID.randomUUID().toString(),
-                externalId = UUID.randomUUID().toString()
+                externalId = "tbd"
         )
 
-
+        logger.info("\uD83D\uDD06 buildSmallInvoice returns; check customer and supplier: ${gson.toJson(invoice)}")
         return invoice
     }
 
