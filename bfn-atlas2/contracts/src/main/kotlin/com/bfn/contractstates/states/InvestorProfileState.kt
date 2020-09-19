@@ -21,6 +21,7 @@ class InvestorProfileState(
                            val bankAccount: String,
                            val stellarAccountId: String,
                            val rippleAccountId: String,
+                           val tradeMatrixItems: MutableList<TradeMatrixItem>,
                            var date: Date
                    ) : ContractState {
 

@@ -13,17 +13,8 @@ import java.util.*
 @BelongsToContract(NetworkOperatorContract::class)
 class NetworkOperatorState(
                            val account: AccountInfo,
-                           val minimumInvoiceAmount: Double,
-                           val maximumInvoiceAmount: Double,
-                           val maximumInvestment: Double,
-                           val tradeFrequencyInMinutes: Int,
-                           val defaultOfferDiscount: Double,
-                           val tradeMatrixItems: MutableList<TradeMatrixItem>,
                            val date: Date,
-                           val name: String,
                            val email: String,
-                           val stellarAccountId: String,
-                           val rippleAccountId: String,
                            val cellphone: String
                    ) : ContractState {
 

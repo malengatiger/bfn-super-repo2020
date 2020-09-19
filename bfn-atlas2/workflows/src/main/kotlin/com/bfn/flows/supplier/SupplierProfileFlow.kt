@@ -29,11 +29,7 @@ class SupplierProfileFlow(private val supplierProfileState: SupplierProfileState
 
         val profile = serviceHub.cordaService(ProfileFinderService::class.java)
                 .findSupplierProfile(supplierProfileState.account.identifier.toString())
-        if (profile == null) {
-            Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 will create new profile ... ")
-        } else {
-            Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 will update profile ... ")
-        }
+
 
         val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
         val command = InvestorProfileContract.CreateProfile()

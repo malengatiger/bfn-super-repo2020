@@ -86,6 +86,33 @@ class DemoDataController(rpc: NodeRPCConnection) {
                 "    \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
         return result
     }
+    @GetMapping(value = ["/generateInvoiceOffers"], produces = [MediaType.TEXT_PLAIN_VALUE])
+    @Throws(Exception::class)
+    private fun generateInvoiceOffers(): String? {
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                "starting DemoDataController: generateInvoiceOffers " +
+                "... \uD83C\uDF4F ")
+
+        val result = demoDataService.generateInvoiceOffers(proxy)
+        logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                "DemoDataController:generateInvoiceOffers result: " +
+                " $result   \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
+        return result
+    }
+    @GetMapping(value = ["/generateOffersFromAccount"], produces = [MediaType.TEXT_PLAIN_VALUE])
+    @Throws(Exception::class)
+    private fun generateOffersFromAccount(accountId:String): String? {
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                "starting DemoDataController: createOffersFromAccount " +
+                "... \uD83C\uDF4F ")
+
+        val acct = workerBeeService.getAccount(proxy = proxy, accountId = accountId)
+        val result = demoDataService.generateOffersFromAccount(proxy,acct)
+        logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                "DemoDataController:generateOffersFromAccount result: " +
+                " $result   \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
+        return result
+    }
     @GetMapping(value = ["/generateAnchorNodeAccounts"], produces = [MediaType.TEXT_PLAIN_VALUE])
     @Throws(Exception::class)
     private fun generateAnchorNodeAccounts(numberOfAccounts:String): String? {

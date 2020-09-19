@@ -18,7 +18,6 @@ class CustomerProfileContract : Contract {
         }
         val customerState = tx.outputStates.first()
         if (customerState is CustomerProfileState) {
-
             if (customerState.maximumInvoiceAmount <= 0.0) {
                 throw IllegalArgumentException("Maximum Invoice Amount must be greater than zero")
             }
@@ -29,7 +28,7 @@ class CustomerProfileContract : Contract {
         }
 
 
-        logger.info(" $em CustomerContract: verification ( \uD83D\uDC7A " +
+        logger.info(" $em CustomerProfileContract: verification done! \uD83D\uDC7A " +
                 ".....\uD83E\uDD1F \uD83E\uDD1F ")
     }
 

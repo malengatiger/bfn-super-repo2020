@@ -91,7 +91,7 @@ class NetworkOperatorBeeService {
         ).states
         logger.info("\uD83C\uDF15 \uD83C\uDF15 Anchor states found: ${states.size}")
         states.forEach() {
-            if (it.state.data.name == networkOperator.name) {
+            if (it.state.data.account.name == networkOperator.account.name) {
                 oldState = it.state.data
             }
         }
@@ -102,7 +102,7 @@ class NetworkOperatorBeeService {
                 NetworkOperatorUpdateFlow::class.java, oldState!!).returnValue
         val result = cordaFuture.get()
         val dto = DTOUtil.getDTO(result)
-        logger.info("\uD83C\uDF53 createAnchor: Anchor updated: \uD83C\uDF53 ${dto.name}")
+        logger.info("\uD83C\uDF53 createAnchor: Anchor updated: \uD83C\uDF53 ${dto.account.name}")
         return dto
     }
 
@@ -133,13 +133,13 @@ class NetworkOperatorBeeService {
 
     @Throws(Exception::class)
     fun createNetworkOperator(proxy: CordaRPCOps,
-                              networkOperator: NetworkOperatorDTO): NetworkOperatorDTO? {
+                              networkOperator: NetworkOperatorDTO,
+                              investorProfile: InvestorProfileStateDTO): NetworkOperatorDTO? {
         logger.info("\n\n\n$xx Starting to create NetworkOperator: BFN Head Honcho to " +
                 "\uD83C\uDF88 Firebase auth, \uD83C\uDF88 Corda and \uD83C\uDF88 Firestore, " +
-                "check networkOperator.tradeFrequencyInMinutes  : ${gson.toJson(networkOperator)}\n\n")
-        if (networkOperator.tradeFrequencyInMinutes <= 0) {
-            throw Exception("Bad tradeFrequencyInMinutes ${networkOperator.tradeFrequencyInMinutes}")
-        }
+                " ${gson.toJson(networkOperator)} \uD83C\uDF88 " +
+                "investorProfile ${gson.toJson(investorProfile)}\n\n")
+
         val res = proxy.vaultQuery(NetworkOperatorState::class.java).states.singleOrNull()
         if (res != null) {
             val msg = "\uD83D\uDE21 NetworkOperator exists; there should only be one, Bro! \uD83D\uDE21 \uD83D\uDE21"
@@ -147,76 +147,70 @@ class NetworkOperatorBeeService {
             throw Exception("\uD83D\uDC7F \uD83D\uDC7F $msg")
         }
         logger.info("$xx1 We cool up to now; going ahead and creating NetworkOperator ... ")
-        //todo - improve this query ...
-        var account: AccountInfo? = null
+
+        var stellarAccount: AccountInfo? = null
         val accounts = proxy.vaultQuery(AccountInfo::class.java).states
         accounts.forEach {
-            logger.info("\uD83D\uDD35 Compare it.state.data.name: ${it.state.data.name} networkOperator.name ${networkOperator.name}")
-            if (it.state.data.name == networkOperator.name) {
-                account = it.state.data
+            logger.info("\uD83D\uDD35 Compare it.state.data.name: ${it.state.data.name} " +
+                    "networkOperator.name ${networkOperator.account.name}")
+            if (it.state.data.name == networkOperator.account.name) {
+                stellarAccount = it.state.data
             }
         }
 
-        var accountInfoDTO: AccountInfoDTO? = null
         try {
-            if (account == null) {
+            if (stellarAccount == null) {
                 logger.info("\n\n$xx1 ..... " +
                         "Creating BRAND NEW NetworkOperator BFN Corda account ................ ")
                 val user = workerBeeService.startAccountRegistrationFlow(
                         proxy,
-                        networkOperator.name,
+                        networkOperator.account.name,
                         networkOperator.email,
                         networkOperator.cellphone,
                         networkOperator.password)
 
                 if (user != null) {
-                    accountInfoDTO = user.accountInfo
-                }
-                if (accountInfoDTO != null) {
-                    if (accountInfoDTO.identifier != null) {
-                        account = getAccountInfo(proxy = proxy,
-                                identifier = accountInfoDTO.identifier)
-                        logger.info("\uD83D\uDD35 \uD83D\uDD35 ACCOUNT INFO: ${gson.toJson(accountInfoDTO)}")
-                    } else {
-                        val msg = "\uD83D\uDE21 \uD83D\uDE21 Account creation failed"
-                        logger.info(msg)
-                        throw Exception(msg)
-                    }
-                }
+                    investorProfile.stellarAccountId = user.accountInfo.identifier.toString()
+                    // ## startNetworkOperatorCreationFlow
+                    val xAccount = workerBeeService.getNodeAccount(proxy, user.accountInfo.identifier.toString())
+                    val mOperatorCreated = startNetworkOperatorCreationFlow(
+                            proxy = proxy, mAccount = xAccount!!, networkOperator = networkOperator)
 
+                    val mUserTx = workerBeeService.createInvestorProfile(proxy = proxy,profile = investorProfile, account = xAccount)
+                    logger.info("\n\n\uD83E\uDD6C\uD83E\uDD6C\uD83E\uDD6C\uD83E\uDD6C Yebo! \uD83D\uDD06 " +
+                            "The Big Kahuna has been created! Long live the Network Operator !!! " +
+                            "\uD83D\uDD06 \uD83D\uDD06 $mUserTx")
+                    logger.info("\uD83C\uDFC0 \uD83C\uDFC0 \uD83C\uDFC0 NETWORK OPERATOR: " +
+                            "\uD83C\uDFC0 ${gson.toJson(mOperatorCreated)} \uD83C\uDFC0\n\n")
+                    return mOperatorCreated
+                }
             } else {
-                logger.info("\uD83D\uDD35 \uD83D\uDD35  No need to create a NetworkOperator BFN account, exists:")
+                investorProfile.stellarAccountId = stellarAccount!!.identifier.id.toString()
+                val mOperatorCreated = startNetworkOperatorCreationFlow(
+                        proxy = proxy,
+                        mAccount = stellarAccount!!,
+                        networkOperator = networkOperator)
+
+                logger.info("\n\n\uD83E\uDD6C\uD83E\uDD6C\uD83E\uDD6C\uD83E\uDD6C Yebo! \uD83D\uDD06 " +
+                        "The Big Kahuna has been created! Long live the Network Operator !!! \uD83D\uDD06 \uD83D\uDD06")
+                logger.info("\uD83C\uDFC0 \uD83C\uDFC0 \uD83C\uDFC0 NETWORK OPERATOR: " +
+                        "\uD83C\uDFC0 ${gson.toJson(mOperatorCreated)} \uD83C\uDFC0\n\n")
+                return mOperatorCreated
+
             }
-            // ## startNetworkOperatorCreationFlow
-            if (account == null) {
-                val msg = "\uD83D\uDC7F \uD83D\uDC7F NetworkOperator creation failed: AccountInfo is NULL!! "
-                logger.info(msg)
-                throw Exception(msg)
-            }
-            val mOperatorCreated = startNetworkOperatorCreationFlow(
-                    proxy = proxy, mAccount = account!!, networkOperator = networkOperator)
-            logger.info("\n\n\uD83E\uDD6C\uD83E\uDD6C\uD83E\uDD6C\uD83E\uDD6C Yebo! \uD83D\uDD06 " +
-                    "The Big Kahuna has been created! Long live the Network Operator !!! \uD83D\uDD06 \uD83D\uDD06")
-            logger.info("\uD83C\uDFC0 \uD83C\uDFC0 \uD83C\uDFC0 NETWORK OPERATOR: " +
-                    "\uD83C\uDFC0 ${gson.toJson(mOperatorCreated)} \uD83C\uDFC0\n\n")
-            return mOperatorCreated
+
 
         } catch (e: Exception) {
             logger.error("\uD83D\uDE21 \uD83D\uDC7F \uD83D\uDC7F NetworkOperatorState creation failed", e)
             throw e
         }
-
+        return null
     }
 
     private fun getAccountInfo(proxy: CordaRPCOps, identifier: String): AccountInfo? {
         val fut2 = proxy.startTrackedFlowDynamic(
                 AccountInfoQueryFlow::class.java, identifier).returnValue
-        if (fut2 != null) {
-            return fut2.get()
-        } else {
-            logger.info("First off, we have a fucking Corda based problem. Boss!")
-            throw Exception("Account Query Failed")
-        }
+        return fut2.get()
     }
 
     private fun startNetworkOperatorCreationFlow(proxy: CordaRPCOps, mAccount: AccountInfo,
@@ -224,20 +218,12 @@ class NetworkOperatorBeeService {
         logger.info("\n\n\n\uD83C\uDF53 \uD83C\uDF53 startNetworkOperatorCreationFlow: \uD83C\uDF3A " +
                 "about to add BFN Network Operator to Corda and Firestore .... " +
                 "\uD83C\uDF3A host: ${mAccount.host.name} identifier: ${mAccount.identifier.id} \n\n")
+
         val anc = NetworkOperatorState(
                 account = mAccount,
-                minimumInvoiceAmount = networkOperator.minimumInvoiceAmount,
-                maximumInvoiceAmount = networkOperator.maximumInvoiceAmount,
-                maximumInvestment = networkOperator.maximumInvestment,
-                defaultOfferDiscount = networkOperator.defaultOfferDiscount,
-                tradeFrequencyInMinutes = networkOperator.tradeFrequencyInMinutes,
-                tradeMatrixItems = getItems(networkOperator.tradeMatrixItems),
-                name = networkOperator.name,
                 email = networkOperator.email,
                 cellphone = networkOperator.cellphone,
-                date = Date(),
-                stellarAccountId = networkOperator.stellarAccountId,
-                rippleAccountId = networkOperator.rippleAccountId)
+                date = Date())
 
         val fut = proxy.startTrackedFlowDynamic(
                 NetworkOperatorCreationFlow::class.java, anc).returnValue
@@ -245,16 +231,16 @@ class NetworkOperatorBeeService {
 
         logger.info("\uD83C\uDF53 startNetworkOperatorCreationFlow: \uD83C\uDF3A " +
                 "about to add BFN Network Operator to Firestore .... ")
-
         firebaseService.addNetworkOperator(DTOUtil.getDTO(anc))
 
         val msg = "\n\n$em4 ....... NetworkOperatorState set up, added to Firestore. DONE!: " +
-                "${networkOperator.name} - ${networkOperator.email} \uD83C\uDF3A " +
+                "${networkOperator.account.name} - ${networkOperator.email} \uD83C\uDF3A " +
                 "txId: ${tx.id} \n\n"
         logger.info(msg)
         return DTOUtil.getDTO(anc);
 
     }
+
     private val em4 = " \uD83C\uDF50 \uD83C\uDF50 \uD83C\uDF50 \uD83C\uDF50 \uD83C\uDF50 "
 
     private fun getItems(list: MutableList<TradeMatrixItemDTO>): MutableList<TradeMatrixItem> {

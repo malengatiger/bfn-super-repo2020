@@ -3,16 +3,17 @@ package com.bfn.client.web
 import com.bfn.client.data.*
 import com.bfn.contractstates.states.*
 import com.bfn.flows.CreateAccountFlow
+import com.bfn.flows.CreateUserFlow
 import com.bfn.flows.customer.CustomerProfileFlow
 import com.bfn.flows.investor.InvestorProfileFlow
 import com.bfn.flows.invoices.InvoiceOfferFlow
 import com.bfn.flows.invoices.InvoiceRegistrationFlow
 import com.bfn.flows.queries.AccountInfoQueryFlow
+import com.bfn.flows.queries.FindInvoiceFlow
 import com.bfn.flows.queries.InvoiceOfferQueryFlow
 import com.bfn.flows.queries.InvoiceQueryFlow
 import com.bfn.flows.scheduled.CreateInvoiceOffersFlow
 import com.bfn.flows.supplier.SupplierProfileFlow
-import com.bfn.flows.todaysDate
 import com.google.firebase.cloud.FirestoreClient
 import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
@@ -24,8 +25,10 @@ import net.corda.core.node.services.vault.PageSpecification
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.node.services.vault.QueryCriteria.VaultQueryCriteria
 import net.corda.core.utilities.getOrThrow
+import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.util.*
 import javax.annotation.PostConstruct
@@ -126,7 +129,7 @@ class WorkerBeeService {
             val acct = state.data
             logger.info("\uD83C\uDF50️ \uD83C\uDF50 ️Processing account  \uD83C\uDF50️ " +
                     "#$cnt \uD83C\uDF3A ${state.data.name} \uD83C\uDF50️ ")
-            if (acct.identifier.toString() == identifier) {
+            if (acct.identifier.id.toString() == identifier) {
                 account = acct
             }
         }
@@ -189,7 +192,7 @@ class WorkerBeeService {
         ).states
         var dto: SupplierProfileStateDTO? = null
         for (profile in list) {
-            if (profile.state.data.account.identifier.equals(accountId)) {
+            if (profile.state.data.account.identifier.id.equals(accountId)) {
                 dto = DTOUtil.getDTO(profile.state.data)
                 break
             }
@@ -213,7 +216,7 @@ class WorkerBeeService {
         ).states
         var dto: InvestorProfileStateDTO? = null
         for (profile in list) {
-            if (profile.state.data.account.identifier.equals(accountId)) {
+            if (profile.state.data.account.identifier.id.equals(accountId)) {
                 dto = DTOUtil.getDTO(profile.state.data)
                 break
             }
@@ -304,7 +307,14 @@ class WorkerBeeService {
     @Throws(Exception::class)
     fun createInvestorProfile(proxy: CordaRPCOps, profile: InvestorProfileStateDTO, account: AccountInfo): String {
 
-
+        val matrixItems: MutableList<TradeMatrixItem> = mutableListOf()
+        for (item in profile.tradeMatrixItems) {
+            matrixItems.add(TradeMatrixItem(
+                    startInvoiceAmount = item.startInvoiceAmount,
+                    endInvoiceAmount = item.endInvoiceAmount,
+                    date = item.date,
+                    offerDiscount = item.offerDiscount))
+        }
         val state = InvestorProfileState(
                 account = account,
                 defaultDiscount = profile.defaultDiscount,
@@ -313,12 +323,14 @@ class WorkerBeeService {
                 bank = profile.bank, bankAccount = profile.bankAccount,
                 minimumInvoiceAmount = profile.minimumInvoiceAmount, date = Date(),
                 stellarAccountId = profile.stellarAccountId,
-                rippleAccountId = profile.rippleAccountId
+                rippleAccountId = profile.rippleAccountId,
+                tradeMatrixItems = matrixItems
         )
         val fut = proxy.startTrackedFlowDynamic(
                 InvestorProfileFlow::class.java, state).returnValue
         val tx = fut.get()
         val m = "\uD83C\uDF3A createInvestorProfile, DONE!:  \uD83C\uDF3A ${tx.id}"
+        firebaseService.addInvestorProfile(DTOUtil.getDTO(state))
         logger.info(m)
         return m
     }
@@ -340,6 +352,7 @@ class WorkerBeeService {
                 SupplierProfileFlow::class.java, state).returnValue
         val tx = fut.get()
         val m = "\uD83C\uDF3A createSupplierProfile, DONE!:  \uD83C\uDF3A ${tx.id}"
+        firebaseService.addSupplierProfile(DTOUtil.getDTO(state))
         logger.info(m)
         return m
     }
@@ -584,27 +597,51 @@ class WorkerBeeService {
         return list
     }
 
+    @Throws(Exception::class)
+    fun validateInvoiceAgainstProfile(proxy: CordaRPCOps,
+                                      invoice: InvoiceDTO,
+                                      investorProfile: InvestorProfileStateDTO): Boolean {
+
+        logger.info("\uD83E\uDD66 validateInvoiceAgainstProfile ... invoice.amount: ${invoice.amount}")
+        if (invoice.amount < investorProfile.minimumInvoiceAmount) {
+            return false;
+        }
+        if (invoice.amount > investorProfile.maximumInvoiceAmount) {
+            return false;
+        }
+        if (invoice.supplier.identifier == investorProfile.account.identifier) {
+            return false;
+        }
+        if (invoice.customer.identifier == investorProfile.account.identifier) {
+            return false;
+        }
+        //todo - 🍎 🍎 🍎 🍎  add validation against industry, specific blackList, whiteList etc. 🍎 🍎 🍎 🍎
+
+        return true
+    }
 
     @Throws(Exception::class)
     fun startInvoiceRegistrationFlow(proxy: CordaRPCOps, invoice: InvoiceDTO): InvoiceDTO {
-        logger.info("startInvoiceRegistrationFlow: \uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C " +
-                "account: check customer and supplier available ${gson.toJson(invoice)}")
+        logger.info("\uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 " +
+                ".... starting startInvoiceRegistrationFlow ........ \uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C " +
+                " \n\n")
         if (invoice.customer.host == null) {
-            throw Exception("\uD83D\uDE21 Customer object is missing data")
+            throw Exception("\uD83D\uDE21 Customer object is missing data; invalid")
         }
         if (invoice.supplier.host == null) {
-            throw Exception("\uD83D\uDE21 Customer object is missing data")
+            throw Exception("\uD83D\uDE21 Supplier object is missing data; invalid")
         }
         return try {
             val accounts = proxy.vaultQuery(AccountInfo::class.java).states
-            logger.info("\uD83D\uDD35 \uD83D\uDD35 Vault Query for Accounts returned ${accounts.size} from the ledger")
+            logger.info("\uD83D\uDD35 \uD83D\uDD35 Vault Query for Accounts returned " +
+                    "${accounts.size} from the Corda ledger")
             var supplierInfo: AccountInfo? = null
             var customerInfo: AccountInfo? = null
             for ((state) in accounts) {
-                if (state.data.identifier.toString().equals(invoice.customer.identifier, ignoreCase = true)) {
+                if (state.data.identifier.id.toString().equals(invoice.customer.identifier, ignoreCase = true)) {
                     customerInfo = state.data
                 }
-                if (state.data.identifier.toString().equals(invoice.supplier.identifier, ignoreCase = true)) {
+                if (state.data.identifier.id.toString().equals(invoice.supplier.identifier, ignoreCase = true)) {
                     supplierInfo = state.data
                 }
             }
@@ -618,10 +655,16 @@ class WorkerBeeService {
             val totalTaxAmt = invoice.amount * taxPercentage
             invoice.totalAmount = totalTaxAmt + invoice.amount
             //
-            logger.info("startInvoiceRegistrationFlow: \uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C about to InvoiceState}")
+            logger.info("\uD83C\uDF51 \uD83C\uDF51 startInvoiceRegistrationFlow: " +
+                    "\uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C " +
+                    "about to add InvoiceState to the Corda ledger .......}")
 
+            var mDate = DateTime().toDateTimeISO().toString()
+            if (profile == "dev") {
+                mDate = invoice.dateRegistered
+            }
             val invoiceState = InvoiceState(
-                    invoiceId = UUID.randomUUID(),
+                    invoiceId = UUID.fromString(invoice.invoiceId),
                     invoiceNumber = invoice.invoiceNumber,
                     description = invoice.description,
                     amount = invoice.amount,
@@ -630,23 +673,23 @@ class WorkerBeeService {
                     supplierInfo = supplierInfo,
                     customerInfo = customerInfo,
                     externalId = invoice.externalId,
-                    dateRegistered = todaysDate()
+                    dateRegistered = mDate
             )
 
             val issueTx = proxy.startTrackedFlowDynamic(
                     InvoiceRegistrationFlow::class.java, invoiceState).returnValue.getOrThrow()
 
-            logger.info("\uD83C\uDF4F InvoiceRegistrationFlow flow completed... txId: $issueTx")
+            logger.info("\uD83C\uDF4F \uD83D\uDCA6 \uD83D\uDCA6 \uD83D\uDCA6 " +
+                    "InvoiceRegistrationFlow flow completed \uD83C\uDF51 ... txId: $issueTx")
 
             val dto = invoiceState.let { DTOUtil.getDTO(it) }
-            logger.info("Check amount discount total calculations: " + gson.toJson(dto))
             try {
                 firebaseService.sendInvoiceMessage(dto)
-                val db = FirestoreClient.getFirestore()
-                val reference = db.collection(BFN_INVOICES).add(dto)
-                logger.info("\uD83E\uDDE9" +
-                        "Firestore path: " + reference.get().path)
+                firebaseService.addInvoice(dto)
+                logger.info("\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 " +
+                        "Invoice has been added to Firestore; \uD83D\uDC2C seems OK ")
             } catch (e: Exception) {
+                //todo - send email to support about this .... firebase shit failed but ledger is OK
                 e.printStackTrace()
                 logger.error(e.message)
             }
@@ -662,6 +705,8 @@ class WorkerBeeService {
         }
     }
 
+    @Value("\${spring.profiles.active}")
+    private var profile: String = "dev"
 
     @Throws(Exception::class)
     fun startAccountInfoQueryFlow(proxy: CordaRPCOps,
@@ -713,10 +758,11 @@ class WorkerBeeService {
                     "Starting the AccountRegistrationFlow ...................... " +
                     "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35\n")
 
+            val acctInfo: AccountInfo?
             try {
                 val accountInfoCordaFuture = proxy.startTrackedFlowDynamic(
                         CreateAccountFlow::class.java, accountName).returnValue
-                val acctInfo = accountInfoCordaFuture.get()
+                acctInfo = accountInfoCordaFuture.get()
                         ?: throw Exception("Account creation failed on ledger \uD83D\uDE21")
                 logger.info("\n\n\n\uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F" +
                         " CreateAccountFlow completed... \uD83D\uDC4C accountInfo returned: " +
@@ -729,20 +775,23 @@ class WorkerBeeService {
                 try {
                     val stellarResponse = stellarAccountService.createStellarAccount(proxy = proxy)
                     if (stellarResponse != null) {
-                        logger.info("\uD83E\uDD6C\uD83E\uDD6C\uD83E\uDD6C\uD83E\uDD6C " +
-                                "Stellar account created on Anchor server. Kudos!! " +
-                                "${stellarResponse.accountId} ${stellarResponse.secretSeed}")
-                        mStellarId = stellarResponse.accountId
-                    } else {
-                        logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 " +
-                                "Stellar account NOT created on Anchor server. Error!!")
+                        if (stellarResponse.accountId != null) {
+                            logger.info("\uD83E\uDD6C\uD83E\uDD6C\uD83E\uDD6C\uD83E\uDD6C " +
+                                    "Stellar account created on Anchor server. Kudos!! " +
+                                    "${stellarResponse.accountId} ${stellarResponse.secretSeed}")
+                            mStellarId = stellarResponse.accountId
+                            logger.info("This is the stellarAccountId needed for the NetworkOperator record: $mStellarId")
+                        } else {
+                            logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 " +
+                                    "Stellar account NOT created on Anchor server. Error!!")
+                        }
                     }
 
                 } catch (e: Exception) {
                     logger.warn("\uD83D\uDE21 Stellar account creation failed \uD83D\uDE21", e)
                 }
 
-                return createBFNUser(
+                val user = createBFNUser(
                         host = acctInfo.host.name.toString(),
                         identifier = acctInfo.identifier.id.toString(),
                         accountName = accountName,
@@ -751,6 +800,11 @@ class WorkerBeeService {
                         cellphone = cellphone,
                         stellarAccountId = mStellarId,
                         rippleAccountId = mRippleId)
+
+                val future = proxy.startFlowDynamic(CreateUserFlow::class.java, user).returnValue
+                logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D " +
+                        "CreateUserFlow completed ${future.get()} User added on  Corda ledger: ${gson.toJson(user)}")
+                return user
 
             } catch (e: Exception) {
                 logger.info(em3 +
@@ -850,34 +904,20 @@ class WorkerBeeService {
     @Throws(Exception::class)
     fun startInvoiceOfferFlow(proxy: CordaRPCOps, invoiceOffer: InvoiceOfferDTO): InvoiceOfferDTO {
         return try {
-            //todo - refactor to proper query ...
-            val criteria: QueryCriteria = VaultQueryCriteria(StateStatus.UNCONSUMED)
-            val (states) = proxy.vaultQueryByWithPagingSpec(
-                    InvoiceState::class.java, criteria,
-                    PageSpecification(1, 200))
-            var invoiceState: InvoiceState? = null
-            for (state in states) {
-                if (state.state.data.invoiceId.toString().equals(invoiceOffer.invoiceId, ignoreCase = true)) {
-                    invoiceState = state.state.data
-                    break
-                }
-            }
+
+            val future = proxy.startFlowDynamic(FindInvoiceFlow::class.java,
+                    invoiceOffer.invoiceId).returnValue
+            val invoiceState = future.get()
+
             if (invoiceState == null) {
-                logger.warn("InvoiceState not found, \uD83D\uDC7F offer probably made on foreign node")
+                logger.warn("Corda InvoiceState for offer not found, \uD83D\uDC7F  probably, maybe, who knows? ")
                 throw Exception("Invoice not found")
             }
-            var investorInfo: AccountInfo? = null
-            val (states1) = proxy.vaultQueryByWithPagingSpec(
-                    AccountInfo::class.java, criteria,
-                    PageSpecification(1, 200))
-            for ((state) in states1) {
-                if (state.data.identifier.toString().equals(invoiceOffer.investor.identifier, ignoreCase = true)) {
-                    investorInfo = state.data
-                }
-            }
-            if (investorInfo == null) {
-                throw Exception("Investor not found")
-            }
+            val future2 = proxy.startFlowDynamic(AccountInfoQueryFlow::class.java,
+                    invoiceOffer.investor.identifier)
+                    .returnValue
+            val investorInfo = future2.get() ?: throw Exception("Investor not found")
+
             if (invoiceOffer.discount == Double.MIN_VALUE) {
                 throw Exception("Discount not found")
             }

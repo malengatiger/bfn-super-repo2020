@@ -45,8 +45,8 @@ class InvoiceOfferFlow(private val invoiceOfferState: InvoiceOfferState) : FlowL
     @Suspendable
     @Throws(FlowException::class)
     override fun call(): SignedTransaction {
-        val serviceHub = serviceHub
-        Companion.logger.info("\uD83E\uDD1F \uD83E\uDD1F  \uD83E\uDD1F \uD83E\uDD1F  ... InvoiceOfferFlow call started ...")
+        Companion.logger.info("\uD83E\uDD1F \uD83E\uDD1F  \uD83E\uDD1F \uD83E\uDD1F  " +
+                "... InvoiceOfferFlow call started ...")
         val notary = serviceHub.networkMapCache.notaryIdentities[0]
         checkDuplicate()
 
@@ -81,7 +81,6 @@ class InvoiceOfferFlow(private val invoiceOfferState: InvoiceOfferState) : FlowL
         txBuilder.verify(serviceHub)
         progressTracker.currentStep = signingTransaction
         val signedTx = serviceHub.signInitialTransaction(txBuilder)
-
 
         progressTracker.currentStep = sendingTransaction
         val mSessions: MutableList<FlowSession> = mutableListOf()

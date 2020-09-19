@@ -106,17 +106,22 @@ class FirebaseService() {
 
     @Throws(ExecutionException::class, InterruptedException::class)
     fun addCustomerProfile(profile: CustomerProfileStateDTO) {
-        val future: ApiFuture<DocumentReference> = db.collection(BFN_CUSTOMERS).add(profile);
+        val future: ApiFuture<DocumentReference> = db.collection(BFN_CUSTOMER_PROFILES).add(profile);
         logger.info("\uD83D\uDE3C \uD83D\uDE3C CustomerProfileState added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
     @Throws(ExecutionException::class, InterruptedException::class)
+    fun addInvoice(invoice: InvoiceDTO) {
+        val future: ApiFuture<DocumentReference> = db.collection(BFN_INVOICES).add(invoice);
+        logger.info("\uD83D\uDE3C \uD83D\uDE3C Invoice added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+    }
+    @Throws(ExecutionException::class, InterruptedException::class)
     fun addInvestorProfile(profile: InvestorProfileStateDTO) {
-        val future: ApiFuture<DocumentReference> = db.collection(BFN_INVESTORS).add(profile);
+        val future: ApiFuture<DocumentReference> = db.collection(BFN_INVESTOR_PROFILES).add(profile);
         logger.info("\uD83D\uDE3C \uD83D\uDE3C InvestorProfileState added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
     @Throws(ExecutionException::class, InterruptedException::class)
     fun addSupplierProfile(profile: SupplierProfileStateDTO) {
-        val future: ApiFuture<DocumentReference> = db.collection(BFN_SUPPLIERS).add(profile);
+        val future: ApiFuture<DocumentReference> = db.collection(BFN_SUPPLIER_PROFILES).add(profile);
         logger.info("\uD83D\uDE3C \uD83D\uDE3C SupplierProfileState added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
 
@@ -167,7 +172,7 @@ class FirebaseService() {
     @Throws(Exception::class)
     fun deleteCustomers() {
         try {
-            val collectionRef = db.collection(BFN_CUSTOMERS).get()
+            val collectionRef = db.collection(BFN_CUSTOMER_PROFILES).get()
             logger.info("\uD83C\uDF4E Found ${collectionRef.get().documents.size} BFN Customers to delete on Firestore")
             collectionRef.get().documents.forEach() {
                 it.reference.delete()
@@ -330,6 +335,50 @@ class FirebaseService() {
         }
         logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 Found ${records.size} BFN users")
         return records
+    }
+    @Throws(FirebaseAuthException::class)
+    fun getBFNUserByAccountName(accountName:String): UserDTO? {
+        logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 Getting BFN user by account name, look out for data parsing error ...")
+        var record: UserDTO? = null
+        try {
+            val page = db.collection(BFN_USERS)
+                    .whereEqualTo("accountInfo.name", accountName)
+                    .limit(1)
+                    .get()
+            val m = page.get()
+            m.documents.forEach {
+                record = it.toObject(UserDTO::class.java)
+            }
+
+        } catch (e: Exception) {
+            logger.error(e.message)
+        }
+        if (record != null) {
+            logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 Found BFN user, " +
+                    "name: ${record!!.accountInfo.name} host: ${record!!.accountInfo.host}")
+        }
+        return record
+    }
+    fun getInvestorProfile(accountId:String): InvestorProfileStateDTO? {
+        var record: InvestorProfileStateDTO? = null
+        try {
+            val page = db.collection(BFN_INVESTOR_PROFILES)
+                    .whereEqualTo("accountInfo.identifier", accountId)
+                    .orderBy("date" )
+                    .get()
+            val m = page.get()
+            m.documents.forEach {
+                record = it.toObject(InvestorProfileStateDTO::class.java)
+            }
+
+        } catch (e: Exception) {
+            logger.error(e.message)
+        }
+        if (record != null) {
+            logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 getInvestorProfile Found " +
+                    "name: ${record!!.account.name} ")
+        }
+        return record
     }
 
 

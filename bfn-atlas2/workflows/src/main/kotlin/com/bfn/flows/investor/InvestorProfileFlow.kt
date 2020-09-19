@@ -22,19 +22,17 @@ class InvestorProfileFlow(private val investorProfile: InvestorProfileState) : F
 
     @Suspendable
     override fun call(): SignedTransaction {
-        Companion.logger.info("\uD83D\uDE39 \uD83D\uDE39 \uD83D\uDE39  \uD83C\uDFC8 \uD83C\uDFC8 \uD83C\uDFC8 \uD83C\uDFC8 \uD83C\uDFC8 \uD83C\uDFC8 " +
+        Companion.logger.info("\uD83D\uDE39 \uD83D\uDE39 \uD83D\uDE39  \uD83C\uDFC8  " +
                 "InvestorProfileFlow started, accountId: ${investorProfile.account.identifier} " )
         val command = InvestorProfileContract.CreateProfile()
-        val account = serviceHub.accountService.accountInfo(UUID.fromString(investorProfile.account.identifier.toString()))
-                ?: throw IllegalArgumentException("InvestorProfileFlow: \uD83D\uDC4E\uD83C\uDFFD Account not found: ${investorProfile.account.identifier}")
+        val account = serviceHub.accountService.accountInfo(
+                UUID.fromString(investorProfile.account.identifier.toString()))
+                ?: throw IllegalArgumentException("InvestorProfileFlow: \uD83D\uDC4E\uD83C\uDFFD " +
+                        "Account not found: ${investorProfile.account.identifier}")
 
         val profile = serviceHub.cordaService(ProfileFinderService::class.java)
                 .findInvestorProfile(investorProfile.account.identifier.toString())
-        if (profile == null) {
-            Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 will create new profile ... ")
-        } else {
-            Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 will update profile ... ")
-        }
+
         Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95  build tx ...")
         val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
         txBuilder.addCommand(command, serviceHub.ourIdentity.owningKey)
@@ -44,7 +42,8 @@ class InvestorProfileFlow(private val investorProfile: InvestorProfileState) : F
         txBuilder.addOutputState(investorProfile)
         txBuilder.verify(serviceHub)
 
-        Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95  Signing transaction ... ")
+        Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95" +
+                "  Signing transaction ... ")
         val tx = serviceHub.signInitialTransaction(txBuilder)
         val signedTx = subFlow(FinalityFlow(tx, listOf()))
         Companion.logger.info("\uD83D\uDE39 \uD83D\uDE39 \uD83D\uDE39  " +

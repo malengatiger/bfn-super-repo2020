@@ -8,6 +8,7 @@ data class InvestorProfileStateDTO (
                                     val defaultDiscount: Double,
                                     val bank: String,
                                     val bankAccount: String,
-                                    val stellarAccountId: String,
+                                    var stellarAccountId: String,
                                     val rippleAccountId: String,
+                                    val tradeMatrixItems: MutableList<TradeMatrixItemDTO>,
                                     val date: String)

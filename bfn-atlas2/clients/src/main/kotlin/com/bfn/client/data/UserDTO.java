@@ -2,7 +2,7 @@ package com.bfn.client.data;
 
 public class UserDTO {
     private AccountInfoDTO accountInfo;
-    private String email, password,cellphone,uid, stellarAccountId,
+    private String  email, password,cellphone,uid, stellarAccountId,
             rippleAccountId;
 
     public UserDTO(AccountInfoDTO accountInfo, String email, String password, String cellphone, String uid, String stellarAccountId, String rippleAccountId) {

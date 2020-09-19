@@ -8,8 +8,13 @@ import net.corda.core.identity.Party
 import net.corda.core.node.AppServiceHub
 import net.corda.core.node.services.CordaService
 import net.corda.core.node.services.Vault
+import net.corda.core.node.services.queryBy
+import net.corda.core.node.services.vault.Builder.equal
+import net.corda.core.node.services.vault.DEFAULT_PAGE_NUM
 import net.corda.core.node.services.vault.PageSpecification
 import net.corda.core.node.services.vault.QueryCriteria
+import net.corda.core.node.services.vault.QueryCriteria.VaultCustomQueryCriteria
+import net.corda.core.node.services.vault.builder
 import net.corda.core.serialization.SingletonSerializeAsToken
 import org.slf4j.LoggerFactory
 import java.security.PublicKey
@@ -129,8 +134,29 @@ class InvoiceFinderService(private val serviceHub: AppServiceHub) : SingletonSer
                 criteria = criteria)
         return page
     }
+
     @Suspendable
-    fun queryInvoiceStateAndRef(pageNumber: Int): Pair<List<StateAndRef<InvoiceState>>, Long> {
+    fun findInvoice(invoiceId: String): InvoiceState? {
+        var pageNumber = DEFAULT_PAGE_NUM
+        val states = mutableListOf<StateAndRef<InvoiceState>>()
+        do {
+            val pageSpec = PageSpecification(pageNumber = pageNumber, pageSize = pageSize)
+            val results = serviceHub.vaultService
+                    .queryBy<InvoiceState>(QueryCriteria.VaultQueryCriteria(), pageSpec)
+            states.addAll(results.states)
+            pageNumber++
+        } while ((pageSpec.pageSize * (pageNumber - 1)) <= results.totalStatesAvailable)
+        var invoice: InvoiceState? = null
+        for (state in states) {
+            if (state.state.data.invoiceId.toString() == invoiceId) {
+                invoice = state.state.data
+            }
+        }
+
+        return invoice
+    }
+    @Suspendable
+    private fun queryInvoiceStateAndRef(pageNumber: Int): Pair<List<StateAndRef<InvoiceState>>, Long> {
         val criteria = QueryCriteria.VaultQueryCriteria(
                 status = Vault.StateStatus.UNCONSUMED)
 
@@ -143,23 +169,21 @@ class InvoiceFinderService(private val serviceHub: AppServiceHub) : SingletonSer
     @Suspendable
     private fun getAllInvoices(): List<InvoiceState> {
         val list: MutableList<InvoiceState> = mutableListOf()
-        //get first page
-        var pageNumber = 1
-        val page: Vault.Page<InvoiceState> = queryInvoices(pageNumber)
-        addToList(page = page, list = list)
+        var pageNumber = DEFAULT_PAGE_NUM
+        val states = mutableListOf<StateAndRef<InvoiceState>>()
+        do {
+            val pageSpec = PageSpecification(pageNumber = pageNumber, pageSize = pageSize)
+            val results = serviceHub.vaultService
+                    .queryBy<InvoiceState>(QueryCriteria.VaultQueryCriteria(), pageSpec)
+            states.addAll(results.states)
+            pageNumber++
+        } while ((pageSpec.pageSize * (pageNumber - 1)) <= results.totalStatesAvailable)
 
-        val remainder: Int = (page.totalStatesAvailable % pageSize).toInt()
-        var pageCnt: Int = (page.totalStatesAvailable / pageSize).toInt()
-        if (remainder > 0) pageCnt++
-
-        if (pageCnt > 1)  {
-            while (pageNumber < pageCnt) {
-                pageNumber++
-                val pageX = queryInvoices(pageNumber)
-                addToList(pageX, list)
-            }
+        for (state in states) {
+           list.add(state.state.data)
         }
-        val sorted = list.sortedBy { it.totalAmount }
+
+        val sorted = list.sortedBy { it.dateRegistered }
         logger.info("\uD83E\uDDE9 Invoices found on node:  \uD83C\uDF00 ${sorted.size} " )
         return sorted
     }

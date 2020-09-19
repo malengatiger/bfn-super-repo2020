@@ -26,7 +26,7 @@ class CustomerProfileFlow(private val customerProfile: CustomerProfileState) : F
                 "\uD83C\uDFC8 \uD83C\uDFC8 \uD83C\uDFC8 \uD83C\uDFC8 " +
                 "CustomerProfileFlow started, accountId: ${customerProfile.account.identifier} " )
         val command = InvestorProfileContract.CreateProfile()
-        val account = serviceHub.accountService.accountInfo(UUID.fromString(customerProfile.account.identifier.toString()))
+        val account = serviceHub.accountService.accountInfo(UUID.fromString(customerProfile.account.identifier.id.toString()))
                 ?: throw IllegalArgumentException("CustomerProfileFlow: \uD83D\uDC4E\uD83C\uDFFD Account not found: ${customerProfile.account.identifier}")
 
         val profile = serviceHub.cordaService(ProfileFinderService::class.java)
