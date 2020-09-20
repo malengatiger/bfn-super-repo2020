@@ -22,7 +22,7 @@ class NetworkOperatorCreationFlow(private val networkOperatorState: NetworkOpera
 
     @Suspendable
     override fun call(): SignedTransaction {
-        Companion.logger.info(pp + "NetworkOperatorCreationFlow started, name: ${networkOperatorState.name}" )
+        Companion.logger.info(pp + "NetworkOperatorCreationFlow started, name: ${networkOperatorState.account.name}" )
 
         val existingOperator = serviceHub.vaultService.queryBy(NetworkOperatorState::class.java).states.singleOrNull()
         if (existingOperator != null) {
@@ -39,7 +39,7 @@ class NetworkOperatorCreationFlow(private val networkOperatorState: NetworkOpera
 
         val tx = serviceHub.signInitialTransaction(txBuilder)
         subFlow(FinalityFlow(tx, listOf()))
-        Companion.logger.info("$pp Yebo Gogo!! - NetworkOperator has been created: ${networkOperatorState.name} $pp")
+        Companion.logger.info("$pp Yebo Gogo!! - NetworkOperator has been created: ${networkOperatorState.account.name} $pp")
         return tx
     }
 

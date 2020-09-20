@@ -161,7 +161,7 @@ class PaymentFinderService(private val serviceHub: AppServiceHub) : SingletonSer
         var pageNumber = 1
         val pair = queryPaymentStateAndRef(pageNumber)
         pair.first.forEach() {
-            if (existingAnchor.state.data.name == it.state.data.acceptedOffer.investor.name) {
+            if (existingAnchor.state.data.account.name == it.state.data.acceptedOffer.investor.name) {
                 list.add(it)
             }
         }
@@ -175,7 +175,7 @@ class PaymentFinderService(private val serviceHub: AppServiceHub) : SingletonSer
                 pageNumber++
                 val pageX = queryPaymentStateAndRef(pageNumber)
                 pageX.first.forEach() {
-                    if (existingAnchor.state.data.name == it.state.data.acceptedOffer.investor.name) {
+                    if (existingAnchor.state.data.account.name == it.state.data.acceptedOffer.investor.name) {
                         list.add(it)
                     }
                 }

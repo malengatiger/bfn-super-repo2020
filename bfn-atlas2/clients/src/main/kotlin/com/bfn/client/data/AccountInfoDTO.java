@@ -7,6 +7,9 @@ public class AccountInfoDTO {
             host,
             name;
 
+    public AccountInfoDTO() {
+    }
+
     public AccountInfoDTO(String identifier, String host, String name) {
         this.identifier = identifier;
         this.host = host;

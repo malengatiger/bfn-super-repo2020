@@ -16,27 +16,9 @@ class NetworkOperatorContract : Contract {
         if (tx.outputStates.size != 1) {
             throw IllegalArgumentException("One output state required")
         }
-        val networkOperatorState = tx.outputStates.first()
-        if (networkOperatorState is NetworkOperatorState) {
-            if (networkOperatorState.maximumInvestment <= 0.0) {
-                throw IllegalArgumentException("Maximum Investment must be greater than zero")
-            }
-            if (networkOperatorState.maximumInvoiceAmount <= 0.0) {
-                throw IllegalArgumentException("Maximum Invoice Amount must be greater than zero")
-            }
-            if (networkOperatorState.minimumInvoiceAmount <= 0.0) {
-                throw IllegalArgumentException("Minimum Invoice Amount must be greater than zero")
-            }
-            if (networkOperatorState.defaultOfferDiscount <= 0) {
-                throw IllegalArgumentException("Default Offer Discount must be greater than zero")
-            }
-            if (networkOperatorState.tradeFrequencyInMinutes <= 0) {
-                throw IllegalArgumentException("Trade Frequency In Minutes must be greater than zero: ${networkOperatorState.tradeFrequencyInMinutes }")
-            }
-        }
 
 
-        logger.info(" $em NetworkOperatorContract: verification ( \uD83D\uDC7A " +
+        logger.info(" $em NetworkOperatorContract: verification done \uD83D\uDC7A " +
                 ".....\uD83E\uDD1F \uD83E\uDD1F ")
     }
 

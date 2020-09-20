@@ -18,6 +18,7 @@ import net.corda.core.identity.Party
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import org.slf4j.LoggerFactory
+import java.math.BigDecimal
 import java.security.PublicKey
 import java.util.*
 
@@ -175,12 +176,13 @@ class CreateInvoiceOffersFlow(private val investorId: String) : FlowLogic<List<I
 
     @Suspendable
     @Throws(FlowException::class)
-    private fun getOfferAmount(invoiceAmount: Double, discount: Double): Double {
-        val percentage = 100.0 - discount
-        val offerAmt = invoiceAmount * (percentage / 100)
+    private fun getOfferAmount(invoiceAmount: String, discount: String): String {
+        val mPerc = BigDecimal("100.00") - BigDecimal(discount)
+        val mOffer = mPerc.divide(BigDecimal("100")).multiply(BigDecimal(invoiceAmount))
+
         Companion.logger.info("\uD83D\uDD30 \uD83D\uDD30 Offer amount is " +
-                "$offerAmt calculated from \uD83D\uDD30 $invoiceAmount with discount: $discount")
-        return offerAmt
+                "$mOffer calculated from \uD83D\uDD30 $invoiceAmount with discount: $discount")
+        return "$mOffer"
     }
 
     companion object {

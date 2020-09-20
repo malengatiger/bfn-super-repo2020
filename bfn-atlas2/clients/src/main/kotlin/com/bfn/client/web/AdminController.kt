@@ -118,7 +118,7 @@ class AdminController(rpc: NodeRPCConnection) {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting DemoUtil: generateOffers ... \uD83C\uDF4F ")
         var maximumRecords = 200;
         if (max != null) maximumRecords = max
-        val result = demoDataService.generateOffers(proxy, maximumRecords)
+        val result = demoDataService.generateInvoiceOffers(proxy)
         logger.info(result)
         return result
     }
@@ -161,11 +161,13 @@ class AdminController(rpc: NodeRPCConnection) {
 
     @PostMapping(value = ["/createNetworkOperator"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
-    private fun createNetworkOperator(@RequestBody networkOperator: NetworkOperatorDTO): NetworkOperatorDTO? {
+    private fun createNetworkOperator(@RequestBody networkOperator: NetworkOperatorDTO,
+                                      investorProfile: InvestorProfileStateDTO): NetworkOperatorDTO? {
         logger.info("\n\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E  " +
                 "Creating Network Operator:, check fields, tradeFrequencyInMinutes, defaultOfferDiscount ...  ${GSON.toJson(networkOperator)}")
+
         val operator =  networkOperatorBeeService.createNetworkOperator(
-                networkOperator = networkOperator, proxy = proxy)
+                networkOperator = networkOperator, proxy = proxy, investorProfile = investorProfile)
         logger.info(" \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
                 "networkOperatorBeeService.createNetworkOperator returns operator:  ${GSON.toJson(operator)}")
 

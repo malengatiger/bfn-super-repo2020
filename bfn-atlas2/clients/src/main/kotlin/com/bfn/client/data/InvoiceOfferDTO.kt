@@ -1,11 +1,12 @@
 package com.bfn.client.data
 
+
 data class InvoiceOfferDTO (
         var invoiceId: String,
         var invoiceNumber: String,
-        var offerAmount: Double,
-        var discount: Double,
-        var originalAmount: Double,
+        var offerAmount: String,
+        var discount: String,
+        var originalAmount: String,
         var supplier: AccountInfoDTO,
         var investor: AccountInfoDTO,
         var offerDate: String,

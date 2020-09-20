@@ -356,14 +356,17 @@ class FirebaseService() {
         if (record != null) {
             logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 Found BFN user, " +
                     "name: ${record!!.accountInfo.name} host: ${record!!.accountInfo.host}")
+        } else {
+            logger.info("User not found on firestore")
         }
         return record
     }
     fun getInvestorProfile(accountId:String): InvestorProfileStateDTO? {
+        logger.info("getInvestorProfile started .... accountId: $accountId")
         var record: InvestorProfileStateDTO? = null
         try {
             val page = db.collection(BFN_INVESTOR_PROFILES)
-                    .whereEqualTo("accountInfo.identifier", accountId)
+                    .whereEqualTo("account.identifier", accountId)
                     .orderBy("date" )
                     .get()
             val m = page.get()

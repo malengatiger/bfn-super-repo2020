@@ -6,6 +6,7 @@ import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.Contract
 import net.corda.core.transactions.LedgerTransaction
 import org.slf4j.LoggerFactory
+import java.math.BigDecimal
 
 
 class InvestorProfileContract : Contract {
@@ -31,16 +32,23 @@ class InvestorProfileContract : Contract {
             }
             val investorProfileState = tx.outputStates.first() as InvestorProfileState
 
-            if (investorProfileState.maximumInvoiceAmount <= 0.0) {
+            val ta =  BigDecimal(investorProfileState.maximumInvoiceAmount)
+            val tb =  BigDecimal("0.00")
+            if (ta <= tb) {
                 throw IllegalArgumentException("\uD83D\uDC7F maximumInvoiceAmount should be > zero")
             }
-            if (investorProfileState.minimumInvoiceAmount <= 0.0) {
+            val ta1 =  BigDecimal(investorProfileState.minimumInvoiceAmount)
+            val tb1 =  BigDecimal("0.00")
+            if (ta1 <= tb1) {
                 throw IllegalArgumentException("\uD83D\uDC7F minimumInvoiceAmount should be > zero")
             }
-            if (investorProfileState.totalInvestment <= 10000.0) {
+            val ta2 =  BigDecimal(investorProfileState.maximumInvoiceAmount)
+            val tb2 =  BigDecimal("10000.00")
+            if (ta2 <= tb2) {
                 throw IllegalArgumentException("\uD83D\uDC7F totalInvestment should be > 10000")
             }
-            if (investorProfileState.defaultDiscount <= 0.0) {
+            val ta3 =  BigDecimal(investorProfileState.defaultDiscount)
+            if (ta3 <= tb) {
                 throw IllegalArgumentException("\uD83D\uDC7F defaultDiscount should be > zero")
             }
 

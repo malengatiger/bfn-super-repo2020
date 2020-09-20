@@ -12,8 +12,8 @@ import java.util.*
 @BelongsToContract(CustomerProfileContract::class)
 class CustomerProfileState(
                     val account: AccountInfo,
-                    val minimumInvoiceAmount: Double,
-                    val maximumInvoiceAmount: Double,
+                    val minimumInvoiceAmount: String,
+                    val maximumInvoiceAmount: String,
                     val dateRegistered: Date,
                     val email: String,
                     val stellarAccountId: String,

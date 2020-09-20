@@ -15,13 +15,13 @@ import net.corda.core.serialization.CordaSerializable
 @CordaSerializable
 class PaymentRequestState(
 
-         val paymentRequestId: String,
-         val supplierInfo: AccountInfo,
-         val customerInfo: AccountInfo,
-         val investorInfo: AccountInfo,
-         val assetCode: String,
-         val amount: Double,
-         val date: String) : ContractState {
+        val paymentRequestId: String,
+        val supplierInfo: AccountInfo,
+        val customerInfo: AccountInfo,
+        val investorInfo: AccountInfo,
+        val assetCode: String,
+        val amount: String,
+        val date: String) : ContractState {
 
     override val participants: List<AbstractParty>
         get() = listOf(supplierInfo.host,

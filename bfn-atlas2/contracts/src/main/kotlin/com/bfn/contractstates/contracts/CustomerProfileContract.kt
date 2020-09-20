@@ -5,6 +5,7 @@ import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.Contract
 import net.corda.core.transactions.LedgerTransaction
 import org.slf4j.LoggerFactory
+import java.math.BigDecimal
 
 
 class CustomerProfileContract : Contract {
@@ -18,15 +19,13 @@ class CustomerProfileContract : Contract {
         }
         val customerState = tx.outputStates.first()
         if (customerState is CustomerProfileState) {
-            if (customerState.maximumInvoiceAmount <= 0.0) {
+            if (customerState.maximumInvoiceAmount <= "0.00") {
                 throw IllegalArgumentException("Maximum Invoice Amount must be greater than zero")
             }
-            if (customerState.minimumInvoiceAmount <= 0.0) {
+            if (customerState.minimumInvoiceAmount <= "0.00") {
                 throw IllegalArgumentException("Minimum Invoice Amount must be greater than zero")
             }
-
         }
-
 
         logger.info(" $em CustomerProfileContract: verification done! \uD83D\uDC7A " +
                 ".....\uD83E\uDD1F \uD83E\uDD1F ")

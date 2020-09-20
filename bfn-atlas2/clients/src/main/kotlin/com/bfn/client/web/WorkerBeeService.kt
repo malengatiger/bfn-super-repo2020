@@ -1,5 +1,6 @@
 package com.bfn.client.web
 
+import com.bfn.client.E
 import com.bfn.client.data.*
 import com.bfn.contractstates.states.*
 import com.bfn.flows.CreateAccountFlow
@@ -30,6 +31,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import java.math.BigDecimal
 import java.util.*
 import javax.annotation.PostConstruct
 
@@ -305,7 +307,9 @@ class WorkerBeeService {
 
 
     @Throws(Exception::class)
-    fun createInvestorProfile(proxy: CordaRPCOps, profile: InvestorProfileStateDTO, account: AccountInfo): String {
+    fun createInvestorProfile(proxy: CordaRPCOps,
+                              profile: InvestorProfileStateDTO,
+                              account: AccountInfo): String {
 
         val matrixItems: MutableList<TradeMatrixItem> = mutableListOf()
         for (item in profile.tradeMatrixItems) {
@@ -321,7 +325,8 @@ class WorkerBeeService {
                 maximumInvoiceAmount = profile.maximumInvoiceAmount,
                 totalInvestment = profile.totalInvestment,
                 bank = profile.bank, bankAccount = profile.bankAccount,
-                minimumInvoiceAmount = profile.minimumInvoiceAmount, date = Date(),
+                minimumInvoiceAmount = profile.minimumInvoiceAmount,
+                date = Date(),
                 stellarAccountId = profile.stellarAccountId,
                 rippleAccountId = profile.rippleAccountId,
                 tradeMatrixItems = matrixItems
@@ -337,7 +342,9 @@ class WorkerBeeService {
 
 
     @Throws(Exception::class)
-    fun createSupplierProfile(proxy: CordaRPCOps, profile: SupplierProfileStateDTO, account: AccountInfo): String {
+    fun createSupplierProfile(proxy: CordaRPCOps,
+                              profile: SupplierProfileStateDTO,
+                              account: AccountInfo): String {
 
         val state = SupplierProfileState(
                 account = account,
@@ -372,7 +379,12 @@ class WorkerBeeService {
 
             if (acctInfo1 != null) {
                 customerProfile.account = acctInfo1.accountInfo
+                val user = firebaseService.getBFNUserByAccountName(acctInfo1.accountInfo.name)
+                if (user != null) {
+                    customerProfile.stellarAccountId = user.stellarAccountId
+                }
             }
+
 
             val txId = startCustomerProfileFlow(proxy, profile = customerProfile)
             firebaseService.addCustomerProfile(customerProfile)
@@ -403,7 +415,7 @@ class WorkerBeeService {
             logger.info("Investor  \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 ${it.investor.name} " +
                     ":: \uD83C\uDF4E Offer made: ${it.supplier.name} " +
                     "offered: ${it.offerAmount} \uD83D\uDD35 \uD83D\uDD35 originalAmt: ${it.originalAmount} " +
-                    " discount: ${it.discount}  \uD83C\uDF40 delta: ${it.originalAmount - it.offerAmount} ")
+                    " discount: ${it.discount}  \uD83C\uDF40 ")
         }
         logger.info(m)
         return offers
@@ -602,17 +614,23 @@ class WorkerBeeService {
                                       invoice: InvoiceDTO,
                                       investorProfile: InvestorProfileStateDTO): Boolean {
 
-        logger.info("\uD83E\uDD66 validateInvoiceAgainstProfile ... invoice.amount: ${invoice.amount}")
-        if (invoice.amount < investorProfile.minimumInvoiceAmount) {
+        val a1 = BigDecimal(invoice.amount)
+        val a2 = BigDecimal(investorProfile.minimumInvoiceAmount)
+        if (a1 < a2) {
+            logger.info("${E.RED_APPLE} minimumInvoiceAmount check failed")
             return false;
         }
-        if (invoice.amount > investorProfile.maximumInvoiceAmount) {
+        val a3 = BigDecimal(investorProfile.maximumInvoiceAmount)
+        if (a1 > a3) {
+            logger.info("${E.RED_APPLE} maximumInvoiceAmount check failed")
             return false;
         }
         if (invoice.supplier.identifier == investorProfile.account.identifier) {
+            logger.info("${E.RED_APPLE} supplier id check failed")
             return false;
         }
         if (invoice.customer.identifier == investorProfile.account.identifier) {
+            logger.info("${E.RED_APPLE} customer id check failed")
             return false;
         }
         //todo - 🍎 🍎 🍎 🍎  add validation against industry, specific blackList, whiteList etc. 🍎 🍎 🍎 🍎
@@ -651,9 +669,11 @@ class WorkerBeeService {
             if (customerInfo == null) {
                 throw Exception("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 Customer is bloody missing")
             }
-            val taxPercentage = invoice.valueAddedTax.div(100.0)
-            val totalTaxAmt = invoice.amount * taxPercentage
-            invoice.totalAmount = totalTaxAmt + invoice.amount
+            val tax = BigDecimal(invoice.valueAddedTax)
+            val taxPercentage = tax.divide(BigDecimal("100.00") )
+            val totalTaxAmt = BigDecimal(invoice.amount).multiply(taxPercentage)
+            val totalAmount = BigDecimal(invoice.amount).add(totalTaxAmt)
+            invoice.totalAmount = "$totalAmount"
             //
             logger.info("\uD83C\uDF51 \uD83C\uDF51 startInvoiceRegistrationFlow: " +
                     "\uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C " +
@@ -800,10 +820,13 @@ class WorkerBeeService {
                         cellphone = cellphone,
                         stellarAccountId = mStellarId,
                         rippleAccountId = mRippleId)
-
-                val future = proxy.startFlowDynamic(CreateUserFlow::class.java, user).returnValue
-                logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D " +
-                        "CreateUserFlow completed ${future.get()} User added on  Corda ledger: ${gson.toJson(user)}")
+                if (user != null) {
+                    val userState = UserState(acctInfo, email, cellphone, mStellarId, mRippleId, user.uid)
+                    val future = proxy.startFlowDynamic(CreateUserFlow::class.java, userState).returnValue
+                    logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D " +
+                            "CreateUserFlow completed ${future.get()} \uD83D\uDE21" +
+                            "User added on  Corda ledger: ${gson.toJson(user)}")
+                }
                 return user
 
             } catch (e: Exception) {
@@ -904,7 +927,6 @@ class WorkerBeeService {
     @Throws(Exception::class)
     fun startInvoiceOfferFlow(proxy: CordaRPCOps, invoiceOffer: InvoiceOfferDTO): InvoiceOfferDTO {
         return try {
-
             val future = proxy.startFlowDynamic(FindInvoiceFlow::class.java,
                     invoiceOffer.invoiceId).returnValue
             val invoiceState = future.get()
@@ -918,17 +940,14 @@ class WorkerBeeService {
                     .returnValue
             val investorInfo = future2.get() ?: throw Exception("Investor not found")
 
-            if (invoiceOffer.discount == Double.MIN_VALUE) {
-                throw Exception("Discount not found")
-            }
-            val nPercentage = 100.0 - invoiceOffer.discount
-            invoiceOffer.offerAmount = invoiceOffer.originalAmount * (nPercentage / 100)
+            val nPercentage = BigDecimal("100.00").minus( BigDecimal(invoiceOffer.discount)).divide(BigDecimal("100"))
+            invoiceOffer.offerAmount = (BigDecimal(invoiceOffer.originalAmount).multiply(nPercentage)).toString()
             processInvoiceOffer(proxy, invoiceOffer, invoiceState, investorInfo)
         } catch (e: Exception) {
             if (e.message != null) {
-                throw Exception("Failed to register invoiceOffer.  \uD83D\uDC7F ${e.message}")
+                throw Exception("\uD83E\uDD80  \uD83E\uDD80 Failed to register invoiceOffer.  \uD83D\uDC7F ${e.message}")
             } else {
-                throw Exception("Failed to register invoiceOffer. Unknown cause")
+                throw Exception("\uD83E\uDD80  \uD83E\uDD80 Failed to register invoiceOffer. Unknown cause")
             }
         }
     }
@@ -947,26 +966,31 @@ class WorkerBeeService {
                 offerDate = invoiceOffer.offerDate,
                 originalAmount = invoiceState.totalAmount,
                 acceptanceDate = invoiceOffer.acceptanceDate,
-                accepted = false, offerId = invoiceOffer.offerId,
+                accepted = false,
+                offerId = invoiceOffer.offerId,
                 externalId = invoiceState.externalId
         )
         val signedTransactionCordaFuture = proxy.startTrackedFlowDynamic(
                 InvoiceOfferFlow::class.java, invoiceOfferState)
                 .returnValue
-        signedTransactionCordaFuture.get()
-        logger.info("\uD83C\uDF4F \uD83C\uDF4F processInvoiceOffer completed... " +
-                "\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C   ")
-        val offerDTO = DTOUtil.getDTO(invoiceOfferState)
+        val txId = signedTransactionCordaFuture.get()
+        logger.info("\uD83C\uDF4F \uD83C\uDF4F .... InvoiceOfferFlow completed on ledger ... " +
+                "\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C  txId: $txId ")
+        val offer = DTOUtil.getDTO(invoiceOfferState)
         try {
             val db = FirestoreClient.getFirestore()
-            val reference = db.collection(BFN_INVOICE_OFFERS).add(offerDTO)
-            logger.info("\uD83E\uDDE9 " +
+            val reference = db.collection(BFN_INVOICE_OFFERS).add(offer)
+            logger.info("\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 added to " +
                     "Firestore invoiceOffers path: " + reference.get().path)
+            firebaseService.sendInvoiceOfferMessage(offer)
         } catch (e: Exception) {
-            logger.error(e.message)
+            logger.error("\uD83D\uDC7F \uD83D\uDC7F \uD83D\uDC7F\uD83D\uDC7F " +
+                    "Failed to add invoiceOffer to Firestore", e)
+            throw e
+
         }
-        firebaseService.sendInvoiceOfferMessage(offerDTO)
-        return offerDTO
+
+        return offer
     }
 }
 

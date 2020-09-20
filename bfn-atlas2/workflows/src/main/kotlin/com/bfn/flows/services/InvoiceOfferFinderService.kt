@@ -116,7 +116,7 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
         val allOffers = getOffersOnNode()
         logger.info("\uD83D\uDC2C \uD83D\uDC2C ${allOffers.size} anchor offers found on node ...")
         allOffers.forEach() {
-            if (it.state.data.investor.name == existingAnchor.state.data.name) {
+            if (it.state.data.investor.name == existingAnchor.state.data.account.name) {
                 if (it.state.data.accepted) {
                    offers.add(it)
                 }

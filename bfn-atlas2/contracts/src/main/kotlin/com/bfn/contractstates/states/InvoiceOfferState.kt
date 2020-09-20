@@ -11,9 +11,9 @@ import java.util.*
 @CordaSerializable
 @BelongsToContract(InvoiceOfferContract::class)
 class InvoiceOfferState(val invoiceId: UUID,
-                        val offerAmount: Double,
-                        val discount: Double,
-                        val originalAmount: Double,
+                        val offerAmount: String,
+                        val discount: String,
+                        val originalAmount: String,
                         val supplier: AccountInfo,
                         val investor: AccountInfo,
                         val offerDate: String,

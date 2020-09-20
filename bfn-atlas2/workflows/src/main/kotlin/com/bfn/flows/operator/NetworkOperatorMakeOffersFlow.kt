@@ -44,45 +44,45 @@ class NetworkOperatorMakeOffersFlow : FlowLogic<List<InvoiceOfferState>>() {
         val keys:MutableMap<String, PublicKey> = mutableMapOf()
         keys[anchorParty.toString()] = anchorParty.owningKey
 
-        val txBuilder = buildTransaction(unconsumedInvoices, existingAnchor, offerList, keys, anchorParty, sessions)
-        finalize(txBuilder, sessions, offerList)
+//        val txBuilder = buildTransaction(unconsumedInvoices, existingAnchor, offerList, keys, anchorParty, sessions)
+//        finalize(txBuilder, sessions, offerList)
         return offerList
     }
 
-    private fun buildTransaction(states: List<StateAndRef<InvoiceState>>,
-                                 existingAnchor: StateAndRef< NetworkOperatorState>,
-                                 offerList: MutableList<InvoiceOfferState>,
-                                 keys: MutableMap<String, PublicKey>,
-                                 anchorParty: Party, sessions: MutableList<FlowSession>): TransactionBuilder {
-        var invoicesThatFailed = 0
-        val command = InvoiceOfferContract.MakeOffer()
-        val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
-        states.forEach() {
-            val offer = attemptToCreateOffer(it, existingAnchor.state.data)
-            if (offer != null) {
-                offerList.add(offer)
-                keys[it.state.data.supplierInfo.host.toString()] = it.state.data.supplierInfo.host.owningKey
-                txBuilder.addOutputState(offer)
-            } else {
-                logger.info("$peppers This invoice does NOT meet anchor requirements" +
-                        " \uD83C\uDF4E\uD83C\uDF4E\uD83C\uDF4E totalAmount: ${it.state.data.totalAmount} invoiceId: ${it.state.data.invoiceId} $peppers")
-                invoicesThatFailed++
-            }
-        }
-        logger.info("$mm Building transaction ...  \uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A Offers created: ${offerList.size}  " +
-                "\uD83C\uDF4E Invoices rejected: $invoicesThatFailed \uD83C\uDF4E")
-
-        txBuilder.addCommand(command, keys.values.toList())
-        logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 Adding ${offerList.size} offers as output states ...")
-        offerList.forEach() {
-            val supplierParty = it.supplier.host
-            if (supplierParty.name.organisation != anchorParty.name.organisation) {
-                val session = initiateFlow(supplierParty)
-                sessions.add(session)
-            }
-        }
-        return txBuilder
-    }
+//    private fun buildTransaction(states: List<StateAndRef<InvoiceState>>,
+//                                 existingAnchor: StateAndRef< NetworkOperatorState>,
+//                                 offerList: MutableList<InvoiceOfferState>,
+//                                 keys: MutableMap<String, PublicKey>,
+//                                 anchorParty: Party, sessions: MutableList<FlowSession>): TransactionBuilder {
+//        var invoicesThatFailed = 0
+//        val command = InvoiceOfferContract.MakeOffer()
+//        val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
+//        states.forEach() {
+//            val offer = attemptToCreateOffer(it, existingAnchor.state.data)
+//            if (offer != null) {
+//                offerList.add(offer)
+//                keys[it.state.data.supplierInfo.host.toString()] = it.state.data.supplierInfo.host.owningKey
+//                txBuilder.addOutputState(offer)
+//            } else {
+//                logger.info("$peppers This invoice does NOT meet anchor requirements" +
+//                        " \uD83C\uDF4E\uD83C\uDF4E\uD83C\uDF4E totalAmount: ${it.state.data.totalAmount} invoiceId: ${it.state.data.invoiceId} $peppers")
+//                invoicesThatFailed++
+//            }
+//        }
+//        logger.info("$mm Building transaction ...  \uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A Offers created: ${offerList.size}  " +
+//                "\uD83C\uDF4E Invoices rejected: $invoicesThatFailed \uD83C\uDF4E")
+//
+//        txBuilder.addCommand(command, keys.values.toList())
+//        logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 Adding ${offerList.size} offers as output states ...")
+//        offerList.forEach() {
+//            val supplierParty = it.supplier.host
+//            if (supplierParty.name.organisation != anchorParty.name.organisation) {
+//                val session = initiateFlow(supplierParty)
+//                sessions.add(session)
+//            }
+//        }
+//        return txBuilder
+//    }
 
     @Suspendable
     private fun finalize(txBuilder: TransactionBuilder, sessions: MutableList<FlowSession>,
@@ -108,61 +108,56 @@ class NetworkOperatorMakeOffersFlow : FlowLogic<List<InvoiceOfferState>>() {
      * Check invoice against AnchorInvestor criteria for investing
      * Create InvoiceOffer where invoice meets ALL requirements
      */
-    @Suspendable
-    private fun attemptToCreateOffer(state: StateAndRef<InvoiceState>, anchor:  NetworkOperatorState): InvoiceOfferState? {
-        logger.info("\uD83D\uDE0E attemptToCreateOffer invoice ... \uD83D\uDE0E \uD83D\uDE0E validating against anchor profile")
-        val invoice = state.state.data
-        if (invoice.totalAmount < anchor.minimumInvoiceAmount) {
-            return null
-        }
-        if (invoice.totalAmount > anchor.maximumInvoiceAmount) {
-            return null
-        }
-        val disc = if (anchor.tradeMatrixItems.isEmpty()) {
-            anchor.defaultOfferDiscount
-        } else {
-            getValidDiscount(invoice, anchor)
-        }
-        if (disc == 0.0) {
-            return null
-        }
-        val mDisc = disc / 100
-        val offerDouble = invoice.totalAmount * (1.0 - mDisc)
-
-        logger.info("\uD83D\uDE0E Processing invoice ... \uD83D\uDD06 offer to be created with offerAmount: $offerDouble")
-        return InvoiceOfferState(
-                invoiceId = invoice.invoiceId,
-                invoiceNumber = invoice.invoiceNumber,
-                discount = disc,
-                customer = invoice.customerInfo,
-                supplier = invoice.supplierInfo,
-                offerAmount = offerDouble,
-                investor = anchor.account,
-                offerDate = todaysDate(),
-                originalAmount = invoice.totalAmount,
-                acceptanceDate = todaysDate(), accepted = false,
-                offerId = UUID.randomUUID().toString(),
-                externalId = invoice.externalId, isAnchor = true
-        )
-    }
-    @Suspendable
-    private fun getValidDiscount(invoice:InvoiceState, anchor:  NetworkOperatorState): Double {
-        var discount = 0.0
-        logger.info("\uD83E\uDD8A \uD83E\uDD8A Validating against trade matrices ... ${anchor.tradeMatrixItems.size}")
-        anchor.tradeMatrixItems.forEach() {
-            logger.info("\uD83D\uDD35  startInvoiceAmount : ${it.startInvoiceAmount} " +
-                    "endInvoiceAmount: ${it.endInvoiceAmount} " +
-                    "\uD83D\uDD35 \uD83D\uDD35  compare against invoice totalAmount: \uD83D\uDD35 ${invoice.totalAmount}")
-            val range = (it.startInvoiceAmount..it.endInvoiceAmount)
-            val isInRange = range.contains(invoice.totalAmount)
-            if (isInRange) {
-                discount = it.offerDiscount
-                return discount
-            }
-        }
-        logger.info("\uD83E\uDD8A \uD83E\uDD8A Discount from trade matrix: \uD83E\uDD8A $discount \uD83E\uDD8A")
-        return discount;
-    }
+//    @Suspendable
+//    private fun attemptToCreateOffer(state: StateAndRef<InvoiceState>, anchor:  NetworkOperatorState): InvoiceOfferState? {
+//        logger.info("\uD83D\uDE0E attemptToCreateOffer invoice ... \uD83D\uDE0E \uD83D\uDE0E validating against anchor profile")
+//        val invoice = state.state.data
+//
+//        val disc = if (anchor.tradeMatrixItems.isEmpty()) {
+//            anchor.defaultOfferDiscount
+//        } else {
+//            getValidDiscount(invoice, anchor)
+//        }
+//        if (disc == 0.0) {
+//            return null
+//        }
+//        val mDisc = disc / 100
+//        val offerDouble = invoice.totalAmount * (1.0 - mDisc)
+//
+//        logger.info("\uD83D\uDE0E Processing invoice ... \uD83D\uDD06 offer to be created with offerAmount: $offerDouble")
+//        return InvoiceOfferState(
+//                invoiceId = invoice.invoiceId,
+//                invoiceNumber = invoice.invoiceNumber,
+//                discount = disc,
+//                customer = invoice.customerInfo,
+//                supplier = invoice.supplierInfo,
+//                offerAmount = offerDouble,
+//                investor = anchor.account,
+//                offerDate = todaysDate(),
+//                originalAmount = invoice.totalAmount,
+//                acceptanceDate = todaysDate(), accepted = false,
+//                offerId = UUID.randomUUID().toString(),
+//                externalId = invoice.externalId, isAnchor = true
+//        )
+//    }
+//    @Suspendable
+//    private fun getValidDiscount(invoice:InvoiceState, anchor:  NetworkOperatorState): Double {
+//        var discount = 0.0
+//        logger.info("\uD83E\uDD8A \uD83E\uDD8A Validating against trade matrices ... ${anchor.tradeMatrixItems.size}")
+//        anchor.tradeMatrixItems.forEach() {
+//            logger.info("\uD83D\uDD35  startInvoiceAmount : ${it.startInvoiceAmount} " +
+//                    "endInvoiceAmount: ${it.endInvoiceAmount} " +
+//                    "\uD83D\uDD35 \uD83D\uDD35  compare against invoice totalAmount: \uD83D\uDD35 ${invoice.totalAmount}")
+//            val range = (it.startInvoiceAmount..it.endInvoiceAmount)
+//            val isInRange = range.contains(invoice.totalAmount)
+//            if (isInRange) {
+//                discount = it.offerDiscount
+//                return discount
+//            }
+//        }
+//        logger.info("\uD83E\uDD8A \uD83E\uDD8A Discount from trade matrix: \uD83E\uDD8A $discount \uD83E\uDD8A")
+//        return discount;
+//    }
 
     private val pp = "\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95"
     private val peppers = "\uD83C\uDF36 \uD83C\uDF36 \uD83C\uDF36 \uD83C\uDF36 "

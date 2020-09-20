@@ -5,6 +5,7 @@ import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.Contract
 import net.corda.core.transactions.LedgerTransaction
 import org.slf4j.LoggerFactory
+import java.math.BigDecimal
 
 
 class SupplierProfileContract : Contract {
@@ -30,7 +31,9 @@ class SupplierProfileContract : Contract {
             }
             val supplierProfileState = tx.outputStates.first() as SupplierProfileState
 
-            if (supplierProfileState.maximumDiscount <= 0.0) {
+            val ta =  BigDecimal(supplierProfileState.maximumDiscount)
+            val tb =  BigDecimal("0.00")
+            if (ta <= tb) {
                 throw IllegalArgumentException("\uD83D\uDC7F maximumDiscount should be > zero")
             }
 

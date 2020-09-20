@@ -54,21 +54,11 @@ object DTOUtil {
     fun getDTO(a: NetworkOperatorState): NetworkOperatorDTO {
 
         return NetworkOperatorDTO(
-
                 account = getDTO(a.account),
-                minimumInvoiceAmount = a.minimumInvoiceAmount,
-                maximumInvoiceAmount = a.maximumInvoiceAmount,
-                maximumInvestment = a.maximumInvestment,
-                defaultOfferDiscount = a.defaultOfferDiscount,
-                tradeFrequencyInMinutes = a.tradeFrequencyInMinutes,
-                name = a.name,
                 cellphone = a.cellphone,
                 email = a.email,
-                tradeMatrixItems = getDTO(a.tradeMatrixItems),
                 password = "",
-                date = a.date.toString(),
-                stellarAccountId = a.stellarAccountId,
-                rippleAccountId = a.rippleAccountId
+                date = a.date.toString()
         )
     }
     @JvmStatic
@@ -85,10 +75,10 @@ object DTOUtil {
     @JvmStatic
     fun getDTO(a: TradeMatrixItem): TradeMatrixItemDTO {
         return TradeMatrixItemDTO(
-                startInvoiceAmount = a.startInvoiceAmount,
-                endInvoiceAmount = a.endInvoiceAmount,
-                offerDiscount = a.offerDiscount,
-                date = a.date
+                a.startInvoiceAmount,
+                a.endInvoiceAmount,
+                a.offerDiscount,
+                a.date
 
         )
     }
@@ -123,16 +113,29 @@ object DTOUtil {
 
     @JvmStatic
     fun getDTO(a: InvestorProfileState): InvestorProfileStateDTO {
-        return InvestorProfileStateDTO(
-                account = getDTO(a.account), date = a.date.toString(),
-                defaultDiscount = a.defaultDiscount,
-                maximumInvoiceAmount = a.maximumInvoiceAmount,
-                totalInvestment = a.totalInvestment,
-                minimumInvoiceAmount = a.minimumInvoiceAmount,
-                bank = a.bank, bankAccount = a.bankAccount,
-                stellarAccountId = a.stellarAccountId,
-                rippleAccountId = a.rippleAccountId
-        )
+        val m: MutableList<TradeMatrixItemDTO> = mutableListOf()
+        for (item in a.tradeMatrixItems) {
+            m.add(TradeMatrixItemDTO(
+                    item.startInvoiceAmount,
+                    item.endInvoiceAmount,
+                    item.offerDiscount,
+                    item.date
+
+            ))
+        }
+        val prof = InvestorProfileStateDTO();
+        prof.account = getDTO(a.account)
+        prof.bank = a.bank
+        prof.bankAccount = a.bankAccount
+        prof.date = a.date.toString()
+        prof.defaultDiscount = a.defaultDiscount
+        prof.minimumInvoiceAmount = a.minimumInvoiceAmount
+        prof.maximumInvoiceAmount = a.maximumInvoiceAmount
+        prof.rippleAccountId = a.rippleAccountId
+        prof.stellarAccountId = a.stellarAccountId
+        prof.totalInvestment = a.totalInvestment
+        prof.tradeMatrixItems = m
+        return prof;
     }
 
     @JvmStatic
@@ -162,12 +165,12 @@ object DTOUtil {
 
     @JvmStatic
     fun getDTO(token: FungibleToken, accountId: String,
-               invoiceId: String, account: AccountInfo, invoiceAmount: Double): TokenDTO {
+               invoiceId: String, account: AccountInfo, invoiceAmount: String): TokenDTO {
         return TokenDTO(
                 accountId = accountId,
                 invoiceId = invoiceId,
                 tokenIdentifier = token.issuedTokenType.tokenIdentifier,
-                amount = token.amount.toDecimal().toDouble(),
+                amount = token.amount.toString(),
                 issuer = token.issuer.toString(),
                 holder = token.holder.toString(),
                 invoiceAmount = invoiceAmount,

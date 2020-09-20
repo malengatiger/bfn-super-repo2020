@@ -67,9 +67,12 @@ class InvoiceOfferFlow(private val invoiceOfferState: InvoiceOfferState) : FlowL
         val map: MutableMap<String, Party> = mutableMapOf()
         val investorOrg: String = invoiceOfferState.investor.host.name.organisation
         val supplierOrg: String = invoiceOfferState.supplier.host.name.organisation
+        val customerOrg: String = invoiceOfferState.customer.host.name.organisation
 
         map[investorOrg] = invoiceOfferState.investor.host
         map[supplierOrg] = invoiceOfferState.supplier.host
+        map[customerOrg] = invoiceOfferState.customer.host
+
         val keys: MutableList<PublicKey> = mutableListOf()
         map.values.forEach() {
             keys.add(it.owningKey)
@@ -102,12 +105,8 @@ class InvoiceOfferFlow(private val invoiceOfferState: InvoiceOfferState) : FlowL
         } else {
             Companion.logger.info(" \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 " +
                     " Participants are LOCAL and REMOTE ... \uD83D\uDD06")
-            val mSignedTransactionDone = subFlow(
-                    FinalityFlow(signedTx, mSessions))
-            Companion.logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D  MULTI NODE ==> " +
-                    " \uD83E\uDD66 \uD83E\uDD66  \uD83E\uDD66 \uD83E\uDD66 FinalityFlow has been executed " +
-                    "...\uD83E\uDD66 \uD83E\uDD66")
-            return mSignedTransactionDone
+            return collectSignaturesAndFinalize(signedTx = signedTx, sessions = mSessions)
+
         }
 
     }
@@ -149,7 +148,7 @@ class InvoiceOfferFlow(private val invoiceOfferState: InvoiceOfferState) : FlowL
 
     @Suspendable
     @Throws(FlowException::class)
-    private fun collectSignatures(signedTx: SignedTransaction, sessions: List<FlowSession>): SignedTransaction {
+    private fun collectSignaturesAndFinalize(signedTx: SignedTransaction, sessions: List<FlowSession>): SignedTransaction {
 
         progressTracker.currentStep = gatheringTransactions
 
@@ -163,6 +162,8 @@ class InvoiceOfferFlow(private val invoiceOfferState: InvoiceOfferState) : FlowL
         progressTracker.currentStep = finalizingTransaction
         val mSignedTransactionDone = subFlow(
                 FinalityFlow(signedTransaction, sessions))
+
+        reportToRegulator(mSignedTransactionDone)
 
         Companion.logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D  " +
                 " \uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C  \uD83E\uDD66 \uD83E\uDD66  " +

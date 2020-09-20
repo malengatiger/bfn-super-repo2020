@@ -5,6 +5,7 @@ import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.Contract
 import net.corda.core.transactions.LedgerTransaction
 import org.slf4j.LoggerFactory
+import java.math.BigDecimal
 
 
 class InvoiceOfferContract : Contract {
@@ -24,7 +25,9 @@ class InvoiceOfferContract : Contract {
             if (invoiceOfferState.supplier.name == invoiceOfferState.investor.name) {
                 throw IllegalArgumentException("Investor and Supplier cannot be the same entity")
             }
-            if (invoiceOfferState.discount <= 0.0) {
+            val ta =  BigDecimal(invoiceOfferState.discount)
+            val tb =  BigDecimal("0.00")
+            if (ta <= tb) {
                 throw IllegalArgumentException("Discount Percent must be greater than zero")
             }
             if (invoiceOfferState.customer.identifier.toString() == invoiceOfferState.supplier.identifier.toString()) {
@@ -33,13 +36,22 @@ class InvoiceOfferContract : Contract {
             if (invoiceOfferState.customer.identifier.toString() == invoiceOfferState.investor.identifier.toString()) {
                 throw IllegalArgumentException("Customer and Investor cannot be the same entity")
             }
-            if (invoiceOfferState.offerAmount < invoiceOfferState.originalAmount) {
-                throw IllegalArgumentException("Offer amount must be less than original invoice amount")
+            val ta1 =  BigDecimal(invoiceOfferState.offerAmount)
+            val tb1 =  BigDecimal(invoiceOfferState.originalAmount)
+            if (tb1 <= ta1) {
+                throw IllegalArgumentException("\uD83C\uDF4E \uD83C\uDF4E Offer amount: " +
+                        "$ta1 " +
+                        "must be less than original invoice amount: " +
+                        "$tb1 \uD83C\uDF4E \uD83C\uDF4E ")
             }
 
         } else {
             throw IllegalArgumentException("Output state must be InvoiceOfferState ")
         }
+        //1,331,700.000000
+        //1,380,000.000
+
+
 
 
 

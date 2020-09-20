@@ -81,7 +81,7 @@ class NetworkOperatorBeeService {
 
     @Throws(Exception::class)
     fun updateNetworkOperator(proxy: CordaRPCOps,
-                              networkOperator: NetworkOperatorDTO): NetworkOperatorDTO {
+                              networkOperator: NetworkOperatorDTO): NetworkOperatorDTO? {
         logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to update Anchor ... ")
         var oldState: NetworkOperatorState? = null
         val states = proxy.vaultQueryByWithPagingSpec(
@@ -98,12 +98,12 @@ class NetworkOperatorBeeService {
         if (oldState == null) {
             throw Exception("\uD83D\uDC7F Anchor does not exist on the Corda node")
         }
-        val cordaFuture = proxy.startFlowDynamic(
-                NetworkOperatorUpdateFlow::class.java, oldState!!).returnValue
-        val result = cordaFuture.get()
-        val dto = DTOUtil.getDTO(result)
-        logger.info("\uD83C\uDF53 createAnchor: Anchor updated: \uD83C\uDF53 ${dto.account.name}")
-        return dto
+//        val cordaFuture = proxy.startFlowDynamic(
+//                NetworkOperatorUpdateFlow::class.java, oldState!!).returnValue
+//        val result = cordaFuture.get()
+//        val dto = DTOUtil.getDTO(result)
+//        logger.info("\uD83C\uDF53 createAnchor: Anchor updated: \uD83C\uDF53 ${dto.account.name}")
+        return null
     }
 
     @Throws(Exception::class)
