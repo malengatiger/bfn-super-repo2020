@@ -22,6 +22,10 @@ import java.math.BigDecimal
 import java.security.PublicKey
 import java.util.*
 
+/**
+ * SchedulableFlow to enable investor automated invoiceOffers. Scheduled using investorProfile property
+ */
+@SchedulableFlow
 @InitiatingFlow
 @StartableByRPC
 class CreateInvoiceOffersFlow(private val investorId: String) : FlowLogic<List<InvoiceOfferState>?>() {
@@ -38,7 +42,7 @@ class CreateInvoiceOffersFlow(private val investorId: String) : FlowLogic<List<I
         }
         val account = serviceHub.accountService.accountInfo(UUID.fromString(investorId))
                 ?: throw IllegalArgumentException("CreateInvoiceOffersFlow: Investor Account not found: $investorId")
-        Companion.logger.info("\uD83E\uDD63 \uD83E\uDD63 ${invoices.size} Total invoices selected for investor: " +
+        Companion.logger.info("\uD83E\uDD63 \uD83E\uDD63 ${invoices.size} Total invoices found for investor: " +
                 "\uD83E\uDD66 ${account.state.data.name} \uD83E\uDD66")
         val profile = serviceHub.cordaService(ProfileFinderService::class.java)
                 .findInvestorProfile(investorId)

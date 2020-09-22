@@ -17,6 +17,7 @@ import net.corda.core.node.services.vault.QueryCriteria.VaultCustomQueryCriteria
 import net.corda.core.node.services.vault.builder
 import net.corda.core.serialization.SingletonSerializeAsToken
 import org.slf4j.LoggerFactory
+import java.math.BigDecimal
 import java.security.PublicKey
 import java.util.*
 
@@ -65,9 +66,14 @@ class InvoiceFinderService(private val serviceHub: AppServiceHub) : SingletonSer
         }
 
         sortedInvoices.forEach(){
-            if (it.totalAmount >= profile.state.data.minimumInvoiceAmount
-                    && it.totalAmount <= profile.state.data.maximumInvoiceAmount ) {
-                bestInvoices!!.add(it)
+
+            val invoiceAmount = BigDecimal(it.totalAmount)
+            for (item in profile.state.data.tradeMatrixItems) {
+                val startInvoiceAmount = BigDecimal(item.startInvoiceAmount)
+                val endInvoiceAmount = BigDecimal(item.endInvoiceAmount)
+                if (invoiceAmount in startInvoiceAmount..endInvoiceAmount) {
+                    bestInvoices!!.add(it)
+                }
             }
         }
         return bestInvoices!!

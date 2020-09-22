@@ -400,7 +400,7 @@ class WorkerBeeService {
     }
 
     @Throws(Exception::class)
-    fun makeInvoiceOffers(proxy: CordaRPCOps, investorId: String): List<InvoiceOfferDTO> {
+    fun makeOffersOnInvoicesForInvestor(proxy: CordaRPCOps, investorId: String): List<InvoiceOfferDTO> {
         val fut = proxy.startTrackedFlowDynamic(
                 CreateInvoiceOffersFlow::class.java, investorId).returnValue
         val offerStates = fut.get()
@@ -610,32 +610,29 @@ class WorkerBeeService {
     }
 
     @Throws(Exception::class)
-    fun validateInvoiceAgainstProfile(proxy: CordaRPCOps,
-                                      invoice: InvoiceDTO,
+    fun validateInvoiceAgainstProfile( invoice: InvoiceDTO,
                                       investorProfile: InvestorProfileStateDTO): Boolean {
 
-        val a1 = BigDecimal(invoice.amount)
-        val a2 = BigDecimal(investorProfile.minimumInvoiceAmount)
-        if (a1 < a2) {
-            logger.info("${E.RED_APPLE} minimumInvoiceAmount check failed")
-            return false;
-        }
-        val a3 = BigDecimal(investorProfile.maximumInvoiceAmount)
-        if (a1 > a3) {
-            logger.info("${E.RED_APPLE} maximumInvoiceAmount check failed")
-            return false;
-        }
+        val invoiceAmount = BigDecimal(invoice.amount)
         if (invoice.supplier.identifier == investorProfile.account.identifier) {
-            logger.info("${E.RED_APPLE} supplier id check failed")
+            logger.info("${E.RED_APPLE} supplier cannot be the investor: ${E.ERROR} id check failed")
             return false;
         }
         if (invoice.customer.identifier == investorProfile.account.identifier) {
-            logger.info("${E.RED_APPLE} customer id check failed")
+            logger.info("${E.RED_APPLE} customer cannot be the investor:  ${E.ERROR} id check failed")
             return false;
         }
-        //todo - 🍎 🍎 🍎 🍎  add validation against industry, specific blackList, whiteList etc. 🍎 🍎 🍎 🍎
 
-        return true
+        for (item in investorProfile.tradeMatrixItems) {
+            val startInvoiceAmount = BigDecimal(item.startInvoiceAmount)
+            val endInvoiceAmount = BigDecimal(item.endInvoiceAmount)
+            if (invoiceAmount in startInvoiceAmount..endInvoiceAmount) {
+                return true
+            }
+        }
+        //todo - 🍎 🍎 🍎 🍎  add validation against industry, specific blackList, whiteList etc. 🍎 🍎 🍎 🍎
+        logger.info("${E.RED_APPLE} invoice amount failed trade matrix check ${E.ERROR}")
+        return false
     }
 
     @Throws(Exception::class)

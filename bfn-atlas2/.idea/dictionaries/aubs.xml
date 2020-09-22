@@ -23,9 +23,11 @@
       <w>graystone</w>
       <w>gson</w>
       <w>infos</w>
+      <w>investec</w>
       <w>jabula</w>
       <w>khambule</w>
       <w>khulula</w>
+      <w>logx</w>
       <w>macoute</w>
       <w>maddow</w>
       <w>mamelodi</w>
@@ -34,7 +36,14 @@
       <w>naidoo</w>
       <w>nkosi</w>
       <w>nuthin</w>
+      <w>pconfig.rpc.host</w>
+      <w>pconfig.rpc.port</w>
+      <w>perc</w>
+      <w>phost</w>
       <w>pify</w>
+      <w>prpcport</w>
+      <w>pserver.port</w>
+      <w>pserverport</w>
       <w>shoprite</w>
       <w>springboot</w>
       <w>tranx</w>

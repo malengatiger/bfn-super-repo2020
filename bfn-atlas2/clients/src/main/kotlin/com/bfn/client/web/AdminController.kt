@@ -259,7 +259,7 @@ class AdminController(rpc: NodeRPCConnection) {
     @GetMapping(value = ["/makeInvoiceOffers"])
     @Throws(Exception::class)
     fun makeInvoiceOffers(@RequestParam investorId: String): List<InvoiceOfferDTO> {
-        return workerBeeService.makeInvoiceOffers(proxy, investorId)
+        return workerBeeService.makeOffersOnInvoicesForInvestor(proxy, investorId)
     }
     @PostMapping(value = ["/createInvestorProfile"])
     @Throws(Exception::class)

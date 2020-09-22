@@ -1,5 +1,6 @@
 package com.bfn.client.web
 
+import com.bfn.client.E
 import com.bfn.client.data.*
 import com.bfn.contractstates.states.NetworkOperatorState
 import com.google.gson.GsonBuilder
@@ -143,39 +144,62 @@ class DemoDataService {
 
     private fun getTradeMatrixItems(): MutableList<TradeMatrixItemDTO> {
         val date = DateTime().toDateTimeISO().toString()
+        var mDisc1 = random.nextInt(20) * 1.5
+        if (mDisc1 < 10.0) {
+            mDisc1 = 10.0
+        }
         val m2 = TradeMatrixItemDTO(
                 "2000001.00",
                 "300000.00",
-                "9.5",
+                "$mDisc1",
                 date
         )
-
+        var mDisc2 = random.nextInt(15) * 1.5
+        if (mDisc2 < 8.0) {
+            mDisc2 = 8.5
+        }
         val m3 = TradeMatrixItemDTO(
                 "300001.00",
                 "400000.00",
-                "8.5",
+                "$mDisc2",
                 date
         )
+        var mDisc3 = random.nextInt(10) * 1.5
+        if (mDisc3 < 7.0) {
+            mDisc3 = 7.0
+        }
         val m4 = TradeMatrixItemDTO(
                 "400001.00",
                 "500000.00",
-                "7.5",
+                "$mDisc3",
                 date
         )
+        var mDisc4 = random.nextInt(10) * 1.0
+        if (mDisc4 < 7.0) {
+            mDisc4 = 4.5
+        }
         val m5 = TradeMatrixItemDTO(
                 "500001.00",
                 "1000000.00",
-                "6.5",
+                "$mDisc4",
                 date)
+        var mDisc5 = random.nextInt(5) * 1.5
+        if (mDisc5 < 3.0) {
+            mDisc5 = 5.0
+        }
         val m6 = TradeMatrixItemDTO(
                 "1000001.00",
                 "10000000.00",
-                "5.5",
+                "$mDisc5",
                 date)
+        var mDisc6 = random.nextInt(5) * 1.1
+        if (mDisc6 < 3.0) {
+            mDisc6 = 4.5
+        }
         val m7 = TradeMatrixItemDTO(
                 "10000001.00",
                 "100000000.00",
-                "4.5",
+                "$mDisc6",
                 date)
 
         return mutableListOf(m2, m3, m4, m5, m6, m7)
@@ -332,11 +356,27 @@ class DemoDataService {
 
     private val em1 = "\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 ";
     private var nodes: List<NodeInfoDTO>? = null
+    private var mList: List<InvoiceDTO> = mutableListOf()
 
+    fun generateOffersForNetworkOperator(proxy: CordaRPCOps): String {
+        val operator = firebaseService.getNetworkOperator()
+        if (operator != null) {
+            logger.info("\uD83D\uDD35 generateOffersFromAccount starting ..... " +
+                    "account: ${operator.account.name}: \uD83D\uDCA6 \uD83D\uDCA6")
+            mList = workerBeeService.findInvoicesForNode(proxy)
+            generateOffersFromAccount(proxy,operator.account)
+        }
+        val msg = "\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
+                "Total InvoiceOffers made by Account ${operator?.account?.name}"
+        logger.info(msg)
+        return msg
+    }
     fun generateOffersFromAccount(proxy: CordaRPCOps, accountInfo: AccountInfoDTO): String {
-        logger.info("\uD83D\uDD35 generateOffersFromAccount starting ..... " +
+        logger.info("\n\n\n${E.RED_APPLES} generateOffersFromAccount starting ..... " +
                 "account: ${accountInfo.name}: \uD83D\uDCA6 \uD83D\uDCA6")
-        val mList = workerBeeService.findInvoicesForNode(proxy)
+        if (mList.isEmpty()) {
+            mList = workerBeeService.findInvoicesForNode(proxy)
+        }
         logger.info("workerBeeService.findInvoicesForNode found Invoices on Node:" +
                 "  \uD83D\uDE21 \uD83D\uDE21 ️ ${mList.size} ♻️")
 
@@ -345,7 +385,7 @@ class DemoDataService {
         var cnt = 0
         for (invoice in mList) {
             val ok = workerBeeService.validateInvoiceAgainstProfile(
-                    proxy = proxy, investorProfile = profile, invoice = invoice)
+                    investorProfile = profile, invoice = invoice)
             if (ok) {
                 val offer = registerInvoiceOffer(
                         proxy = proxy,
@@ -362,7 +402,7 @@ class DemoDataService {
                             "offerAmount: ${offer.offerAmount} < originalAmount ${offer.originalAmount}" + "\n\n\n")
                 }
             } else {
-                logger.info("\uD83D\uDD35 ...... ignoring this baby. did not meet compliance!! Boss!")
+                logger.info("\n\uD83D\uDD35 ...... ignoring this baby. did not meet compliance!! Boss!")
             }
         }
         val msg = "\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
@@ -375,28 +415,24 @@ class DemoDataService {
 
         logger.info("\n\n\n\uD83D\uDD35 start generateOffers .......... \uD83D\uDCA6 \uD83D\uDCA6\n\n");
         val acctList = workerBeeService.getNodeAccounts(proxy)
-        val mList = workerBeeService.findInvoicesForNode(proxy)
+        mList = workerBeeService.findInvoicesForNode(proxy)
 
         logger.info("\uD83D\uDE21 \uD83D\uDE21 Accounts on Node:  \uD83D\uDE21 \uD83D\uDE21 ️ ${acctList.size} ♻️")
         logger.info("\uD83D\uDE21 \uD83D\uDE21 Invoices on Node:  \uD83D\uDE21 \uD83D\uDE21 ️ ${mList.size} ♻\n\n️")
 
         var cnt = 0
-        val shuffledInvoices = mList.shuffled()
-        val shuffledAccts = acctList.shuffled()
-        shuffledInvoices.forEach() { invoice ->
-            if (invoice.supplier.host == proxy.nodeInfo().legalIdentities.first().toString()) {
-                shuffledAccts.forEach() {
-                    val account = it
-                    if (invoice.supplier.identifier == account.identifier) {
-                        logger.info("\uD83D\uDD35 Ignore: ${it.name} Account is the supplier. " +
-                                "\uD83D\uDD35 Cannot offer invoice to self: \uD83C\uDF3A ${account.name}")
-                    } else {
-                        generateOffersFromAccount(proxy = proxy, accountInfo = account)
-                        cnt++
-                    }
+        acctList.forEach() {
+            for (invoice in mList) {
+                if (invoice.supplier.identifier == it.identifier) {
+                    logger.info("\uD83D\uDD35 Ignore: ${it.name} Account is the supplier. " +
+                            "\uD83D\uDD35 Cannot offer invoice to self: \uD83C\uDF3A ${it.name}")
+                } else {
+                    generateOffersFromAccount(proxy = proxy, accountInfo = it)
+                    cnt++
                 }
             }
         }
+
         val msg = "\uD83E\uDDE1 \uD83D\uDC9B generateInvoiceOffers complete: " +
                 "Offers generated: \uD83E\uDD4F  $cnt \uD83E\uDD4F "
         logger.info(msg)
@@ -744,14 +780,12 @@ class DemoDataService {
                 isAnchor = false
         )
 
-        logger.info("\uD83D\uDD35 \uD83D\uDD35 Invoice offer about to be added to ledger, " +
-                "\uD83D\uDE21 check offerAmount < original Amount: " +
-                gson.toJson(invoiceOffer) + "  \uD83D\uDD35  \uD83D\uDD35")
+
         return try {
-            val offer = workerBeeService.startInvoiceOfferFlow(proxy, invoiceOffer)
-            nodeInvoiceOffers.add(offer)
+            val resultOffer = workerBeeService.startInvoiceOfferFlow(proxy, invoiceOffer)
+            nodeInvoiceOffers.add(resultOffer)
             logger.info("\uD83C\uDFB2 \uD83C\uDFB2 Number of invoice offers made so far: ${nodeInvoiceOffers.size}")
-            offer
+            resultOffer
         } catch (e: Exception) {
             logger.warn("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
                     "Failed to add offer on ledger; \uD83C\uDF4E we are fucked! Returning null \uD83C\uDF4E ", e)

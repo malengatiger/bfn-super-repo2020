@@ -99,6 +99,19 @@ class DemoDataController(rpc: NodeRPCConnection) {
                 " $result   \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
         return result
     }
+    @GetMapping(value = ["/generateOffersForNetworkOperator"], produces = [MediaType.TEXT_PLAIN_VALUE])
+    @Throws(Exception::class)
+    private fun generateOffersForNetworkOperator(): String? {
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                "starting DemoDataController: generateOffersForNetworkOperator " +
+                "... \uD83C\uDF4F ")
+
+        val result = demoDataService.generateOffersForNetworkOperator(proxy)
+        logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                "DemoDataController:generateOffersForNetworkOperator result: " +
+                " $result   \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
+        return result
+    }
     @GetMapping(value = ["/generateOffersFromAccount"], produces = [MediaType.TEXT_PLAIN_VALUE])
     @Throws(Exception::class)
     private fun generateOffersFromAccount(accountId:String): String? {
