@@ -30,7 +30,7 @@ class InvoiceQueryFlow(
     private fun getNodeInvoices() : List<InvoiceState> {
         val service = serviceHub.cordaService(InvoiceFinderService::class.java)
         val mList: MutableList<InvoiceState> = mutableListOf()
-        service.getAllInvoiceStateAnRefs().forEach() {
+        service.getAllInvoiceStateAndRefs().forEach() {
             mList.add(it.state.data)
         }
         return mList

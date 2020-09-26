@@ -9,12 +9,9 @@ import net.corda.core.node.AppServiceHub
 import net.corda.core.node.services.CordaService
 import net.corda.core.node.services.Vault
 import net.corda.core.node.services.queryBy
-import net.corda.core.node.services.vault.Builder.equal
 import net.corda.core.node.services.vault.DEFAULT_PAGE_NUM
 import net.corda.core.node.services.vault.PageSpecification
 import net.corda.core.node.services.vault.QueryCriteria
-import net.corda.core.node.services.vault.QueryCriteria.VaultCustomQueryCriteria
-import net.corda.core.node.services.vault.builder
 import net.corda.core.serialization.SingletonSerializeAsToken
 import org.slf4j.LoggerFactory
 import java.math.BigDecimal
@@ -30,7 +27,7 @@ class InvoiceFinderService(private val serviceHub: AppServiceHub) : SingletonSer
      fun findInvoiceStateAndRef(invoiceId: String): StateAndRef<InvoiceState>? {
 
         var invoiceState: StateAndRef<InvoiceState>? = null
-        val list = getAllInvoiceStateAnRefs()
+        val list = getAllInvoiceStateAndRefs()
         list.forEach() {
             if (invoiceId == it.state.data.invoiceId.toString()) {
                 invoiceState = it
@@ -194,7 +191,7 @@ class InvoiceFinderService(private val serviceHub: AppServiceHub) : SingletonSer
         return sorted
     }
     @Suspendable
-    fun getAllInvoiceStateAnRefs(): List<StateAndRef<InvoiceState>> {
+    fun getAllInvoiceStateAndRefs(): List<StateAndRef<InvoiceState>> {
         val list: MutableList<StateAndRef<InvoiceState>> = mutableListOf()
         //get first page
         var pageNumber = 1

@@ -1,13 +1,16 @@
-package com.bfn.client.web
+package com.bfn.client.web.services
 
 import com.bfn.client.E
 import com.bfn.client.data.*
+import com.bfn.client.web.BFN_INVOICE_OFFERS
+import com.bfn.client.web.DTOUtil
 import com.bfn.contractstates.states.*
 import com.bfn.flows.CreateAccountFlow
 import com.bfn.flows.CreateUserFlow
 import com.bfn.flows.customer.CustomerProfileFlow
 import com.bfn.flows.investor.InvestorProfileFlow
-import com.bfn.flows.invoices.InvoiceOfferFlow
+import com.bfn.flows.investor.InvoiceOfferFlow
+import com.bfn.flows.investor.MultiInvoiceOfferFlow
 import com.bfn.flows.invoices.InvoiceRegistrationFlow
 import com.bfn.flows.queries.AccountInfoQueryFlow
 import com.bfn.flows.queries.FindInvoiceFlow
@@ -72,7 +75,6 @@ class WorkerBeeService {
                 + nodeList.size + " \uD83D\uDC9A ")
         return nodeList
     }
-
 
     fun getNodeAccounts(proxy: CordaRPCOps): List<AccountInfoDTO> {
         val start = Date()
@@ -144,7 +146,6 @@ class WorkerBeeService {
         return account
     }
 
-
     fun getNetworkAccounts(proxy: CordaRPCOps): List<AccountInfoDTO> {
         val accounts = proxy.vaultQuery(AccountInfo::class.java).states
         logger.info("\uD83C\uDF3A Total Accounts in Network: ${accounts.size} \uD83C\uDF3A ")
@@ -208,7 +209,6 @@ class WorkerBeeService {
         return dto
     }
 
-
     @Throws(Exception::class)
     fun getInvestorProfile(proxy: CordaRPCOps, accountId: String?): InvestorProfileStateDTO? {
         val list: List<StateAndRef<InvestorProfileState>> = proxy.vaultQueryByWithPagingSpec(
@@ -232,7 +232,6 @@ class WorkerBeeService {
         return dto
     }
 
-
     @Throws(Exception::class)
     fun findInvoicesForCustomer(proxy: CordaRPCOps,
                                 accountId: String): List<InvoiceDTO> {
@@ -249,7 +248,6 @@ class WorkerBeeService {
         logger.info(m)
         return dtos
     }
-
 
     @Throws(Exception::class)
     fun findInvoicesForSupplier(proxy: CordaRPCOps,
@@ -268,7 +266,6 @@ class WorkerBeeService {
         return dtos
     }
 
-
     @Throws(Exception::class)
     fun findInvoicesForInvestor(proxy: CordaRPCOps,
                                 accountId: String): List<InvoiceDTO> {
@@ -285,7 +282,6 @@ class WorkerBeeService {
         logger.info(m)
         return dtos
     }
-
 
     @Throws(Exception::class)
     fun findInvoicesForNode(proxy: CordaRPCOps): List<InvoiceDTO> {
@@ -353,7 +349,8 @@ class WorkerBeeService {
                 bankAccount = profile.bankAccount,
                 date = Date(),
                 stellarAccountId = profile.stellarAccountId,
-                rippleAccountId = profile.rippleAccountId
+                rippleAccountId = profile.rippleAccountId,
+                assetCode = profile.assetCode
         )
         val fut = proxy.startTrackedFlowDynamic(
                 SupplierProfileFlow::class.java, state).returnValue
@@ -421,7 +418,6 @@ class WorkerBeeService {
         return offers
     }
 
-
     @Throws(Exception::class)
     fun findOffersForInvestor(proxy: CordaRPCOps, accountId: String): List<InvoiceOfferDTO> {
         val fut = proxy.startTrackedFlowDynamic(
@@ -473,7 +469,6 @@ class WorkerBeeService {
         logger.info(m)
         return dtos
     }
-
 
     fun getDashboardData(proxy: CordaRPCOps): DashboardData {
         var pageNumber = 1
@@ -535,7 +530,6 @@ class WorkerBeeService {
         return data
     }
 
-
     fun getStates(proxy: CordaRPCOps): List<String> {
         var pageNumber = 1
         val states: MutableList<StateAndRef<ContractState>> = ArrayList()
@@ -590,7 +584,6 @@ class WorkerBeeService {
         }
         return mList
     }
-
 
     fun listFlows(proxy: CordaRPCOps): List<String> {
         val flows = proxy.registeredFlows()
@@ -989,5 +982,31 @@ class WorkerBeeService {
 
         return offer
     }
+
+    @Throws(Exception::class)
+    fun makeInvestorOffers(proxy: CordaRPCOps, investorId: String): List<InvoiceOfferDTO> {
+        logger.info("\uD83C\uDFC0 \uD83C\uDFC0 .............. " +
+                "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 Starting to make Offers for Anchor ... ")
+
+        val cordaFuture = proxy.startFlowDynamic(
+                MultiInvoiceOfferFlow::class.java, investorId).returnValue
+        val result = cordaFuture.get()
+        val mList: MutableList<InvoiceOfferDTO> = mutableListOf()
+        result.forEach() {
+            val dto = DTOUtil.getDTO(it)
+            mList.add(dto)
+        }
+
+        mList.forEach() {
+            logger.info("$xx OFFER: ${gson.toJson(it)}  $xx")
+        }
+        logger.info("$xx makeOffers: Number of Anchor offers made OK: " +
+                "\uD83C\uDF53 ${mList.size} \uD83C\uDF53 ")
+        return mList
+    }
+
+    private val xx = "\uD83C\uDF53 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35"
+    private val xx1 = "\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 "
+
 }
 

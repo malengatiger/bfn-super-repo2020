@@ -136,7 +136,7 @@ class CreateInvoiceOffersFlow(private val investorId: String) : FlowLogic<List<I
                         accepted = false,
                         externalId = it.externalId,
                         offerId = UUID.randomUUID().toString(),
-                        supplier = it.supplierInfo, acceptanceDate = todaysDate(), isAnchor = false
+                        supplier = it.supplierInfo, acceptanceDate = todaysDate()
                 ))
             }
         }

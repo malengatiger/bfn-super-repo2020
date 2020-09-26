@@ -4,6 +4,7 @@ package com.bfn.client.web
 //}
 
 //
+import com.bfn.client.web.services.*
 import com.google.gson.GsonBuilder
 import net.corda.core.messaging.CordaRPCOps
 import org.slf4j.LoggerFactory
@@ -39,10 +40,10 @@ class DemoDataController(rpc: NodeRPCConnection) {
     private lateinit var  firebaseService: FirebaseService
 
     @Autowired
-    private lateinit var  crossNodeService:CrossNodeService
+    private lateinit var  crossNodeService: CrossNodeService
 
     @Autowired
-    private lateinit var  networkService:StellarAccountService
+    private lateinit var  networkService: StellarAccountService
 
 
 

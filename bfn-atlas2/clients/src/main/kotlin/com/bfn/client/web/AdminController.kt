@@ -6,6 +6,7 @@ package com.bfn.client.web
 //
 import com.bfn.client.TesterBee
 import com.bfn.client.data.*
+import com.bfn.client.web.services.*
 import com.google.firebase.auth.UserRecord
 import com.google.gson.GsonBuilder
 import net.corda.core.messaging.CordaRPCOps
@@ -42,10 +43,10 @@ class AdminController(rpc: NodeRPCConnection) {
     private lateinit var  firebaseService: FirebaseService
 
     @Autowired
-    private lateinit var  crossNodeService:CrossNodeService
+    private lateinit var  crossNodeService: CrossNodeService
 
     @Autowired
-    private lateinit var  stellarAccountService:StellarAccountService
+    private lateinit var  stellarAccountService: StellarAccountService
 
 
     @GetMapping(value = ["/test"], produces = [MediaType.TEXT_PLAIN_VALUE])
@@ -115,19 +116,18 @@ class AdminController(rpc: NodeRPCConnection) {
     @GetMapping(value = ["/generateOffers"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun generateOffers(@RequestParam max: Int?): String? {
-        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting DemoUtil: generateOffers ... \uD83C\uDF4F ")
-        var maximumRecords = 200;
-        if (max != null) maximumRecords = max
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting demoDataService: generateOffers ... \uD83C\uDF4F ")
+
         val result = demoDataService.generateInvoiceOffers(proxy)
         logger.info(result)
         return result
     }
 
-    @GetMapping(value = ["/getAnchor"], produces = [MediaType.APPLICATION_JSON_VALUE])
+    @GetMapping(value = ["/getNetworkOperator"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
-    private fun getAnchor(@RequestParam identifier: String): NetworkOperatorDTO? {
+    private fun getNetworkOperator(@RequestParam identifier: String): NetworkOperatorDTO? {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting getAnchor signIn ... \uD83C\uDF4F ")
-        return networkOperatorBeeService.getNetworkOperator(proxy, identifier);
+        return networkOperatorBeeService.getNetworkOperator(proxy);
     }
     @GetMapping(value = ["/getAccounts"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
@@ -140,7 +140,7 @@ class AdminController(rpc: NodeRPCConnection) {
     @Throws(Exception::class)
     private fun generateInvoices(numberOfInvoicesPerAccount:Int ): String? {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 AdminController: ... generateInvoices ...")
-        val result = demoDataService.generateInvoices(proxy, numberOfInvoicesPerAccount = 5)
+        val result = demoDataService.generateInvoices(proxy, numberOfInvoicesPerAccount = numberOfInvoicesPerAccount)
         logger.info(result)
         return result
     }

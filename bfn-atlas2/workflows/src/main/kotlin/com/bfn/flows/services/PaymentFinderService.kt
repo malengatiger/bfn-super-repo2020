@@ -47,6 +47,30 @@ class PaymentFinderService(private val serviceHub: AppServiceHub) : SingletonSer
 
         return paymentState
     }
+
+    @Suspendable
+    fun findPaymentById(supplierPaymentId: String): StateAndRef<SupplierPaymentState>? {
+
+        var paymentState: StateAndRef<SupplierPaymentState>? = null
+//        val list = getAllPaymentStateAndRefs()
+//        list.forEach() {
+//            if (invoiceId == it.state.data.acceptedOffer.invoiceId.toString()) {
+//                paymentState = it
+//            }
+//        }
+//
+//        if (paymentState == null) {
+//            logger.warn("findPaymentForInvoice :  " +
+//                    "\uD83D\uDE3C \uD83D\uDE3C  \uD83D\uDE3C unconsumed SupplierPayment NOT FOUND: " +
+//                    "\uD83C\uDF4E $invoiceId \uD83C\uDF4E")
+//        } else {
+//            logger.warn("findPaymentForInvoice :  " +
+//                    "\uD83D\uDE3C " +
+//                    "unconsumed SupplierPayment FOUND: \uD83C\uDF4E $invoiceId \uD83C\uDF4E")
+//        }
+
+        return paymentState
+    }
     @Suspendable
     @Throws(Exception::class)
     fun findPaymentsForInvestor(investorId: String): List<SupplierPaymentState> {

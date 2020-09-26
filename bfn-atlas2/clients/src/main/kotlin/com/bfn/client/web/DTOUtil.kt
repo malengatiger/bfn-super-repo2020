@@ -22,7 +22,19 @@ object DTOUtil {
                 externalId = a.externalId
         )
     }
+    @JvmStatic
+    fun getDTO(a: PurchaseOrderState): PurchaseOrderDTO {
 
+        return PurchaseOrderDTO(
+                purchaseOrderId = a.purchaseOrderId,
+                purchaseOrderNumber = a.purchaseOrderNumber,
+                customer = getDTO(a.customer),
+                supplier = getDTO(a.supplier),
+                amount = a.amount,
+                dateRegistered = a.dateRegistered,
+                description = a.description
+        )
+    }
 
     @JvmStatic
     fun getDTO(a: SupplierPaymentState): SupplierPaymentDTO {
@@ -32,7 +44,8 @@ object DTOUtil {
                 acceptedOffer = getDTO(a.acceptedOffer),
                 date = a.date,
                 paid = a.paid,
-                paymentRequest = null
+                paymentRequest = null,
+                supplierPaymentId = a.supplierPaymentId
         )
     }
 
@@ -97,8 +110,7 @@ object DTOUtil {
                 investorDate = a.acceptanceDate,
                 accepted = a.accepted, externalId = a.externalId,
                 acceptanceDate = a.acceptanceDate,
-                offerId = a.offerId,
-                isAnchor = a.isAnchor
+                offerId = a.offerId
 
         )
     }
@@ -146,7 +158,8 @@ object DTOUtil {
                 bankAccount = a.bankAccount,
                 bank = a.bank,
                 stellarAccountId = a.stellarAccountId,
-                rippleAccountId = a.rippleAccountId
+                rippleAccountId = a.rippleAccountId,
+                assetCode = a.assetCode
         )
     }
     @JvmStatic

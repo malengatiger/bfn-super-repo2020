@@ -1,32 +1,30 @@
 package com.bfn.contractstates.contracts
 
-import com.bfn.contractstates.states.CustomerProfileState
+import com.bfn.contractstates.states.PurchaseOrderState
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.Contract
 import net.corda.core.transactions.LedgerTransaction
 import org.slf4j.LoggerFactory
 
 
-class CustomerProfileContract : Contract {
+class PurchaseOrderContract : Contract {
     @Throws(IllegalArgumentException::class)
     override fun verify(tx: LedgerTransaction) {
-        logger.info("$em CustomerContract: verify starting" +
+        logger.info("$em PurchaseOrderContract: verify starting" +
                 " ..... \uD83E\uDD6C \uD83E\uDD6C ")
         logger.info("Number ofCommands: ${tx.commands.size}")
         if (tx.outputStates.size != 1) {
             throw IllegalArgumentException("One output state required")
         }
-        val customerState = tx.outputStates.first()
-        if (customerState is CustomerProfileState) {
-            if (customerState.maximumInvoiceAmount <= "0.00") {
-                throw IllegalArgumentException("Maximum Invoice Amount must be greater than zero")
-            }
-            if (customerState.minimumInvoiceAmount <= "0.00") {
-                throw IllegalArgumentException("Minimum Invoice Amount must be greater than zero")
+        val purchaseOrderState = tx.outputStates.first()
+        if (purchaseOrderState is PurchaseOrderState) {
+            if (purchaseOrderState.amount <= "0.00") {
+                throw IllegalArgumentException("" +
+                        "PurchaseOrder Amount must be greater than zero")
             }
         }
 
-        logger.info(" $em CustomerProfileContract: verification done! \uD83D\uDC7A " +
+        logger.info(" $em PurchaseOrderContract: verification done! \uD83D\uDC7A " +
                 ".....\uD83E\uDD1F \uD83E\uDD1F ")
         //todo - ☘️ ☘️ ☘️ refactor all contracts to use less verbose syntax for verify methods
         /*
@@ -39,16 +37,16 @@ class CustomerProfileContract : Contract {
         require.using("The X's value must be non-negative.", out.getX().getValue() > 0);
         return null;
         });
-        👽 👽 👽 👽 👽 👽 👽 👽 👽 👽 👽 👽
+        👽 👽 👽 👽 👽 👽 👽 👽 👽 👽 👽 👽 ☘️ ☘️ ☘️
          */
     }
 
     class Create : CommandData
-    class Update : CommandData
+    class Consume : CommandData
 
     companion object {
-        val ID: String = CustomerProfileContract::class.java.name
-        private val logger = LoggerFactory.getLogger(CustomerProfileContract::class.java)
+        val ID: String = PurchaseOrderContract::class.java.name
+        private val logger = LoggerFactory.getLogger(PurchaseOrderContract::class.java)
         private const val em = "\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06"
     }
 }

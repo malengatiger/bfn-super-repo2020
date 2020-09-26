@@ -6,7 +6,9 @@ import com.bfn.contractstates.states.InvoiceState
 import com.bfn.flows.regulator.BroadcastTransactionFlow
 import com.bfn.flows.regulator.ReportToRegulatorFlow
 import com.bfn.flows.services.RegulatorFinderService
+import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import net.corda.core.flows.*
+import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.node.ServiceHub
 import net.corda.core.node.services.Vault.StateStatus
@@ -59,11 +61,9 @@ class InvoiceRegistrationFlow(private val invoiceState: InvoiceState) : FlowLogi
         if (invoiceState.supplierInfo.name == invoiceState.customerInfo.name) {
             throw IllegalArgumentException("Customer and Supplier cannot be the same entity")
         }
+        val supplierAnonParty = subFlow(RequestKeyForAccount(invoiceState.supplierInfo))
+        val customerAnonParty = subFlow(RequestKeyForAccount(invoiceState.customerInfo))
         progressTracker.currentStep = GENERATING_KEYS
-
-        //todo - SORT OUT THIS ACCOUNT THING ---> EXAMPLES FUCKED!
-        val customerParty = invoiceState.customerInfo.host //subFlow(RequestKeyForAccount(customerAccount!!))
-        val supplierParty = invoiceState.supplierInfo.host //subFlow(RequestKeyForAccount(supplierAccount!!))
 
         val customerOrg = invoiceState.customerInfo.host.name.organisation
         val supplierOrg = invoiceState.supplierInfo.host.name.organisation
@@ -77,14 +77,15 @@ class InvoiceRegistrationFlow(private val invoiceState: InvoiceState) : FlowLogi
                 .addOutputState(invoiceState, InvoiceContract.ID)
                 .addCommand(
                         command,
-                        supplierParty.owningKey,
-                        customerParty.owningKey, regulatorNode!!.legalIdentities.first().owningKey)
+                        supplierAnonParty.owningKey,
+                        customerAnonParty.owningKey, regulatorNode!!.legalIdentities.first().owningKey)
 
         progressTracker.currentStep = VERIFYING_TRANSACTION
         txBuilder.verify(serviceHub)
+
         progressTracker.currentStep = SIGNING_TRANSACTION
         val signedTx = serviceHub.signInitialTransaction(txBuilder)
-//        reportToRegulator(signedTx)
+
         val nodeInfo = serviceHub.myInfo
         val thisNodeOrg = nodeInfo.legalIdentities.first().name.organisation
         val supplierStatus: Int
@@ -100,8 +101,8 @@ class InvoiceRegistrationFlow(private val invoiceState: InvoiceState) : FlowLogi
             REMOTE_CUSTOMER
         }
 
-        val tranx = processTransaction(supplierStatus, customerStatus, customerParty, signedTx,
-                supplierParty, regulatorNode.legalIdentities.first())
+        val tranx = processTransaction(supplierStatus, customerStatus, customerAnonParty, signedTx,
+                supplierAnonParty, regulatorNode.legalIdentities.first())
         if (tranx != null) {
             reportToRegulator(tranx)
         }
@@ -111,14 +112,15 @@ class InvoiceRegistrationFlow(private val invoiceState: InvoiceState) : FlowLogi
 
     @Suspendable
     private fun processTransaction(supplierStatus: Int, customerStatus: Int,
-                                   customerParty: Party, signedTx: SignedTransaction,
-                                   supplierParty: Party, regulatorParty: Party): SignedTransaction? {
+                                   customerParty: AnonymousParty, signedTx: SignedTransaction,
+                                   supplierParty: AnonymousParty, regulatorParty: Party): SignedTransaction? {
         Companion.logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 Supplier and Customer are NOT on the same node ..." +
                 "  \uD83D\uDE21 flowSession(s) required ... \uD83D\uDE21")
 
         val regulatorSession = initiateFlow(regulatorParty)
         var supplierSession: FlowSession
         var customerSession: FlowSession
+
         var signedTransaction: SignedTransaction? = null
         if (supplierStatus == LOCAL_SUPPLIER && customerStatus == LOCAL_CUSTOMER) {
             Companion.logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 LOCAL_SUPPLIER and LOCAL_CUSTOMER \uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21")

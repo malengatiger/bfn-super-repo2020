@@ -1,13 +1,14 @@
-package com.bfn.client.web
+package com.bfn.client.web.services
 
 import com.bfn.client.data.*
+import com.bfn.client.web.DTOUtil
 import com.google.firebase.cloud.FirestoreClient
 import com.google.gson.GsonBuilder
 
 import com.bfn.contractstates.states.*
-import com.bfn.flows.investor.InvestorMakeMultiplePaymentsFlow
+import com.bfn.flows.investor.MultiplePaymentsFlow
 import com.bfn.flows.supplier.FindBestOfferForInvoiceFlow
-import com.bfn.flows.supplier.InvestorOfferAcceptanceBySupplierFlow
+import com.bfn.flows.supplier.OfferAcceptanceBySupplierFlow
 import com.google.cloud.firestore.Firestore
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.messaging.CordaRPCOps
@@ -29,10 +30,10 @@ class SupplierBeeService {
     
     @Throws(Exception::class)
     fun selectBestOffer(proxy: CordaRPCOps, accountId: String,
-                        invoiceId: String): InvoiceOfferDTO? {
+                        invoiceId: String, acceptBestOffer:Boolean): InvoiceOfferDTO? {
 
-        val cordaFuture = proxy.startTrackedFlowDynamic(
-                FindBestOfferForInvoiceFlow::class.java, accountId, invoiceId)
+        val cordaFuture = proxy.startFlowDynamic(
+                FindBestOfferForInvoiceFlow::class.java, accountId, invoiceId, acceptBestOffer)
                 .returnValue
         val offer: StateAndRef<InvoiceOfferState> = cordaFuture.get() ?: return null
         val dto = DTOUtil.getDTO(offer.state.data)
@@ -42,30 +43,37 @@ class SupplierBeeService {
     }
     
     @Throws(Exception::class)
-    fun acceptOffer(proxy: CordaRPCOps, offerId: String): Int {
+    fun acceptOffer(proxy: CordaRPCOps, offerId: String): InvoiceOfferState? {
 
-        val cordaFuture = proxy.startTrackedFlowDynamic(
-                InvestorOfferAcceptanceBySupplierFlow::class.java,  offerId)
+        val cordaFuture = proxy.startFlowDynamic(
+                OfferAcceptanceBySupplierFlow::class.java,  offerId)
                 .returnValue
-        val tx: Int = cordaFuture.get()
-        logger.info("\uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C Offer accepted if result == 0 :" +
-                " \uD83C\uDF4E result: \uD83E\uDD6C $tx")
+        val tx: InvoiceOfferState? = cordaFuture.get()
+        if (tx != null) {
+            logger.info("\uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C Offer accepted if result == InvoiceOfferState:" +
+                    " \uD83C\uDF4E supplier: \uD83E\uDD6C ${tx.supplier.name}")
+        }
         return tx
     }
     
     @Throws(Exception::class)
-    fun createPayments(proxy: CordaRPCOps, investorId: String, delayMinutesUntilNextPaymentFlow: Long): List<SupplierPaymentDTO> {
+    fun createPayments(proxy: CordaRPCOps,
+                       investorId: String,
+                       stellarAnchorUrl:String ,
+                       delayMinutesUntilNextPaymentFlow: Long): List<SupplierPaymentDTO> {
 
+        val investor = workerBeeService.getNodeAccount(proxy = proxy, identifier = investorId)
         val cordaFuture = proxy.startTrackedFlowDynamic(
-                InvestorMakeMultiplePaymentsFlow::class.java,  investorId, delayMinutesUntilNextPaymentFlow)
+                MultiplePaymentsFlow::class.java,
+                investor, stellarAnchorUrl, delayMinutesUntilNextPaymentFlow)
                 .returnValue
-        val tx: List<SupplierPaymentState>? = cordaFuture.get()
-        if (tx != null) {
+        val supplierPayments: List<SupplierPaymentState>? = cordaFuture.get()
+        if (supplierPayments != null) {
             logger.info("\uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C createPayment" +
-                    " \uD83C\uDF4E result: \uD83E\uDD6C ${tx.size}")
+                    " \uD83C\uDF4E result: \uD83E\uDD6C ${supplierPayments.size}")
         }
         val mList:MutableList<SupplierPaymentDTO> = mutableListOf()
-        tx?.forEach() {
+        supplierPayments?.forEach() {
             mList.add(DTOUtil.getDTO(it))
         }
         logger.info("\uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C createPayment" +

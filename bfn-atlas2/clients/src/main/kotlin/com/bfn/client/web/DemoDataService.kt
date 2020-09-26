@@ -2,6 +2,9 @@ package com.bfn.client.web
 
 import com.bfn.client.E
 import com.bfn.client.data.*
+import com.bfn.client.web.services.FirebaseService
+import com.bfn.client.web.services.NetworkOperatorBeeService
+import com.bfn.client.web.services.WorkerBeeService
 import com.bfn.contractstates.states.NetworkOperatorState
 import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
@@ -524,7 +527,8 @@ class DemoDataService {
                 bank = "BlackOx Investment Bank",
                 maximumDiscount = "$disc",
                 stellarAccountId = stellarAccountId,
-                rippleAccountId = "tbd"
+                rippleAccountId = "tbd",
+                assetCode = "ZAR"
         )
         workerBeeService.createSupplierProfile(
                 proxy = proxy,
@@ -573,10 +577,18 @@ class DemoDataService {
     private val cal: Calendar = GregorianCalendar.getInstance()
     private var invoiceCnt = 0
 
-
+    /**
+     * this call should be run on the CustomerNode1
+     */
     fun generateInvoices(proxy: CordaRPCOps, numberOfInvoicesPerAccount: Int): String {
         logger.info("\n\n\n \uD83C\uDF4E \uD83C\uDF4E ...... generateInvoices: " +
                 " Invoices to be generated for all accounts except for Network Operator \n\n")
+
+        //todo - get all customers
+        //todo - get all suppliers
+        //todo - generate purchase orders
+
+        //todo - get all purchase orders and generate an invoice from each ....
 
         val page = proxy.vaultQuery(NetworkOperatorState::class.java)
         if (page.states.isEmpty()) {
@@ -776,8 +788,7 @@ class DemoDataService {
                 invoiceNumber = invoice.invoiceNumber,
                 investorDate = DateTime().toDateTimeISO().toString(),
                 acceptanceDate = "tbd",
-                offerId = UUID.randomUUID().toString(),
-                isAnchor = false
+                offerId = UUID.randomUUID().toString()
         )
 
 

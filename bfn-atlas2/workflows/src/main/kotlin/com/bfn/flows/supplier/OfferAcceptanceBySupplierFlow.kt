@@ -6,45 +6,48 @@ import com.bfn.flows.regulator.ReportToRegulatorFlow
 import com.bfn.flows.services.InvoiceFinderService
 import com.bfn.flows.services.InvoiceOfferFinderService
 import com.bfn.flows.todaysDate
+import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.ourIdentity
+import com.r3.corda.lib.tokens.workflows.utilities.toParty
 import com.template.InvoiceOfferContract
 import net.corda.core.flows.*
-import net.corda.core.identity.Party
+import net.corda.core.identity.AnonymousParty
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import org.slf4j.LoggerFactory
-import java.lang.IllegalArgumentException
-import java.security.PublicKey
+
 
 /**
  * Supplier accepts offer made by casual Investor
  */
 @InitiatingFlow
 @StartableByRPC
-class InvestorOfferAcceptanceBySupplierFlow(
-        private val offerId: String) : FlowLogic<Int>() {
+class OfferAcceptanceBySupplierFlow(
+        private val offerId: String) : FlowLogic<InvoiceOfferState>() {
     @Suspendable
     @Throws(FlowException::class, IllegalArgumentException::class)
-    override fun call(): Int {
-        Companion.logger.info("$nn InvestorOfferAcceptanceBySupplierFlow started ..offerId: \uD83C\uDF4E $offerId \uD83D\uDE21 ")
+    override fun call(): InvoiceOfferState {
+        Companion.logger.info("$nn OfferAcceptanceBySupplierFlow started ..offerId: \uD83C\uDF4E $offerId \uD83D\uDE21 ")
 
         val offerFinderService = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
         val invoiceOfferState = offerFinderService.findInvestorOffer(offerId)
-                ?: return -1 //offer not found
+                ?: throw IllegalArgumentException("Offer not found")
 
         if (invoiceOfferState.state.data.accepted) {
             val msg = "\uD83D\uDE21 Offer has already been accepted \uD83D\uDE21 "
             logger.warn(msg)
-            return -2 //offer already accepted
+             throw IllegalArgumentException("Offer already accepted")
         }
 
-        val allOffersByInvoice = offerFinderService.findOffersByInvoice(invoiceOfferState.state.data.invoiceId.toString())
+        val allOffersByInvoice = offerFinderService.findOffersByInvoice(
+                invoiceOfferState.state.data.invoiceId.toString())
         val invoiceFinderService = serviceHub.cordaService(InvoiceFinderService::class.java)
-        val invoiceState = invoiceFinderService.findInvoiceStateAndRef(invoiceOfferState.state.data.invoiceId.toString())
+        val invoiceState = invoiceFinderService.findInvoiceStateAndRef(
+                invoiceOfferState.state.data.invoiceId.toString())
         if (invoiceState == null) {
             val msg = "\uD83D\uDE21 Invoice consumed; Offer has already been accepted \uD83D\uDE21 "
             logger.warn(msg)
-            return -1
+            throw IllegalArgumentException(msg)
         }
 
         val acceptedOffer = InvoiceOfferState(
@@ -60,50 +63,54 @@ class InvestorOfferAcceptanceBySupplierFlow(
                 investor = invoiceOfferState.state.data.investor,
                 offerId = invoiceOfferState.state.data.offerId,
                 acceptanceDate = todaysDate(),
-                accepted = true,
-                isAnchor = invoiceOfferState.state.data.isAnchor
+                accepted = true
         )
         val command = InvoiceOfferContract.AcceptOffer()
         val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities[0])
-        val anchorParty = serviceHub.myInfo.legalIdentities.first()
-        val supplierParty = acceptedOffer.supplier.host
-        val customerParty = acceptedOffer.customer.host
-        val map: MutableMap<String, Party> = mutableMapOf()
-        map[anchorParty.name.toString()] = anchorParty
-        map[customerParty.name.toString()] = customerParty
-        map[supplierParty.name.toString()] = supplierParty
-        val keys: MutableList<PublicKey> = mutableListOf()
-        map.values.forEach() {
-            keys.add(it.owningKey)
-        }
+
+        val supplierParty = subFlow(RequestKeyForAccount(acceptedOffer.supplier))
+        val customerParty = subFlow(RequestKeyForAccount(acceptedOffer.customer))
+        val investorParty = subFlow(RequestKeyForAccount(acceptedOffer.investor))
+
         logger.info("\uD83C\uDF1E Adding ${allOffersByInvoice.size} offers to transaction inputState  \uD83C\uDF1E")
+        //consume all outstanding offers and replace with accepted offer
         allOffersByInvoice.forEach() {
             txBuilder.addInputState(it)
         }
         txBuilder.addInputState(invoiceState)
-        txBuilder.addCommand(command, keys)
+        txBuilder.addCommand(command, mutableListOf(
+                supplierParty.owningKey,
+                customerParty.owningKey,
+                investorParty.owningKey))
         txBuilder.addOutputState(acceptedOffer)
 
-        Companion.logger.info("$nn verify and sign this fucking Transaction ...! \uD83C\uDF1D ")
         txBuilder.verify(serviceHub)
         val signedTx = serviceHub.signInitialTransaction(txBuilder)
-        val parties = map.values.toList()
-        val signedTxFinal = processAcceptance(parties, signedTx)
+        val parties = mutableListOf(
+                supplierParty,
+                customerParty,
+                investorParty)
+
+        val signedTxFinal = processAcceptance(parties = parties, signedTx = signedTx)
+
         reportToRegulator(signedTxFinal)
         logger.info("\uD83D\uDC9C \uD83D\uDC9C Offer accepted: \uD83C\uDF1D investor: ${acceptedOffer.investor.name} supplier: ${acceptedOffer.supplier.name} " +
                 "customer: ${acceptedOffer.customer.name} Offer Amt: ${acceptedOffer.offerAmount} " +
                 "Original AmT: ${acceptedOffer.originalAmount} discount: ${acceptedOffer.discount}% \uD83C\uDF1D ")
-        return 0
+
+        return acceptedOffer
     }
 
     @Suspendable
     private fun processAcceptance(
-            parties: List<Party>,
+            parties: List<AnonymousParty>,
             signedTx: SignedTransaction): SignedTransaction {
         val flowSessions: MutableList<FlowSession> = mutableListOf()
-        logger.info("process offer and finalize acceptance: \uD83C\uDF1D ${parties.size} parties in this thing ...\uD83C\uDF1D ")
+        logger.info("process offer and finalize acceptance: \uD83C\uDF1D " +
+                "${parties.size} parties in this thing ...\uD83C\uDF1D ")
+
         parties.forEach() {
-            if (it.toString() != serviceHub.ourIdentity.toString()) {
+            if (it.toParty(serviceHub).name.toString() != serviceHub.ourIdentity.name.toString()) {
                 flowSessions.add(initiateFlow(it))
             }
         }
@@ -150,9 +157,12 @@ class InvestorOfferAcceptanceBySupplierFlow(
     }
 
     companion object {
-        private val logger = LoggerFactory.getLogger(InvestorOfferAcceptanceBySupplierFlow::class.java)
+        private val logger = LoggerFactory.getLogger(OfferAcceptanceBySupplierFlow::class.java)
         private const val nn = "\uD83C\uDFBD \uD83C\uDFBD \uD83C\uDFBD \uD83C\uDFBD"
         private const val xx = "\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C  \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66"
+        const val OFFER_NOT_FOUND = -1
+        const val OFFER_ALREADY_ACCEPTED = -2
+        const val OFFER_ACCEPTED = 0
     }
 
 }

@@ -14,6 +14,5 @@ data class InvoiceOfferDTO (
         var acceptanceDate: String,
         var accepted: Boolean,
         var externalId: String,
-        var offerId: String,
-        var isAnchor: Boolean
+        var offerId: String
 )

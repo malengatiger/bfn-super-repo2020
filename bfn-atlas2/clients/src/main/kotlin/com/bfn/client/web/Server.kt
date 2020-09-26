@@ -1,5 +1,8 @@
 package com.bfn.client.web
 
+import com.bfn.client.web.services.FirebaseService
+import com.bfn.client.web.services.SupplierBeeService
+import com.bfn.client.web.services.WorkerBeeService
 import net.corda.nodeapi.internal.config.toConfigValue
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired

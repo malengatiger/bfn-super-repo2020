@@ -21,6 +21,7 @@ class InvoiceState(val invoiceId: UUID,
                    val totalAmount: String,
                    val supplierInfo: AccountInfo,
                    val customerInfo: AccountInfo,
+                   var purchaseOrder: PurchaseOrderState? = null,
                    val externalId: String,
                    val dateRegistered: String) : ContractState {
 

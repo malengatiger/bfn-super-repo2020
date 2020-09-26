@@ -9,4 +9,5 @@ data class SupplierProfileStateDTO (
         val maximumDiscount: String,
         val stellarAccountId: String,
         val rippleAccountId: String,
+        val assetCode: String,
         val date: String = Date().toString())

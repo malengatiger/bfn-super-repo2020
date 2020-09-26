@@ -1,9 +1,13 @@
-package com.bfn.client.web
+package com.bfn.client.web.services
 
 import com.bfn.client.data.*
+import com.bfn.client.web.DTOUtil
 import com.bfn.contractstates.states.NetworkOperatorState
 import com.bfn.contractstates.states.TradeMatrixItem
+import com.bfn.flows.investor.MultiInvoiceOfferFlow
 import com.bfn.flows.operator.*
+import com.bfn.flows.investor.MultiplePaymentsFlow
+import com.bfn.flows.investor.SinglePaymentFlow
 import com.bfn.flows.queries.AccountInfoQueryFlow
 import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
@@ -37,17 +41,15 @@ class NetworkOperatorBeeService {
     }
 
     @Throws(Exception::class)
-    fun getNetworkOperator(proxy: CordaRPCOps, identifier: String): NetworkOperatorDTO {
-        logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to getAnchor ... $identifier")
+    fun getNetworkOperator(proxy: CordaRPCOps): NetworkOperatorDTO {
+        logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to getNetworkOperator ... ")
 
         val netOperator = proxy.vaultQuery(NetworkOperatorState::class.java).states.singleOrNull()
                 ?: throw Exception("Missing anchor")
-        if (netOperator.state.data.account.identifier.id.toString() != identifier) {
-            throw Exception("Invalid anchor identifier")
-        }
+
         val dto = DTOUtil.getDTO(netOperator.state.data)
         logger.info("\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C " +
-                "Anchor: ${gson.toJson(dto)} \uD83D\uDC4C ")
+                "Network Operator: ${gson.toJson(dto)} \uD83D\uDC4C ")
         return dto
     }
 
@@ -56,7 +58,7 @@ class NetworkOperatorBeeService {
         logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to makeSinglePayment ... ")
 
         val cordaFuture = proxy.startFlowDynamic(
-                NetworkOperatorMakeSinglePaymentFlow::class.java, invoiceId).returnValue
+                SinglePaymentFlow::class.java, invoiceId).returnValue
         val result = cordaFuture.get()
         logger.info("\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C " +
                 "Bank: ${result.supplierProfile.bank} \uD83D\uDC4C amount: ${result.acceptedOffer.offerAmount} payment state made")
@@ -68,7 +70,7 @@ class NetworkOperatorBeeService {
         logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to makeMultiplePayments ... ")
 
         val cordaFuture = proxy.startFlowDynamic(
-                NetworkOperatorMakeMultiplePaymentsFlow::class.java, delayMinutesUntilNextPaymentFlow).returnValue
+                MultiplePaymentsFlow::class.java, delayMinutesUntilNextPaymentFlow).returnValue
         val result = cordaFuture.get()
         val mList: MutableList<SupplierPaymentDTO> = mutableListOf()
         result.forEach() {
@@ -89,15 +91,16 @@ class NetworkOperatorBeeService {
                 paging = PageSpecification(1, 20),
                 contractStateType = NetworkOperatorState::class.java
         ).states
-        logger.info("\uD83C\uDF15 \uD83C\uDF15 Anchor states found: ${states.size}")
+        logger.info("\uD83C\uDF15 \uD83C\uDF15  NetworkOperator states found: ${states.size}")
         states.forEach() {
             if (it.state.data.account.name == networkOperator.account.name) {
                 oldState = it.state.data
             }
         }
         if (oldState == null) {
-            throw Exception("\uD83D\uDC7F Anchor does not exist on the Corda node")
+            throw Exception("\uD83D\uDC7F  NetworkOperator does not exist on the Corda node")
         }
+        //todo - 🐸🐸🐸 create NetworkOperatorUpdateFlow 🐸🐸🐸
 //        val cordaFuture = proxy.startFlowDynamic(
 //                NetworkOperatorUpdateFlow::class.java, oldState!!).returnValue
 //        val result = cordaFuture.get()
@@ -107,12 +110,12 @@ class NetworkOperatorBeeService {
     }
 
     @Throws(Exception::class)
-    public fun makeOffers(proxy: CordaRPCOps): List<InvoiceOfferDTO> {
+    fun makeOffers(proxy: CordaRPCOps): List<InvoiceOfferDTO> {
         logger.info("\uD83C\uDFC0 \uD83C\uDFC0 .............. " +
                 "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 Starting to make Offers for Anchor ... ")
-
+        val operator = getNetworkOperator(proxy)
         val cordaFuture = proxy.startFlowDynamic(
-                NetworkOperatorMakeOffersFlow::class.java).returnValue
+                MultiInvoiceOfferFlow::class.java, operator.account.identifier).returnValue
         val result = cordaFuture.get()
         val mList: MutableList<InvoiceOfferDTO> = mutableListOf()
         result.forEach() {
@@ -121,9 +124,9 @@ class NetworkOperatorBeeService {
         }
 
         mList.forEach() {
-            logger.info("$xx OFFER: ${gson.toJson(it)}  $xx")
+            logger.info("$xx OFFER made: ${gson.toJson(it)}  $xx")
         }
-        logger.info("$xx makeOffers: Number of Anchor offers made OK: " +
+        logger.info("$xx makeOffers: Number of Network Operator offers made OK: " +
                 "\uD83C\uDF53 ${mList.size} \uD83C\uDF53 ")
         return mList
     }

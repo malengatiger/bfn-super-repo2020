@@ -1,10 +1,8 @@
-package com.bfn.client.web
+package com.bfn.client.web.services
 
 import com.google.gson.GsonBuilder
 import com.bfn.client.data.InvoiceDTO
 import com.bfn.client.data.NodeInfoDTO
-import com.bfn.client.web.FirebaseService
-import com.bfn.client.web.WorkerBeeService
 import khttp.get
 import net.corda.core.messaging.CordaRPCOps
 import org.json.JSONArray

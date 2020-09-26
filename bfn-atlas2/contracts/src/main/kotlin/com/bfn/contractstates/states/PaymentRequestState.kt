@@ -14,7 +14,6 @@ import net.corda.core.serialization.CordaSerializable
 @BelongsToContract(PaymentRequestContract::class)
 @CordaSerializable
 class PaymentRequestState(
-
         val paymentRequestId: String,
         val supplierInfo: AccountInfo,
         val customerInfo: AccountInfo,

@@ -19,6 +19,7 @@ class SupplierProfileState(
         val bankAccount: String,
         val stellarAccountId: String,
         val rippleAccountId: String,
+        val assetCode: String,
         val date: Date = Date()
                    ) : ContractState {
 

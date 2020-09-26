@@ -1,6 +1,7 @@
-package com.bfn.client.web
+package com.bfn.client.web.services
 
 import com.bfn.client.data.*
+import com.bfn.client.web.*
 import com.google.api.core.ApiFuture
 import com.google.cloud.firestore.CollectionReference
 import com.google.cloud.firestore.DocumentReference

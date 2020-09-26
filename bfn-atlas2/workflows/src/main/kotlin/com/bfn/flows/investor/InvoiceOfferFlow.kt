@@ -1,9 +1,10 @@
-package com.bfn.flows.invoices
+package com.bfn.flows.investor
 
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.states.InvoiceOfferState
 import com.bfn.flows.regulator.ReportToRegulatorFlow
 import com.bfn.flows.services.InvoiceOfferFinderService
+import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.template.InvoiceOfferContract
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
@@ -13,10 +14,14 @@ import net.corda.core.utilities.ProgressTracker
 import org.slf4j.LoggerFactory
 import java.security.PublicKey
 
-
+/**
+ * Investor makes an Offer for buying an Invoice
+ */
 @InitiatingFlow
 @StartableByRPC
-class InvoiceOfferFlow(private val invoiceOfferState: InvoiceOfferState) : FlowLogic<SignedTransaction>() {
+class InvoiceOfferFlow(
+        private val invoiceOfferState: InvoiceOfferState) : FlowLogic<SignedTransaction>() {
+
     private val sendingTransaction = ProgressTracker.Step("Sending transaction to counterParty")
     private val generatingTransaction = ProgressTracker.Step("Generating transaction")
     private val verifyingTransaction = ProgressTracker.Step("Verifying contract constraints.")
@@ -64,6 +69,11 @@ class InvoiceOfferFlow(private val invoiceOfferState: InvoiceOfferState) : FlowL
 
     @Suspendable
     private fun processFlow(txBuilder: TransactionBuilder): SignedTransaction {
+
+        val investorKey = subFlow(RequestKeyForAccount(invoiceOfferState.investor)).owningKey
+        val supplierKey = subFlow(RequestKeyForAccount(invoiceOfferState.supplier)).owningKey
+        val customerKey = subFlow(RequestKeyForAccount(invoiceOfferState.customer)).owningKey
+
         val map: MutableMap<String, Party> = mutableMapOf()
         val investorOrg: String = invoiceOfferState.investor.host.name.organisation
         val supplierOrg: String = invoiceOfferState.supplier.host.name.organisation
@@ -74,9 +84,10 @@ class InvoiceOfferFlow(private val invoiceOfferState: InvoiceOfferState) : FlowL
         map[customerOrg] = invoiceOfferState.customer.host
 
         val keys: MutableList<PublicKey> = mutableListOf()
-        map.values.forEach() {
-            keys.add(it.owningKey)
-        }
+        keys.add(investorKey)
+        keys.add(customerKey)
+        keys.add(supplierKey)
+
         val command = InvoiceOfferContract.MakeOffer()
         txBuilder.addCommand(command, keys)
 

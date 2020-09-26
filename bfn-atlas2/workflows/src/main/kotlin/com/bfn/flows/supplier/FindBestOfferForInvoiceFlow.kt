@@ -11,15 +11,16 @@ import net.corda.core.node.services.Vault.StateStatus
 import net.corda.core.node.services.vault.PageSpecification
 import net.corda.core.node.services.vault.QueryCriteria.VaultQueryCriteria
 import org.slf4j.LoggerFactory
-import java.lang.IllegalArgumentException
 import java.util.*
+import kotlin.IllegalArgumentException
 
 
 @InitiatingFlow
 @StartableByRPC
 @SchedulableFlow
 class FindBestOfferForInvoiceFlow(private val supplierAccountId: String,
-                                  private val invoiceId: String) : FlowLogic<StateAndRef<InvoiceOfferState>?>() {
+                                  private val invoiceId: String,
+                                  private val acceptBestOffer: Boolean) : FlowLogic<StateAndRef<InvoiceOfferState>?>() {
 
     @Suspendable
     @Throws(FlowException::class)
@@ -32,21 +33,26 @@ class FindBestOfferForInvoiceFlow(private val supplierAccountId: String,
 
         val pair = filterOffersByProfile()
         if (pair == null) {
-            logger.info("\uD83D\uDC80 \uD83D\uDC80 \uD83D\uDC80 Unable to find acceptable offer. \uD83D\uDC80 Quitting, returning null ... ")
-            return null
+            val msg = "\uD83D\uDC80 \uD83D\uDC80 \uD83D\uDC80 Unable to find acceptable offer. \uD83D\uDC80 "
+            logger.info(msg)
+            throw IllegalArgumentException(msg)
         }
-        val list = pair.first
-        val selected = pair.second
-        if (list.isEmpty()) {
-            Companion.logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21  " +
-                    "No invoiceOffers found on node. returning null")
-            return null
-        }
+        val offers = pair.first
 
+        if (offers.isEmpty()) {
+            val msg = "\uD83D\uDC80 \uD83D\uDC80 \uD83D\uDC80 No invoiceOffers found on node \uD83D\uDC80 "
+            logger.info(msg)
+            throw IllegalArgumentException(msg)
+        }
+        val selected = pair.second
         Companion.logger.info("\uD83C\uDF6F \uD83C\uDF6F \uD83C\uDF6F \uD83C\uDF6F " +
                 "Yebo! Best Offer selected: \uD83C\uDF6F \uD83C\uDF6F ${selected.state.data.offerAmount} " +
                 " supplier : ${selected.state.data.supplier.name}  ${selected.state.data.supplier.host} \uD83D\uDC4C " +
                 " investor: ${selected.state.data.investor.name} ${selected.state.data.investor.host} \uD83E\uDDE9 ")
+        //accept the best offer found
+        if (acceptBestOffer) {
+            subFlow(OfferAcceptanceBySupplierFlow(selected.state.data.offerId))
+        }
 
         return selected
     }

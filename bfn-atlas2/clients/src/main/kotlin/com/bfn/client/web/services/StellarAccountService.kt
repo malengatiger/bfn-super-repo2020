@@ -1,10 +1,9 @@
-package com.bfn.client.web
+package com.bfn.client.web.services
 
 
 import com.bfn.client.data.StellarResponse
 import com.google.gson.GsonBuilder
 import khttp.post
-import net.corda.core.internal.Emoji
 import net.corda.core.messaging.CordaRPCOps
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired

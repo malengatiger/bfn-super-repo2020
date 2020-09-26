@@ -4,10 +4,14 @@ import com.bfn.client.data.InvoiceDTO
 import com.bfn.client.data.InvoiceOfferDTO
 import com.bfn.client.data.SupplierPaymentDTO
 import com.bfn.client.data.SupplierProfileStateDTO
+import com.bfn.client.web.services.FirebaseService
+import com.bfn.client.web.services.SupplierBeeService
+import com.bfn.client.web.services.WorkerBeeService
 import com.google.gson.GsonBuilder
 import net.corda.core.messaging.CordaRPCOps
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.env.Environment
 import org.springframework.web.bind.annotation.*
 import java.util.*
@@ -38,10 +42,13 @@ class SupplierController(rpc: NodeRPCConnection) {
     @GetMapping(value = ["/selectBestOffer"], produces = ["application/json"])
     @Throws(Exception::class)
     private fun selectBestOffer(@RequestParam accountId: String,
-                                @RequestParam invoiceId: String): InvoiceOfferDTO? {
+                                @RequestParam invoiceId: String,
+                                @RequestParam acceptBestOffer:Boolean): InvoiceOfferDTO? {
 
         val offer = supplierBeeService.selectBestOffer(proxy = proxy,
-                accountId = accountId, invoiceId = invoiceId)
+                accountId = accountId,
+                invoiceId = invoiceId,
+                acceptBestOffer = acceptBestOffer)
         if (offer == null) {
             logger.info("\uD83D\uDC80 \uD83D\uDC80 \uD83D\uDC80 \uD83D\uDC80  NO OFFER MADE: \uD83C\uDF0E ")
         } else {
@@ -53,12 +60,16 @@ class SupplierController(rpc: NodeRPCConnection) {
 
     @GetMapping(value = ["/acceptOffer"], produces = ["application/json"])
     @Throws(Exception::class)
-    private fun acceptOffer(@RequestParam offerId: String): Int? {
+    private fun acceptOffer(@RequestParam offerId: String): InvoiceOfferDTO? {
 
         val tx = supplierBeeService.acceptOffer(proxy = proxy, offerId = offerId)
         logger.info("\uD83C\uDF0E \uD83C\uDF0E Offer accepted, txId: \uD83C\uDF0E $tx")
 
-        return tx
+        if (tx == null) {
+            return null
+        }
+
+        return DTOUtil.getDTO(tx)
     }
 
     @GetMapping(value = ["findInvoicesForSupplier"])
@@ -75,6 +86,9 @@ class SupplierController(rpc: NodeRPCConnection) {
         return workerBeeService.findOffersForSupplier(proxy, accountId)
     }
 
+    @Value("\${stellarAnchorUrl}")
+    private lateinit var stellarAnchorUrl: String
+
     @GetMapping(value = ["createPayments"])
     @Throws(Exception::class)
     fun createPayments(
@@ -82,6 +96,7 @@ class SupplierController(rpc: NodeRPCConnection) {
             @RequestParam(value = "delayMinutesUntilNextPaymentFlow", required = true) delayMinutesUntilNextPaymentFlow: Long): List<SupplierPaymentDTO>? {
         return supplierBeeService.createPayments(proxy,
                 investorId = investorId,
+                stellarAnchorUrl = stellarAnchorUrl,
                 delayMinutesUntilNextPaymentFlow = delayMinutesUntilNextPaymentFlow)
     }
 

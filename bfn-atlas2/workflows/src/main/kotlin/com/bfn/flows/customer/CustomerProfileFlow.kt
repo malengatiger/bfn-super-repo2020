@@ -1,6 +1,7 @@
 package com.bfn.flows.customer
 
 import co.paralleluniverse.fibers.Suspendable
+import com.bfn.contractstates.contracts.CustomerProfileContract
 import com.bfn.contractstates.contracts.InvestorProfileContract
 import com.bfn.contractstates.states.CustomerProfileState
 import com.bfn.flows.services.ProfileFinderService
@@ -25,17 +26,14 @@ class CustomerProfileFlow(private val customerProfile: CustomerProfileState) : F
         Companion.logger.info("\uD83D\uDE39 \uD83D\uDE39 \uD83D\uDE39  \uD83C\uDFC8 \uD83C\uDFC8 " +
                 "\uD83C\uDFC8 \uD83C\uDFC8 \uD83C\uDFC8 \uD83C\uDFC8 " +
                 "CustomerProfileFlow started, accountId: ${customerProfile.account.identifier} " )
-        val command = InvestorProfileContract.CreateProfile()
-        val account = serviceHub.accountService.accountInfo(UUID.fromString(customerProfile.account.identifier.id.toString()))
-                ?: throw IllegalArgumentException("CustomerProfileFlow: \uD83D\uDC4E\uD83C\uDFFD Account not found: ${customerProfile.account.identifier}")
+        val command = CustomerProfileContract.Create()
+        val account = serviceHub.accountService.accountInfo(customerProfile.account.identifier.id)
+                ?: throw IllegalArgumentException("CustomerProfileFlow: \uD83D\uDC4E\uD83C\uDFFD " +
+                        "Account not found: ${customerProfile.account.name}")
 
         val profile = serviceHub.cordaService(ProfileFinderService::class.java)
                 .findCustomerProfile(customerProfile.account.identifier.toString())
-//        if (profile == null) {
-//            Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 will create new customer profile ... ")
-//        } else {
-//            Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 will update customer profile ... ")
-//        }
+
         Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95  build tx ...")
         val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
         txBuilder.addCommand(command, serviceHub.ourIdentity.owningKey)
