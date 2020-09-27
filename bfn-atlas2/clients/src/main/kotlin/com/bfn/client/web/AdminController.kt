@@ -140,7 +140,7 @@ class AdminController(rpc: NodeRPCConnection) {
     @Throws(Exception::class)
     private fun generateInvoices(numberOfInvoicesPerAccount:Int ): String? {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 AdminController: ... generateInvoices ...")
-        val result = demoDataService.generateInvoices(proxy, numberOfInvoicesPerAccount = numberOfInvoicesPerAccount)
+        val result = demoDataService.generateInvoices(proxy)
         logger.info(result)
         return result
     }

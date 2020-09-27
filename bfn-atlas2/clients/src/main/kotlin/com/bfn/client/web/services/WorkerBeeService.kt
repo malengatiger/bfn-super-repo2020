@@ -8,6 +8,7 @@ import com.bfn.contractstates.states.*
 import com.bfn.flows.CreateAccountFlow
 import com.bfn.flows.CreateUserFlow
 import com.bfn.flows.customer.CustomerProfileFlow
+import com.bfn.flows.customer.PurchaseOrderFlow
 import com.bfn.flows.investor.InvestorProfileFlow
 import com.bfn.flows.investor.InvoiceOfferFlow
 import com.bfn.flows.investor.MultiInvoiceOfferFlow
@@ -81,25 +82,13 @@ class WorkerBeeService {
         val node = proxy.nodeInfo()
         logger.info("\uD83C\uDF50 \uD83C\uDF50 Current Node: ${node.legalIdentities[0].name}")
         val accounts = proxy.vaultQuery(AccountInfo::class.java).states
-        logger.info("\uD83C\uDF3A \uD83C\uDF3A \uD83C\uDF3A " +
-                "Total Accounts in Node (\uD83D\uDD35 \uD83D\uDD35 including accounts from other Corda node): " +
-                "${accounts.size} \uD83C\uDF3A THIS Node: ${proxy.nodeInfo().legalIdentities[0].name}")
-        var cnt = 0
-        for (account in accounts) {
-            cnt++
-            logger.info("\uD83C\uDF40 Account from query:  \uD83C\uDF50" +
-                    " name: ${account.state.data.host.name} \uD83C\uDF50 " +
-                    "identifier: ${account.state.data.identifier.id}")
-        }
-        var end = Date()
-        val ms1 = (end.time - start.time)
-        logger.info("\uD83D\uDD37 \uD83D\uDD37 \uD83D\uDD37 vault query: " +
-                "$ms1 milliseconds elapsed, ${accounts.size} accounts gotten \uD83D\uDD37 ${accounts.size} accounts ...")
-        cnt = 0
+//        logger.info("\uD83C\uDF3A \uD83C\uDF3A \uD83C\uDF3A " +
+//                "Total Accounts in Node (\uD83D\uDD35 \uD83D\uDD35 including accounts from other Corda node): " +
+//                "${accounts.size} \uD83C\uDF3A THIS Node: ${proxy.nodeInfo().legalIdentities[0].name}")
+
+
         val list: MutableList<AccountInfoDTO> = mutableListOf()
-        val start2 = Date()
         for ((state) in accounts) {
-            cnt++
             val acct = state.data
             if (acct.host.name.toString() == proxy.nodeInfo().legalIdentities[0].name.toString()) {
                 val dto = AccountInfoDTO(acct.identifier.id.toString(),
@@ -108,47 +97,44 @@ class WorkerBeeService {
             }
 
         }
-        end = Date()
-        val ms = (end.time - start2.time)
-        val msg = "\uD83C\uDF3A \uD83C\uDF3A done filtered listing; found accounts for node: \uD83D\uDC9A ${list.size} " +
-                "\uD83D\uDC9A accounts on Node: \uD83C\uDF3A : \uD83D\uDD37 $ms milliseconds elapsed \uD83D\uDD37 " +
-                proxy.nodeInfo().legalIdentities.first().name.toString()
-        logger.info(msg)
+
+        return list
+    }
+
+    fun getAllNodeAccounts(proxy: CordaRPCOps): List<AccountInfoDTO> {
+        val start = Date()
+        val node = proxy.nodeInfo()
+        logger.info("\uD83C\uDF50 \uD83C\uDF50 Current Node: ${node.legalIdentities[0].name}")
+        val accounts = proxy.vaultQuery(AccountInfo::class.java).states
+
+        val list: MutableList<AccountInfoDTO> = mutableListOf()
+        for ((state) in accounts) {
+            val acct = state.data
+            val dto = AccountInfoDTO(acct.identifier.id.toString(),
+                    acct.host.toString(), acct.name)
+            list.add(dto)
+        }
+
         return list
     }
 
     fun getNodeAccount(proxy: CordaRPCOps, identifier: String): AccountInfo? {
-        val start = Date()
         val accounts = proxy.vaultQuery(AccountInfo::class.java).states
-        logger.info("\uD83C\uDF3A Total Accounts in Node: ${accounts.size} \uD83C\uDF3A ")
-        var end = Date()
-        val ms1 = (end.time - start.time)
-        logger.info("\uD83D\uDD37 vault query: $ms1 milliseconds elapsed, ${accounts.size} accounts gotten \uD83D\uDD37 ")
-        var cnt = 0
+
         var account: AccountInfo? = null
 
-        val start2 = Date()
         for ((state) in accounts) {
-            cnt++
             val acct = state.data
-            logger.info("\uD83C\uDF50️ \uD83C\uDF50 ️Processing account  \uD83C\uDF50️ " +
-                    "#$cnt \uD83C\uDF3A ${state.data.name} \uD83C\uDF50️ ")
             if (acct.identifier.id.toString() == identifier) {
                 account = acct
             }
         }
-        end = Date()
-        val ms = (end.time - start2.time)
-        val msg = "\uD83C\uDF3A \uD83C\uDF3A done  \uD83D\uDC9A " +
-                "\uD83D\uDC9A account on Node: \uD83C\uDF3A : \uD83D\uDD37 $ms milliseconds elapsed \uD83D\uDD37 " +
-                proxy.nodeInfo().legalIdentities.first().toString()
-        logger.info(msg)
+
         return account
     }
 
     fun getNetworkAccounts(proxy: CordaRPCOps): List<AccountInfoDTO> {
         val accounts = proxy.vaultQuery(AccountInfo::class.java).states
-        logger.info("\uD83C\uDF3A Total Accounts in Network: ${accounts.size} \uD83C\uDF3A ")
         var cnt = 0
         val list: MutableList<AccountInfoDTO> = ArrayList()
         for ((state) in accounts) {
@@ -158,10 +144,7 @@ class WorkerBeeService {
                     host.toString(), name)
             list.add(dto)
         }
-        val msg = "\uD83C\uDF3A \uD83C\uDF3A done listing  \uD83E\uDDA0 ${list.size}  " +
-                "\uD83E\uDDA0 accounts on Network: \uD83C\uDF3A " +
-                proxy.nodeInfo().legalIdentities.first().toString()
-        logger.info(msg)
+
         return list
     }
 
@@ -170,7 +153,7 @@ class WorkerBeeService {
     fun getAccount(proxy: CordaRPCOps, accountId: String?): AccountInfoDTO {
         val list = getNodeAccounts(proxy)
         var dto: AccountInfoDTO? = null
-        logger.info("\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 AccountID to search for: $accountId")
+
         for (info in list) {
             if (info.identifier.equals(accountId, ignoreCase = true)) {
                 dto = info
@@ -395,7 +378,17 @@ class WorkerBeeService {
             throw Exception("Customer creation failed")
         }
     }
-
+    fun createPurchaseOrder(proxy: CordaRPCOps,
+                            purchaseOrder: PurchaseOrderDTO): String {
+        try {
+            //start purchase order flow
+            return startPurchaseOrderFlow(proxy, purchaseOrder = purchaseOrder)
+        } catch (e: Exception) {
+            logger.info("\uD83D\uDD25 \uD83D\uDD25 \uD83D\uDD25 createPurchaseOrder failed ")
+            e.printStackTrace()
+            throw Exception("createPurchaseOrder failed")
+        }
+    }
     @Throws(Exception::class)
     fun makeOffersOnInvoicesForInvestor(proxy: CordaRPCOps, investorId: String): List<InvoiceOfferDTO> {
         val fut = proxy.startTrackedFlowDynamic(
@@ -432,7 +425,6 @@ class WorkerBeeService {
         logger.info(m)
         return dtos
     }
-
 
     @Throws(Exception::class)
     fun findOffersForSupplier(proxy: CordaRPCOps, accountId: String): List<InvoiceOfferDTO> {
@@ -673,8 +665,20 @@ class WorkerBeeService {
             if (profile == "dev") {
                 mDate = invoice.dateRegistered
             }
+            var poState: PurchaseOrderState? = null
+            if (invoice.purchaseOrder != null) {
+                poState = PurchaseOrderState(
+                        purchaseOrderId = invoice.purchaseOrder!!.purchaseOrderId,
+                        supplier = supplierInfo,
+                        customer = customerInfo,
+                        purchaseOrderNumber = invoice.purchaseOrder!!.purchaseOrderNumber,
+                        amount = invoice.purchaseOrder!!.amount,
+                        dateRegistered = invoice.purchaseOrder!!.dateRegistered,
+                        description = invoice.purchaseOrder!!.description)
+
+            }
             val invoiceState = InvoiceState(
-                    invoiceId = UUID.fromString(invoice.invoiceId),
+                    purchaseOrder = poState,
                     invoiceNumber = invoice.invoiceNumber,
                     description = invoice.description,
                     amount = invoice.amount,
@@ -683,7 +687,8 @@ class WorkerBeeService {
                     supplierInfo = supplierInfo,
                     customerInfo = customerInfo,
                     externalId = invoice.externalId,
-                    dateRegistered = mDate
+                    dateRegistered = mDate,
+                    invoiceId = UUID.randomUUID()
             )
 
             val issueTx = proxy.startTrackedFlowDynamic(
@@ -694,7 +699,7 @@ class WorkerBeeService {
 
             val dto = invoiceState.let { DTOUtil.getDTO(it) }
             try {
-                firebaseService.sendInvoiceMessage(dto)
+//                firebaseService.sendInvoiceMessage(dto)
                 firebaseService.addInvoice(dto)
                 logger.info("\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 " +
                         "Invoice has been added to Firestore; \uD83D\uDC2C seems OK ")
@@ -752,7 +757,7 @@ class WorkerBeeService {
             val criteria: QueryCriteria = VaultQueryCriteria(StateStatus.UNCONSUMED)
             val page = proxy.vaultQueryByWithPagingSpec(
                     AccountInfo::class.java, criteria,
-                    PageSpecification(1, 200))
+                    PageSpecification(1, 2000))
             logger.info("$em1 Accounts found on network:  " +
                     "\uD83E\uDD6C " + page.states.size + " ... about to check if account exists ...")
             if (page.states.isNotEmpty()) {
@@ -836,6 +841,57 @@ class WorkerBeeService {
     }
 
     private val em3 = "\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D "
+
+    @Throws(Exception::class)
+    fun startPurchaseOrderFlow(proxy: CordaRPCOps,
+                                 purchaseOrder: PurchaseOrderDTO): String {
+        var tranxId = "tbd"
+        try {
+
+            logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                    "Starting the PurchaseOrderFlow ...................... " +
+                    "customer: ${purchaseOrder.customer.name} " +
+                    "supplier: ${purchaseOrder.supplier.name} " +
+                    "amount: ${purchaseOrder.amount}" +
+                    "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35\n\n")
+
+            val customerAccount = getNodeAccount(proxy, purchaseOrder.customer.identifier)
+            val supplierAccount = getNodeAccount(proxy, purchaseOrder.supplier.identifier)
+            if (customerAccount != null && supplierAccount != null) {
+                val po = PurchaseOrderState(
+                        purchaseOrderId = UUID.randomUUID().toString(),
+                        purchaseOrderNumber = purchaseOrder.purchaseOrderNumber,
+                        customer = customerAccount,
+                        supplier = supplierAccount,
+                        amount = purchaseOrder.amount,
+                        dateRegistered = Date(),
+                        description = purchaseOrder.description)
+
+                val profileCordaFuture = proxy.startFlowDynamic(
+                        PurchaseOrderFlow::class.java, po).returnValue
+
+                tranxId = profileCordaFuture.get().toString()
+                firebaseService.addPurchaseOrder(purchaseOrder)
+                logger.info("\uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F " +
+                        " PurchaseOrderFlow completed ... " +
+                        "\uD83D\uDC4C signedTx: " + tranxId +
+                        "; \n\uD83D\uDD35 \uD83D\uDD35 PurchaseOrder now created for " +
+                        "customer: ${purchaseOrder.customer.name} supplier: ${purchaseOrder.supplier.name}\n\n")
+                return tranxId
+            } else {
+                throw Exception("\uD83D\uDE21 \uD83D\uDE21 startPurchaseOrderFlow failed; customer or supplier not found")
+            }
+
+        } catch (e: Exception) {
+            logger.error(
+                    "\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D" +
+                            " \uD83D\uDC7D \uD83D\uDC7D " +
+                            "Houston, we fucked, like royally, Boss! PurchaseOrderFlow failed:  ${e.message}")
+            logger.error(e.message)
+            throw e
+        }
+
+    }
 
     @Throws(Exception::class)
     fun startCustomerProfileFlow(proxy: CordaRPCOps,

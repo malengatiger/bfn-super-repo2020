@@ -9,6 +9,10 @@ object DTOUtil {
     @JvmStatic
     fun getDTO(a: InvoiceState): InvoiceDTO {
 
+        var poDTO: PurchaseOrderDTO? = null
+        if (a.purchaseOrder != null) {
+            poDTO = getDTO(a.purchaseOrder!!)
+        }
         return InvoiceDTO(
                 amount = a.amount,
                 customer = getDTO(a.customerInfo),
@@ -19,7 +23,8 @@ object DTOUtil {
                 dateRegistered = a.dateRegistered.toString(),
                 valueAddedTax = a.valueAddedTax,
                 totalAmount = a.totalAmount,
-                externalId = a.externalId
+                externalId = a.externalId,
+                purchaseOrder = poDTO
         )
     }
     @JvmStatic

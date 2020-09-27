@@ -106,6 +106,11 @@ class FirebaseService() {
     }
 
     @Throws(ExecutionException::class, InterruptedException::class)
+    fun addPurchaseOrder(purchaseOrder: PurchaseOrderDTO) {
+        val future: ApiFuture<DocumentReference> = db.collection(BFN_PURCHASE_ORDERS).add(purchaseOrder);
+        logger.info("\uD83D\uDE3C \uD83D\uDE3C purchaseOrder added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+    }
+    @Throws(ExecutionException::class, InterruptedException::class)
     fun addCustomerProfile(profile: CustomerProfileStateDTO) {
         val future: ApiFuture<DocumentReference> = db.collection(BFN_CUSTOMER_PROFILES).add(profile);
         logger.info("\uD83D\uDE3C \uD83D\uDE3C CustomerProfileState added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")

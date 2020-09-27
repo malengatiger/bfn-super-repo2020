@@ -25,7 +25,6 @@ class PurchaseOrderFlow(private val purchaseOrder: PurchaseOrderState) : FlowLog
                 "supplier: ${purchaseOrder.supplier.name}" )
 
         val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
-
         val signedTx = processFlow(txBuilder = txBuilder)
 
         Companion.logger.info("\uD83D\uDE39 \uD83D\uDE39 \uD83D\uDE39  " +
@@ -36,43 +35,63 @@ class PurchaseOrderFlow(private val purchaseOrder: PurchaseOrderState) : FlowLog
     }
     @Suspendable
     private fun processFlow(txBuilder: TransactionBuilder): SignedTransaction {
-        val map: MutableMap<String, AnonymousParty> = mutableMapOf()
+        Companion.logger.info("\uD83C\uDFC8 \uD83C\uDFC8 " +
+                "\uD83C\uDFC8 \uD83C\uDFC8 \uD83C\uDFC8 \uD83C\uDFC8 " +
+                "PurchaseOrderFlow:processFlow started, customer: ${purchaseOrder.customer.name} " +
+                "supplier: ${purchaseOrder.supplier.name} \uD83C\uDF4E" )
+
         val supplierOrg: String = purchaseOrder.supplier.host.name.organisation
         val customerOrg: String = purchaseOrder.customer.host.name.organisation
 
-        map[supplierOrg] = subFlow(RequestKeyForAccount(purchaseOrder.supplier))
-        map[customerOrg] = subFlow(RequestKeyForAccount(purchaseOrder.customer))
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 RequestKeyForAccount for " +
+                "supplier: ${purchaseOrder.supplier.name} " +
+                "and customer: ${purchaseOrder.customer.name} ... about to request ....")
 
-        val keys: MutableList<PublicKey> = mutableListOf()
-        map.values.forEach() {
-            keys.add(it.owningKey)
-        }
+        val supplierKey = purchaseOrder.supplier.host
+        val customerKey = purchaseOrder.customer.host
+
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                "Have requested keys for supplier key: ${supplierKey.owningKey} " +
+                "customer key: ${customerKey.owningKey} ... about to create transaction using txBuilder ...")
+
         val command = PurchaseOrderContract.Create()
-        txBuilder.addCommand(command, keys)
+        txBuilder.addCommand(
+                command, mutableListOf(supplierKey.owningKey, customerKey.owningKey))
+        txBuilder.addOutputState(purchaseOrder)
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                " about to verify and initially sign the transaction ... ")
         txBuilder.verify(serviceHub)
-
         val signedTx = serviceHub.signInitialTransaction(txBuilder)
+
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                "Transaction initial signature done: $signedTx, \uD83C\uDF4E building sessions ...")
         val mSessions: MutableList<FlowSession> = mutableListOf()
-        map.values.forEach() {
-            if (it.toParty(serviceHub).toString() != serviceHub.myInfo.legalIdentities.first().toString()) {
-                mSessions.add(initiateFlow(it))
-            }
+
+        val node = serviceHub.myInfo.legalIdentities[0].name.organisation
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 This node is: $node " +
+                "compare to supplier: $supplierOrg customer: $customerOrg ")
+        if (supplierOrg != node) {
+            mSessions.add(initiateFlow(supplierKey))
         }
-        if (mSessions.isEmpty()) {
-            PurchaseOrderFlow.logger.info(" \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 " +
+        if (customerOrg != node) {
+            mSessions.add(initiateFlow(customerKey))
+        }
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                "Sessions created: ${mSessions.size}. Check for ZERO sessions \uD83C\uDF4E")
+        return if (mSessions.isEmpty()) {
+            logger.info(" \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 " +
                     "All participants are LOCAL ... \uD83D\uDD06")
             val mSignedTransactionDone = subFlow(
                     FinalityFlow(signedTx, listOf()))
-            PurchaseOrderFlow.logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D  SINGLE NODE ==> " +
+            logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D  SINGLE NODE ==> " +
                     " \uD83E\uDD66 \uD83E\uDD66  \uD83E\uDD66 \uD83E\uDD66 FinalityFlow has been executed " +
                     "...\uD83E\uDD66 \uD83E\uDD66")
-            return mSignedTransactionDone
-
+            mSignedTransactionDone
         } else {
-            PurchaseOrderFlow.logger.info(" \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 " +
-                    " Participants are LOCAL and REMOTE ... \uD83D\uDD06")
-            return collectSignaturesAndFinalize(signedTx = signedTx, sessions = mSessions)
-
+            PurchaseOrderFlow.logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 " +
+                    " Participants are LOCAL and REMOTE ... about to collect signatures: " +
+                    "\uD83D\uDD06 for ${mSessions.size} sessions")
+            collectSignaturesAndFinalize(signedTx = signedTx, sessions = mSessions)
         }
 
     }
@@ -80,9 +99,12 @@ class PurchaseOrderFlow(private val purchaseOrder: PurchaseOrderState) : FlowLog
     @Throws(FlowException::class)
     private fun collectSignaturesAndFinalize(signedTx: SignedTransaction,
                                              sessions: List<FlowSession>): SignedTransaction {
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                " running collectSignaturesAndFinalize for ${sessions.size} sessions ...")
 
         val signedTransaction = subFlow(CollectSignaturesFlow(
                 partiallySignedTx = signedTx, sessionsToCollectFrom = sessions))
+
         logger.info("\uD83C\uDFBD \uD83C\uDFBD \uD83C\uDFBD \uD83C\uDFBD  " +
                 "Signatures collected OK!  \uD83D\uDE21 \uD83D\uDE21 " +
                 ".... will call FinalityFlow ... \uD83C\uDF3A \uD83C\uDF3A txId: "

@@ -5,8 +5,8 @@ import com.bfn.contractstates.contracts.InvoiceContract
 import com.bfn.contractstates.states.InvoiceState
 import com.bfn.flows.regulator.BroadcastTransactionFlow
 import com.bfn.flows.regulator.ReportToRegulatorFlow
+import com.bfn.flows.services.PurchaseOrderFinderService
 import com.bfn.flows.services.RegulatorFinderService
-import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import net.corda.core.flows.*
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
@@ -18,6 +18,7 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.ProgressTracker
 import org.slf4j.LoggerFactory
+import java.math.BigDecimal
 
 @InitiatingFlow
 @StartableByRPC
@@ -61,8 +62,8 @@ class InvoiceRegistrationFlow(private val invoiceState: InvoiceState) : FlowLogi
         if (invoiceState.supplierInfo.name == invoiceState.customerInfo.name) {
             throw IllegalArgumentException("Customer and Supplier cannot be the same entity")
         }
-        val supplierAnonParty = subFlow(RequestKeyForAccount(invoiceState.supplierInfo))
-        val customerAnonParty = subFlow(RequestKeyForAccount(invoiceState.customerInfo))
+        val supplierParty = invoiceState.supplierInfo
+        val customerParty = invoiceState.customerInfo
         progressTracker.currentStep = GENERATING_KEYS
 
         val customerOrg = invoiceState.customerInfo.host.name.organisation
@@ -77,8 +78,23 @@ class InvoiceRegistrationFlow(private val invoiceState: InvoiceState) : FlowLogi
                 .addOutputState(invoiceState, InvoiceContract.ID)
                 .addCommand(
                         command,
-                        supplierAnonParty.owningKey,
-                        customerAnonParty.owningKey, regulatorNode!!.legalIdentities.first().owningKey)
+                        supplierParty.host.owningKey,
+                        customerParty.host.owningKey,
+                        regulatorNode!!.legalIdentities.first().owningKey)
+
+        if (invoiceState.purchaseOrder != null) {
+            val mPO = serviceHub.cordaService(PurchaseOrderFinderService::class.java)
+                    .findPurchaseOrderStateAndRef(invoiceState.purchaseOrder!!.purchaseOrderId)
+            val poAmt = BigDecimal(invoiceState.purchaseOrder!!.amount)
+            val invAmt = BigDecimal(invoiceState.amount)
+            //todo - write algorithm to check if there are multiple invoices for 1 purchaseOrder
+            //assuming that there is only 1 invoice per purchaseOrder. Lets think about this!
+            if (invAmt == poAmt) {
+                if (mPO != null) {
+                    txBuilder.addInputState(mPO)
+                }
+            }
+        }
 
         progressTracker.currentStep = VERIFYING_TRANSACTION
         txBuilder.verify(serviceHub)
@@ -101,8 +117,8 @@ class InvoiceRegistrationFlow(private val invoiceState: InvoiceState) : FlowLogi
             REMOTE_CUSTOMER
         }
 
-        val tranx = processTransaction(supplierStatus, customerStatus, customerAnonParty, signedTx,
-                supplierAnonParty, regulatorNode.legalIdentities.first())
+        val tranx = processTransaction(supplierStatus, customerStatus, customerParty.host, signedTx,
+                supplierParty.host, regulatorNode.legalIdentities.first())
         if (tranx != null) {
             reportToRegulator(tranx)
         }
@@ -112,8 +128,8 @@ class InvoiceRegistrationFlow(private val invoiceState: InvoiceState) : FlowLogi
 
     @Suspendable
     private fun processTransaction(supplierStatus: Int, customerStatus: Int,
-                                   customerParty: AnonymousParty, signedTx: SignedTransaction,
-                                   supplierParty: AnonymousParty, regulatorParty: Party): SignedTransaction? {
+                                   customerParty: Party, signedTx: SignedTransaction,
+                                   supplierParty: Party, regulatorParty: Party): SignedTransaction? {
         Companion.logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 Supplier and Customer are NOT on the same node ..." +
                 "  \uD83D\uDE21 flowSession(s) required ... \uD83D\uDE21")
 

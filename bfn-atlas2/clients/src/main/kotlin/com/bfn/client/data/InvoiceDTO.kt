@@ -1,5 +1,7 @@
 package com.bfn.client.data
 
+import com.bfn.contractstates.states.PurchaseOrderState
+
 
 data class InvoiceDTO (
         var invoiceId: String,
@@ -10,6 +12,7 @@ data class InvoiceDTO (
         var totalAmount: String,
         var valueAddedTax: String,
         var dateRegistered: String,
+        var purchaseOrder: PurchaseOrderDTO? = null,
         var supplier: AccountInfoDTO,
         var customer: AccountInfoDTO
 )

@@ -42,14 +42,16 @@ class IssueInvoiceTokenFlow(
         val zarTokenType = TokenType("ZAR", 2)
         val myIssuedTokenType: IssuedTokenType = zarTokenType issuedBy issuer
 
-        val anonParty = subFlow(RequestKeyForAccount(account))
-        val fungibleToken: FungibleToken =  amount of myIssuedTokenType heldBy anonParty
-        logger.info("\uD83E\uDDE9 \uD83E\uDDE9 Token: ${fungibleToken.issuedTokenType.tokenType.tokenIdentifier} created for \uD83C\uDF3F  $anonParty")
+        val fungibleToken: FungibleToken =  amount of myIssuedTokenType heldBy account.host
+        logger.info("\uD83E\uDDE9 \uD83E\uDDE9 " +
+                "Token: ${fungibleToken.issuedTokenType.tokenType.tokenIdentifier} " +
+                "created for \uD83C\uDF3F  $account")
 
-        val holderSession = initiateFlow(anonParty)
+        val holderSession = initiateFlow(account.host)
         val tx = subFlow(IssueTokensFlow(fungibleToken, listOf(holderSession)))
         //
-        logger.info(" \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E Tokens issued to ${account.name}, token: \uD83C\uDF4A $fungibleToken ")
+        logger.info(" \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
+                "Tokens issued to ${account.name}, token: \uD83C\uDF4A $fungibleToken ")
         return tx
     }
 }
@@ -69,12 +71,11 @@ class MoveInvoiceTokenFlow(
 
         val issuer: Party = serviceHub.ourIdentity
         val myTokenType = TokenType("ZAR", 2)
-        val anonParty = subFlow(RequestKeyForAccount(account))
         val regulator = serviceHub.networkMapCache.getNodeByLegalName(
                 CordaX500Name(organisation = "Regulator", locality = "London", country = "GB"))
 
         val result = MoveFungibleTokens(
-                partyAndAmount = PartyAndAmount(anonParty, amount of myTokenType),
+                partyAndAmount = PartyAndAmount(account.host, amount of myTokenType),
                 observers = listOf(regulator!!.legalIdentities.first()),
                 queryCriteria = tokenAmountWithIssuerCriteria(myTokenType, issuer)
         )

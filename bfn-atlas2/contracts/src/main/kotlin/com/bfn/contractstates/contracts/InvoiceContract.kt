@@ -1,6 +1,7 @@
 package com.bfn.contractstates.contracts
 
 import com.bfn.contractstates.states.InvoiceState
+import com.bfn.contractstates.states.PurchaseOrderState
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.Contract
 import net.corda.core.transactions.LedgerTransaction
@@ -16,10 +17,13 @@ class InvoiceContract : Contract {
         val cmd = tx.commands.first()
         if (cmd.value is Register) {
             if (tx.outputStates.isEmpty()) {
-                throw IllegalArgumentException("There should be an output state of InvoiceState")
+                throw IllegalArgumentException("\uD83D\uDD06 There should be an output state of InvoiceState")
             }
             if (tx.inputStates.isNotEmpty()) {
-                throw IllegalArgumentException("There should be no input states")
+                val state = tx.inputStates[0]
+                if (state !is PurchaseOrderState) {
+                    throw IllegalArgumentException("\uD83D\uDD06 input state should be a PurchaseOrderState")
+                }
             }
             val invoiceState = tx.outputStates.first() as InvoiceState
             if (invoiceState.supplierInfo.name == invoiceState.customerInfo.name) {

@@ -4,10 +4,8 @@ import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.states.InvoiceOfferState
 import com.bfn.flows.regulator.ReportToRegulatorFlow
 import com.bfn.flows.services.InvoiceOfferFinderService
-import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.template.InvoiceOfferContract
 import net.corda.core.flows.*
-import net.corda.core.identity.Party
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.ProgressTracker
@@ -70,23 +68,18 @@ class InvoiceOfferFlow(
     @Suspendable
     private fun processFlow(txBuilder: TransactionBuilder): SignedTransaction {
 
-        val investorKey = subFlow(RequestKeyForAccount(invoiceOfferState.investor)).owningKey
-        val supplierKey = subFlow(RequestKeyForAccount(invoiceOfferState.supplier)).owningKey
-        val customerKey = subFlow(RequestKeyForAccount(invoiceOfferState.customer)).owningKey
+        val investorParty = invoiceOfferState.investor
+        val supplierParty = invoiceOfferState.supplier
+        val customerParty = invoiceOfferState.customer
 
-        val map: MutableMap<String, Party> = mutableMapOf()
         val investorOrg: String = invoiceOfferState.investor.host.name.organisation
         val supplierOrg: String = invoiceOfferState.supplier.host.name.organisation
         val customerOrg: String = invoiceOfferState.customer.host.name.organisation
 
-        map[investorOrg] = invoiceOfferState.investor.host
-        map[supplierOrg] = invoiceOfferState.supplier.host
-        map[customerOrg] = invoiceOfferState.customer.host
-
         val keys: MutableList<PublicKey> = mutableListOf()
-        keys.add(investorKey)
-        keys.add(customerKey)
-        keys.add(supplierKey)
+        keys.add(investorParty.host.owningKey)
+        keys.add(customerParty.host.owningKey)
+        keys.add(supplierParty.host.owningKey)
 
         val command = InvoiceOfferContract.MakeOffer()
         txBuilder.addCommand(command, keys)
@@ -97,11 +90,17 @@ class InvoiceOfferFlow(
         val signedTx = serviceHub.signInitialTransaction(txBuilder)
 
         progressTracker.currentStep = sendingTransaction
+
+        val mName = serviceHub.myInfo.legalIdentities[0].name.organisation
         val mSessions: MutableList<FlowSession> = mutableListOf()
-        map.values.forEach() {
-            if (it.toString() != serviceHub.myInfo.legalIdentities.first().toString()) {
-                mSessions.add(initiateFlow(it))
-            }
+        if (investorOrg != mName) {
+            mSessions.add(initiateFlow(investorParty.host))
+        }
+        if (customerOrg != mName) {
+            mSessions.add(initiateFlow(customerParty.host))
+        }
+        if (supplierOrg != mName) {
+            mSessions.add(initiateFlow(supplierParty.host))
         }
         if (mSessions.isEmpty()) {
             Companion.logger.info(" \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 " +

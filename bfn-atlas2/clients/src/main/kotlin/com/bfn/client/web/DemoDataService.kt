@@ -6,12 +6,17 @@ import com.bfn.client.web.services.FirebaseService
 import com.bfn.client.web.services.NetworkOperatorBeeService
 import com.bfn.client.web.services.WorkerBeeService
 import com.bfn.contractstates.states.NetworkOperatorState
+import com.bfn.contractstates.states.PurchaseOrderState
+import com.bfn.flows.todaysDate
 import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.internal.Emoji
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.node.NodeInfo
+import net.corda.core.node.services.Vault
+import net.corda.core.node.services.vault.PageSpecification
+import net.corda.core.node.services.vault.QueryCriteria
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -30,9 +35,10 @@ class DemoDataService {
     private val logger = LoggerFactory.getLogger(DemoDataService::class.java)
     private val gson = GsonBuilder().setPrettyPrinting().create()
 
-    private var suppliers: MutableList<AccountInfoDTO>? = null
-    private var customers: MutableList<AccountInfoDTO>? = null
-    private var investors: MutableList<AccountInfoDTO>? = null
+    private var suppliers: MutableList<AccountInfoDTO> = mutableListOf()
+    private var customers: MutableList<AccountInfoDTO> = mutableListOf()
+    private var investors: MutableList<AccountInfoDTO> = mutableListOf()
+
     private val demoSummary = DemoSummary()
     private var myNode: NodeInfo? = null
 
@@ -92,7 +98,7 @@ class DemoDataService {
         firebaseService.deleteCollection(collectionName = BFN_INVESTOR_PROFILES)
         logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E Firebase clean up completed")
     }
-
+    var accounts: List<AccountInfoDTO> = mutableListOf()
     /**
      * Generate data for the customer node : Accounts are created for several customers
      */
@@ -100,25 +106,30 @@ class DemoDataService {
         logger.info("\n\n\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
                 "Generating data for the Customer Node: Customers only, Boss!")
 
-        val accts = workerBeeService.getNodeAccounts(proxy = mProxy)
+        accounts = workerBeeService.getNodeAccounts(proxy = mProxy)
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
-                "Accounts found on the current node: " + accts.size)
+                "generateCustomerNodeData: Accounts found on the current node: " + accounts.size)
         val node = mProxy.nodeInfo()
         var cnt = 0
-        accts.forEach {
+        accounts.forEach {
             logger.info(" \uD83C\uDF4E Account found on node: ${it.name} ${it.host}")
             if (it.host == node.addresses[0].host) {
                 cnt++
             }
         }
         if (cnt > 0) {
-            throw Exception("\uD83D\uDE1D \uD83D\uDE1D ${accts.size} " +
-                    "Accounts exist on the node. Should we close down shop?")
+            throw Exception("\uD83D\uDE1D \uD83D\uDE1D ${accounts.size} " +
+                    "Accounts exist on the node. \uD83C\uDF4E Not a good look. Should we close down shop?")
         }
 
         firebaseService.deleteCollection(BFN_CUSTOMER_PROFILES)
+        firebaseService.deleteCollection(BFN_INVOICES)
+        firebaseService.deleteCollection(BFN_PURCHASE_ORDERS)
 
         createCustomers(mProxy)
+        generatePurchaseOrders(mProxy)
+        generateInvoices(mProxy)
+
         val msg = "\n\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
                 "DemoDataService: generateCustomerNodeData COMPLETE! " +
                 "\uD83E\uDD6E \uD83E\uDD6E \uD83E\uDD6E\n"
@@ -126,8 +137,100 @@ class DemoDataService {
         logger.info("\n\n\n\n")
         return msg
     }
+    var purchaseOrderCount = 0
+    fun generatePurchaseOrders(mProxy: CordaRPCOps): String {
+        val msg = "\n\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
+                "DemoDataService: generatePurchaseOrders starting ........! " +
+                "\uD83E\uDD6E \uD83E\uDD6E \uD83E\uDD6E\n"
+        logger.info(msg)
+        purchaseOrderCount = 0
+        accounts = workerBeeService.getAllNodeAccounts(mProxy)
+        accounts.forEach {
+            logger.info("\uD83C\uDF4E Account found on node, " +
+                    "\uD83C\uDF40 ${it.name} \uD83C\uDF40 ${it.host}")
+            if (it.host.contains("Customer")) {
+               customers.add(it)
+            } else {
+                suppliers.add(it)
+            }
+        }
+        //create a set of PO's for each customer ....
+        logger.info("\n\n\n\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E\uD83C\uDF4E" +
+                " Start creating PurchaseOrders for " +
+                "${customers.size} customers and ${suppliers.size} suppliers.... ")
+        for (customer in customers) {
+            createCustomerPurchaseOrders(mProxy,customer)
+        }
+        val msg2 = "\n\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
+                "DemoDataService: generatePurchaseOrders COMPLETE! " +
+                " $purchaseOrderCount purchaseOrders generated \uD83E\uDD6E \uD83E\uDD6E \uD83E\uDD6E\n"
+        logger.info(msg2)
+        logger.info("\n\n\n\n")
+        return msg2
+    }
+    private fun createCustomerPurchaseOrders(mProxy: CordaRPCOps,
+                                             customer: AccountInfoDTO): String {
 
-    private fun getNetworkOperatorObject(): NetworkOperatorDTO {
+        for (supplier in suppliers) {
+            createSmallAndLargePurchaseOrders(mProxy,customer,supplier)
+        }
+        val msg = "\n\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
+                "DemoDataService: generatePurchaseOrders COMPLETE! " +
+                "\uD83E\uDD6E \uD83E\uDD6E \uD83E\uDD6E\n"
+        logger.info(msg)
+        logger.info("\n\n")
+        return msg
+    }
+    private fun createSmallAndLargePurchaseOrders(mProxy: CordaRPCOps,
+                                                  customer: AccountInfoDTO,
+                                                  supplier: AccountInfoDTO): String {
+
+        val poSmall = PurchaseOrderDTO(
+                purchaseOrderId = "tbd",
+                purchaseOrderNumber = "" + System.currentTimeMillis()+ "-" + random.nextInt(100),
+                customer = customer,
+                supplier = supplier,
+                amount = getSmallPOAmount(),
+                dateRegistered = Date(),
+                description = "\uD83C\uDF40 Demo: Small Purchase Order: ${customer.name} " +
+                        "to supplier: ${supplier.name}. Used for testing and demo")
+
+        val poLarge = PurchaseOrderDTO(
+                purchaseOrderId = "tbd",
+                purchaseOrderNumber = "" + System.currentTimeMillis() + "-" + random.nextInt(100),
+                customer = customer,
+                supplier = supplier,
+                amount = getLargePOAmount(),
+                dateRegistered = Date(),
+                description = "\uD83C\uDF40 Demo: Large Purchase Order: ${customer.name} " +
+                        "to supplier: ${supplier.name}. Used for testing and demo")
+
+        val msg1 =  workerBeeService.createPurchaseOrder(mProxy, purchaseOrder = poSmall)
+        purchaseOrderCount++
+        val msg2 =  workerBeeService.createPurchaseOrder(mProxy, purchaseOrder = poLarge)
+        purchaseOrderCount++
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 PurchaseOrderFlow results: small: $msg1 large: $msg2")
+
+        return "$msg1 $msg2"
+
+    }
+    private fun getLargePOAmount(): String {
+        val amt = random.nextInt(100) * 100000
+        return if (amt < 1000000) {
+            "1000000.00"
+        } else {
+            "" + (amt * 1.00)
+        }
+    }
+    private fun getSmallPOAmount(): String {
+        val amt = random.nextInt(100) * 1000
+        return if (amt < 5000) {
+            "10000.00"
+        } else {
+            "" + (amt * 1.00)
+        }
+    }
+     private fun getNetworkOperatorObject(): NetworkOperatorDTO {
 
         val email = "operator${System.currentTimeMillis()}@bfn.com"
 
@@ -286,7 +389,7 @@ class DemoDataService {
     }
 
     @Throws(Exception::class)
-    fun generateAccounts(proxy: CordaRPCOps, numberOfAccounts: Int = 10): String {
+    fun generateAccounts(proxy: CordaRPCOps, numberOfAccounts: Int = 20): String {
         logger.info("\n\n$em1 ..... generateAccounts started ...  " +
                 "\uD83D\uDD06 \uD83D\uDD06 ................. generating numberOfAccounts: $numberOfAccounts")
         var cnt = 0
@@ -580,88 +683,42 @@ class DemoDataService {
     /**
      * this call should be run on the CustomerNode1
      */
-    fun generateInvoices(proxy: CordaRPCOps, numberOfInvoicesPerAccount: Int): String {
+    fun generateInvoices(proxy: CordaRPCOps): String {
         logger.info("\n\n\n \uD83C\uDF4E \uD83C\uDF4E ...... generateInvoices: " +
-                " Invoices to be generated for all accounts except for Network Operator \n\n")
+                " Invoices to be generated for all purchase orders \n\n")
 
-        //todo - get all customers
-        //todo - get all suppliers
-        //todo - generate purchase orders
-
-        //todo - get all purchase orders and generate an invoice from each ....
-
-        val page = proxy.vaultQuery(NetworkOperatorState::class.java)
+        val criteria = QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.UNCONSUMED)
+        val page = proxy.vaultQueryByWithPagingSpec(
+                contractStateType = PurchaseOrderState::class.java,
+                criteria = criteria,
+                paging = PageSpecification(pageNumber = 1, pageSize = 2000)
+        )
         if (page.states.isEmpty()) {
-            throw Exception("\uD83D\uDC19 Missing NetworkOperator")
+            throw Exception("\uD83D\uDC19 Missing Purchase Orders. Invoices cannot be generated")
         } else {
-            logger.info("\uD83C\uDF4E \uD83C\uDF4E We have found the network operator: "
-                    + page.states[0].state.data.account.name)
+            logger.info("\uD83C\uDF4E \uD83C\uDF4E We have found ${page.states.size} purchase orders on the network: ")
         }
-        val networkOperatorState = page.states[0].state.data
-        val suppliers = workerBeeService.getNodeAccounts(proxy)
-        if (suppliers.isEmpty()) {
-            throw Exception("\n\n\uD83D\uDC19 Invoice generation Failed. \uD83D\uDD06 \uD83D\uDD06 " +
-                    "generateInvoices could not find Accounts on the Node")
-        }
-        logger.info("\uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C " +
-                "\uD83D\uDC9C Number of Suppliers to process:  " +
-                "\uD83C\uDF3C ${suppliers.size} \uD83C\uDF3C ....")
-        logger.info("\uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C " +
-                "number of invoices to attempt to generate for each account: " +
-                "\uD83C\uDF3C $numberOfInvoicesPerAccount ")
         invoiceCnt = 0
+        for (stateAndRef in page.states) {
+            val po = stateAndRef.state.data
+            val inv = InvoiceDTO(
+                    purchaseOrder = DTOUtil.getDTO(po),
+                    amount = po.amount,
+                    customer = DTOUtil.getDTO(po.customer),
+                    supplier = DTOUtil.getDTO(po.supplier),
+                    description = po.description,
+                    invoiceId = UUID.randomUUID().toString(),
+                    dateRegistered = todaysDate(),
+                    valueAddedTax = "15.0",
+                    totalAmount = "tbd",
+                    externalId = "tbd",
+                    invoiceNumber = "" + System.currentTimeMillis() + "-" + random.nextInt(1000))
 
-        val customers = customerNodeService.getCustomers()
-        if (customers.isEmpty()) {
-            val m = "\n\n\n\n\uD83D\uDE1D\uD83D\uDE1D\uD83D\uDE1D No customers found, quiting ..."
-            logger.info(m)
-            return m
-        } else {
-            logger.info("\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40  We have customers from the node!  " +
-                    "\uD83E\uDD80 there are ${customers.size} customers. We cooking with gas! " +
-                    "\uD83D\uDC37 \uD83D\uDC37")
+            val result = workerBeeService.startInvoiceRegistrationFlow(proxy, inv)
+            invoiceCnt++
+            logger.info("\n\n\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E Invoice generated from PO on Corda ledger: ${gson.toJson(result)}")
         }
 
-        for (supplier in suppliers) {
-            if (supplier.identifier == networkOperatorState.account.identifier.id.toString()) {
-                logger.info("\uD83D\uDD35 \uD83D\uDD35  \uD83D\uDD35 \uD83D\uDD35" +
-                        "Invoice generation ignored for the Network Operator .............. "
-                        + networkOperatorState.account.name)
-                continue
-            }
-            val filteredCustomers: MutableMap<String, AccountInfoDTO> = mutableMapOf()
-            for (c in customers) {
-                val x = random.nextInt(100)
-                if (x < 50) {
-                    filteredCustomers[c.identifier] = c;
-                }
-            }
-
-            val mCustomers = filteredCustomers.values.toMutableList()
-            if (mCustomers.isEmpty()) {
-                logger.info("\n\n\n\uD83D\uDD35 \uD83D\uDD35  \uD83D\uDD35 \uD83D\uDD35" +
-                        "Random customer list is empty; trying this shit again .............. ")
-                generateInvoices(proxy, numberOfInvoicesPerAccount)
-            }
-            logger.info("\n\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35  " +
-                    "${supplier.name} is about to generate invoices for " +
-                    "${mCustomers.size} customers for ${supplier.name}\n\n")
-            for (customer in mCustomers) {
-                logger.info("\n\n\n\uD83C\uDF50 \uD83C\uDF50 Generating invoices for Customer: " +
-                        "${customer.name} \uD83E\uDDE9 Supplier: ${supplier.name}  \uD83E\uDDE9 ........")
-                cal.set(2020, 6, 1)
-                for (x in 0..numberOfInvoicesPerAccount) {
-                    try {
-                        startInvoiceFlow(proxy, customer, supplier, DateTime(cal.time))
-                        cal.add(Calendar.MONTH, 1)
-                    } catch (e: Exception) {
-                        logger.error("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 " +
-                                "Invoice failed to generate for supplier: ${gson.toJson(supplier)}", e)
-                    }
-                }
-            }
-        }
-        demoSummary.numberOfInvoices = invoiceCnt
         val msh = "\n\n\n\uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A :: " +
                 "generateInvoices complete. Total Invoices generated on Node: " +
                 "\uD83D\uDC9C $invoiceCnt \uD83D\uDC9C\n\n\n"
@@ -669,7 +726,7 @@ class DemoDataService {
         return msh;
     }
 
-    private fun startInvoiceFlow(proxy: CordaRPCOps, customer: AccountInfoDTO,
+     fun startInvoiceFlow(proxy: CordaRPCOps, customer: AccountInfoDTO,
                                  supplier: AccountInfoDTO, date: DateTime) {
         logger.info("\n\n...... ........... .........  \uD83D\uDD35 \uD83D\uDD35 " +
                 "startInvoiceFlow: \uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C " +

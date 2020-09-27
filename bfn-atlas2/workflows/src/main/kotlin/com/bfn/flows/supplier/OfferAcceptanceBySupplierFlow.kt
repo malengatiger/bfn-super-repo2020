@@ -12,6 +12,7 @@ import com.r3.corda.lib.tokens.workflows.utilities.toParty
 import com.template.InvoiceOfferContract
 import net.corda.core.flows.*
 import net.corda.core.identity.AnonymousParty
+import net.corda.core.identity.Party
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import org.slf4j.LoggerFactory
@@ -68,9 +69,9 @@ class OfferAcceptanceBySupplierFlow(
         val command = InvoiceOfferContract.AcceptOffer()
         val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities[0])
 
-        val supplierParty = subFlow(RequestKeyForAccount(acceptedOffer.supplier))
-        val customerParty = subFlow(RequestKeyForAccount(acceptedOffer.customer))
-        val investorParty = subFlow(RequestKeyForAccount(acceptedOffer.investor))
+        val supplierParty = acceptedOffer.supplier
+        val customerParty = acceptedOffer.customer
+        val investorParty = acceptedOffer.investor
 
         logger.info("\uD83C\uDF1E Adding ${allOffersByInvoice.size} offers to transaction inputState  \uD83C\uDF1E")
         //consume all outstanding offers and replace with accepted offer
@@ -79,40 +80,51 @@ class OfferAcceptanceBySupplierFlow(
         }
         txBuilder.addInputState(invoiceState)
         txBuilder.addCommand(command, mutableListOf(
-                supplierParty.owningKey,
-                customerParty.owningKey,
-                investorParty.owningKey))
+                supplierParty.host.owningKey,
+                customerParty.host.owningKey,
+                investorParty.host.owningKey))
         txBuilder.addOutputState(acceptedOffer)
 
         txBuilder.verify(serviceHub)
         val signedTx = serviceHub.signInitialTransaction(txBuilder)
-        val parties = mutableListOf(
-                supplierParty,
-                customerParty,
-                investorParty)
 
-        val signedTxFinal = processAcceptance(parties = parties, signedTx = signedTx)
+        val signedTxFinal = processAcceptance(
+                customer = customerParty.host,
+                supplier = supplierParty.host,
+                investor = investorParty.host,
+                signedTx = signedTx,
+                offer = acceptedOffer)
 
         reportToRegulator(signedTxFinal)
-        logger.info("\uD83D\uDC9C \uD83D\uDC9C Offer accepted: \uD83C\uDF1D investor: ${acceptedOffer.investor.name} supplier: ${acceptedOffer.supplier.name} " +
-                "customer: ${acceptedOffer.customer.name} Offer Amt: ${acceptedOffer.offerAmount} " +
-                "Original AmT: ${acceptedOffer.originalAmount} discount: ${acceptedOffer.discount}% \uD83C\uDF1D ")
+        logger.info("\uD83D\uDC9C \uD83D\uDC9C Offer accepted: \uD83C\uDF1D " +
+                "investor: ${acceptedOffer.investor.name} " +
+                "supplier: ${acceptedOffer.supplier.name} " +
+                "customer: ${acceptedOffer.customer.name} " +
+                "Offer Amt: ${acceptedOffer.offerAmount} " +
+                "Original AmT: ${acceptedOffer.originalAmount} " +
+                "discount: ${acceptedOffer.discount}% \uD83C\uDF1D ")
 
         return acceptedOffer
     }
 
     @Suspendable
     private fun processAcceptance(
-            parties: List<AnonymousParty>,
+            offer: InvoiceOfferState,
+            customer: Party,
+            supplier: Party,
+            investor: Party,
             signedTx: SignedTransaction): SignedTransaction {
         val flowSessions: MutableList<FlowSession> = mutableListOf()
-        logger.info("process offer and finalize acceptance: \uD83C\uDF1D " +
-                "${parties.size} parties in this thing ...\uD83C\uDF1D ")
 
-        parties.forEach() {
-            if (it.toParty(serviceHub).name.toString() != serviceHub.ourIdentity.name.toString()) {
-                flowSessions.add(initiateFlow(it))
-            }
+        val mName = serviceHub.ourIdentity.name.organisation
+        if (offer.customer.host.name.organisation!= mName) {
+            flowSessions.add(initiateFlow(customer))
+        }
+        if (offer.supplier.host.name.organisation!= mName) {
+            flowSessions.add(initiateFlow(supplier))
+        }
+        if (offer.investor.host.name.organisation!= mName) {
+            flowSessions.add(initiateFlow(investor))
         }
 
         return if (flowSessions.isEmpty()) {

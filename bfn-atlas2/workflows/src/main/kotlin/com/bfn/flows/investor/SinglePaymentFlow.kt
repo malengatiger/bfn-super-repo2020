@@ -12,6 +12,7 @@ import com.r3.corda.lib.tokens.workflows.utilities.toParty
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
 import net.corda.core.identity.AnonymousParty
+import net.corda.core.identity.Party
 import net.corda.core.transactions.TransactionBuilder
 import org.slf4j.LoggerFactory
 import java.security.PublicKey
@@ -45,9 +46,9 @@ class SinglePaymentFlow(private val offerId: String,
         val command = SupplierPaymentContract.Pay()
         val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
 
-        val supplierParty =  subFlow(RequestKeyForAccount(acceptedOffer.state.data.supplier))
-        val customerParty =  subFlow(RequestKeyForAccount(acceptedOffer.state.data.customer))
-        val investorParty =  subFlow(RequestKeyForAccount(acceptedOffer.state.data.investor))
+        val supplierParty =  acceptedOffer.state.data.supplier
+        val customerParty =  acceptedOffer.state.data.customer
+        val investorParty =  acceptedOffer.state.data.investor
 
         val supplierProfile = serviceHub.cordaService(ProfileFinderService::class.java)
                 .findSupplierProfile(acceptedOffer.state.data.supplier.identifier.id.toString())
@@ -77,16 +78,16 @@ class SinglePaymentFlow(private val offerId: String,
                 supplierPayment = payment,
                 stellarAnchorUrl = stellarAnchorUrl))
         if (result.statusCode == 200) {
-            return processOKPayment(investorParty, supplierParty,
-                    customerParty, txBuilder, command, acceptedOffer, payment)
+            return processOKPayment(investorParty.host, supplierParty.host,
+                    customerParty.host, txBuilder, command, acceptedOffer, payment)
         } else {
             throw Exception("Payment failed, statusCode: ${result.statusCode} text: ${result.text}")
         }
     }
 
-    private fun processOKPayment(investorParty: AnonymousParty,
-                                 supplierParty: AnonymousParty,
-                                 customerParty: AnonymousParty,
+    private fun processOKPayment(investorParty: Party,
+                                 supplierParty: Party,
+                                 customerParty: Party,
                                  txBuilder: TransactionBuilder,
                                  command: SupplierPaymentContract.Pay,
                                  acceptedOffer: StateAndRef<InvoiceOfferState>,
@@ -107,17 +108,17 @@ class SinglePaymentFlow(private val offerId: String,
         val tx = serviceHub.signInitialTransaction(txBuilder)
         val sessions: MutableList<FlowSession> = mutableListOf()
         val thisParty = serviceHub.myInfo.legalIdentities[0]
-        if (supplierParty.toParty(serviceHub).name.organisation !=
+        if (acceptedOffer.state.data.supplier.host.name.organisation !=
                 thisParty.name.organisation) {
             val session = initiateFlow(supplierParty)
             sessions.add(session)
         }
-        if (investorParty.toParty(serviceHub).name.organisation !=
+        if (acceptedOffer.state.data.investor.host.name.organisation !=
                 thisParty.name.organisation) {
             val session = initiateFlow(investorParty)
             sessions.add(session)
         }
-        if (customerParty.toParty(serviceHub).name.organisation !=
+        if (acceptedOffer.state.data.customer.host.name.organisation !=
                 thisParty.name.organisation) {
             val session = initiateFlow(customerParty)
             sessions.add(session)

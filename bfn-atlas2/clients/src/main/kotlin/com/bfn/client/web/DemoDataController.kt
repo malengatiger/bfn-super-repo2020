@@ -74,14 +74,27 @@ class DemoDataController(rpc: NodeRPCConnection) {
                  "    \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
         return result
     }
+    @GetMapping(value = ["/generatePurchaseOrders"], produces = [MediaType.TEXT_PLAIN_VALUE])
+    @Throws(Exception::class)
+    private fun generatePurchaseOrders(): String? {
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                "starting DemoDataController: generatePurchaseOrders " +
+                "... \uD83C\uDF4F ")
+
+        val result = demoDataService.generatePurchaseOrders(proxy)
+        logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                "DemoDataController:generatePurchaseOrders result: $result " +
+                "  \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
+        return result
+    }
     @GetMapping(value = ["/generateInvoices"], produces = [MediaType.TEXT_PLAIN_VALUE])
     @Throws(Exception::class)
-    private fun generateInvoices(count:Int): String? {
+    private fun generateInvoices(): String? {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
                 "starting DemoDataController: generateInvoices " +
                 "... \uD83C\uDF4F ")
 
-        val result = demoDataService.generateInvoices(proxy, numberOfInvoicesPerAccount = count)
+        val result = demoDataService.generateInvoices(proxy)
         logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
                 "DemoDataController:generateInvoices result: " +
                 "    \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
