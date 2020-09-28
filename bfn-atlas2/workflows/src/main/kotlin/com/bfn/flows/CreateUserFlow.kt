@@ -48,16 +48,22 @@ class CreateUserFlow(
         val me = serviceHub.myInfo.legalIdentities[0]
         val nodes = serviceHub.networkMapCache.allNodes
         for (node in nodes) {
-            if (node.legalIdentities[0].name.toString() != me.name.toString()) {
-                val userStateAndRef = serviceHub.cordaService(UserFinderService::class.java)
-                        .findUserStateAndRef(accountId = user.accountInfo.identifier.id.toString())
-                if (userStateAndRef != null) {
-                    subFlow(ShareStateAndSyncAccounts(
-                            state = userStateAndRef,
-                            partyToShareWith = node.legalIdentities[0]))
-                    logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
-                            "User ${user.accountInfo.name} " +
-                            "has been shared with party ${node.legalIdentities[0].name} \uD83E\uDDE9")
+            if (node.legalIdentities[0].name.toString().contains("Notary") ||
+                    node.legalIdentities[0].name.toString().contains("Regulator")) {
+                logger.info("\uD83D\uDD35 No need to share state with this node: " +
+                        "${node.legalIdentities[0].name}")
+            } else {
+                if (node.legalIdentities[0].name.toString() != me.name.toString()) {
+                    val userStateAndRef = serviceHub.cordaService(UserFinderService::class.java)
+                            .findUserStateAndRef(accountId = user.accountInfo.identifier.id.toString())
+                    if (userStateAndRef != null) {
+                        subFlow(ShareStateAndSyncAccounts(
+                                state = userStateAndRef,
+                                partyToShareWith = node.legalIdentities[0]))
+                        logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
+                                "User ${user.accountInfo.name} " +
+                                "has been shared with party ${node.legalIdentities[0].name} \uD83E\uDDE9")
+                    }
                 }
             }
         }

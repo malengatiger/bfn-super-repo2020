@@ -1,14 +1,12 @@
-package com.bfn.flows.services
+package com.bfn.flows.operator
 
 import co.paralleluniverse.fibers.Suspendable
-import com.bfn.contractstates.contracts.SupplierPaymentContract
 import com.bfn.contractstates.states.SupplierPaymentState
+import com.bfn.flows.services.StellarAnchorService
 import khttp.responses.Response
 import net.corda.core.flows.FlowExternalOperation
 import net.corda.core.flows.FlowLogic
-import net.corda.core.transactions.TransactionBuilder
 import org.slf4j.LoggerFactory
-import java.util.*
 
 class StellarPaymentFlow (
         private val supplierPayment: SupplierPaymentState,

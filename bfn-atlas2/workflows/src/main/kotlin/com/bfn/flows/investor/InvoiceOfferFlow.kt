@@ -129,7 +129,7 @@ class InvoiceOfferFlow(
             return
         }
         val offerStateAndRef = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
-                .findInvestorOffer(offerId = invoiceOfferState.offerId)
+                .findInvoiceOffer(offerId = invoiceOfferState.offerId)
         if (offerStateAndRef != null) {
             subFlow(ShareStateAndSyncAccounts(
                     state = offerStateAndRef,

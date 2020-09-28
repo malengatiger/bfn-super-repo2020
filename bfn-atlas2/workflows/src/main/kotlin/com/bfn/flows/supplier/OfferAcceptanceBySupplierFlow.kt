@@ -6,12 +6,9 @@ import com.bfn.flows.regulator.ReportToRegulatorFlow
 import com.bfn.flows.services.InvoiceFinderService
 import com.bfn.flows.services.InvoiceOfferFinderService
 import com.bfn.flows.todaysDate
-import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.ourIdentity
-import com.r3.corda.lib.tokens.workflows.utilities.toParty
 import com.template.InvoiceOfferContract
 import net.corda.core.flows.*
-import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
@@ -19,7 +16,7 @@ import org.slf4j.LoggerFactory
 
 
 /**
- * Supplier accepts offer made by casual Investor
+ * Supplier accepts offer made by Investor
  */
 @InitiatingFlow
 @StartableByRPC
@@ -31,13 +28,13 @@ class OfferAcceptanceBySupplierFlow(
         Companion.logger.info("$nn OfferAcceptanceBySupplierFlow started ..offerId: \uD83C\uDF4E $offerId \uD83D\uDE21 ")
 
         val offerFinderService = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
-        val invoiceOfferState = offerFinderService.findInvestorOffer(offerId)
+        val invoiceOfferState = offerFinderService.findInvoiceOffer(offerId)
                 ?: throw IllegalArgumentException("Offer not found")
 
         if (invoiceOfferState.state.data.accepted) {
             val msg = "\uD83D\uDE21 Offer has already been accepted \uD83D\uDE21 "
             logger.warn(msg)
-             throw IllegalArgumentException("Offer already accepted")
+            throw IllegalArgumentException("Offer already accepted")
         }
 
         val allOffersByInvoice = offerFinderService.findOffersByInvoice(
@@ -106,7 +103,7 @@ class OfferAcceptanceBySupplierFlow(
 
         return acceptedOffer
     }
-
+//todo - 🍎 🍎 🍎 resolve the Party vs AnonymousParty thing with Accounts SDK - keys fail when trying RequestAccountKey thing ... 🍎
     @Suspendable
     private fun processAcceptance(
             offer: InvoiceOfferState,
@@ -134,7 +131,6 @@ class OfferAcceptanceBySupplierFlow(
         } else {
             Companion.logger.info("$nn Participants are LOCAL/REMOTE ... \uD83D\uDD06")
             collectSignaturesAndFinalize(signedTx, flowSessions)
-
         }
     }
 
@@ -145,12 +141,12 @@ class OfferAcceptanceBySupplierFlow(
 
         val signedTransaction = subFlow(CollectSignaturesFlow(
                 partiallySignedTx = signedTx, sessionsToCollectFrom = sessions))
-        logger.info("$nn Signatures collected OK!  \uD83D\uDE21 \uD83D\uDE21 " +
+        logger.info("$nn OfferAcceptanceBySupplierFlow: Signatures collected OK!  \uD83D\uDE21 \uD83D\uDE21 " +
                 ".... will call FinalityFlow ... \uD83C\uDF3A \uD83C\uDF3A ")
         val mSignedTransactionDone = subFlow(
                 FinalityFlow(signedTransaction, sessions))
 
-        logger.info("$xx MULTIPLE NODE(S): FinalityFlow has been executed ... $xx ")
+        logger.info("$xx OfferAcceptanceBySupplierFlow: MULTIPLE NODE(S): FinalityFlow has been executed ... $xx ")
 
         return mSignedTransactionDone
     }

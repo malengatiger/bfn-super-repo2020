@@ -25,7 +25,7 @@ class PurchaseOrderFinderService(private val serviceHub: AppServiceHub) : Single
         var pageNumber = 1
         val states = mutableListOf<StateAndRef<PurchaseOrderState>>()
         do {
-            val pageSpec = PageSpecification(pageSize = 200, pageNumber = pageNumber)
+            val pageSpec = PageSpecification(pageSize = pageSize, pageNumber = pageNumber)
             val page = serviceHub.vaultService.queryBy<PurchaseOrderState>(QueryCriteria.VaultQueryCriteria(), pageSpec)
             for (po in page.states) {
                 if (po.state.data.purchaseOrderId == purchaseOrderId) {
@@ -39,14 +39,13 @@ class PurchaseOrderFinderService(private val serviceHub: AppServiceHub) : Single
         logger.info("Searched ${states.size} purchaseOrders and did not find $purchaseOrderId")
         return null
     }
-
     @Suspendable
     fun findPurchaseOrdersForSupplier(supplierId: String): List<StateAndRef<PurchaseOrderState>> {
 
         var pageNumber = 1
         val states = mutableListOf<StateAndRef<PurchaseOrderState>>()
         do {
-            val pageSpec = PageSpecification(pageSize = 200, pageNumber = pageNumber)
+            val pageSpec = PageSpecification(pageSize = pageSize, pageNumber = pageNumber)
             val page = serviceHub.vaultService.queryBy<PurchaseOrderState>(QueryCriteria.VaultQueryCriteria(), pageSpec)
             for (po in page.states) {
                 if (po.state.data.supplier.identifier.id.toString() == supplierId) {

@@ -35,8 +35,8 @@ class SupplierBeeService {
         val cordaFuture = proxy.startFlowDynamic(
                 FindBestOfferForInvoiceFlow::class.java, accountId, invoiceId, acceptBestOffer)
                 .returnValue
-        val offer: StateAndRef<InvoiceOfferState> = cordaFuture.get() ?: return null
-        val dto = DTOUtil.getDTO(offer.state.data)
+        val offer: InvoiceOfferState = cordaFuture.get() ?: return null
+        val dto = DTOUtil.getDTO(offer)
         logger.info("✅ ✅ ✅ ✅ \uD83C\uDF4E Best offer selected: " +
                 "\uD83C\uDF88 ${GSON.toJson(dto)} \uD83C\uDF88")
         return dto

@@ -4,7 +4,6 @@ import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.contracts.InvestorProfileContract
 import com.bfn.contractstates.states.InvestorProfileState
 import com.bfn.flows.services.ProfileFinderService
-import com.bfn.flows.services.UserFinderService
 import com.r3.corda.lib.accounts.workflows.flows.ShareStateAndSyncAccounts
 import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.accounts.workflows.ourIdentity
@@ -25,7 +24,7 @@ class InvestorProfileFlow(private val investorProfile: InvestorProfileState) : F
     @Suspendable
     override fun call(): SignedTransaction {
         Companion.logger.info("\uD83D\uDE39 \uD83D\uDE39 \uD83D\uDE39  \uD83C\uDFC8  " +
-                "InvestorProfileFlow started, accountId: ${investorProfile.account.identifier} " )
+                "InvestorProfileFlow started, accountId: ${investorProfile.account.identifier} ")
         val command = InvestorProfileContract.CreateProfile()
         val account = serviceHub.accountService.accountInfo(
                 UUID.fromString(investorProfile.account.identifier.toString()))
@@ -54,26 +53,32 @@ class InvestorProfileFlow(private val investorProfile: InvestorProfileState) : F
         shareState()
         return signedTx
     }
+
     @Suspendable
     private fun shareState() {
         logger.info("Sharing InvestorProfile state with all nodes in network")
         val me = serviceHub.myInfo.legalIdentities[0]
         val nodes = serviceHub.networkMapCache.allNodes
         for (node in nodes) {
-            if (node.legalIdentities[0].name.toString() != me.name.toString()) {
-                val userStateAndRef = serviceHub.cordaService(ProfileFinderService::class.java)
-                        .findInvestorProfile(investorAccountId = investorProfile.account.identifier.id.toString())
-                if (userStateAndRef != null) {
-                    subFlow(ShareStateAndSyncAccounts(
-                            state = userStateAndRef,
-                            partyToShareWith = node.legalIdentities[0]))
-                    logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
-                            "InvestorProfile ${investorProfile.account.name} " +
-                            "has been shared with party ${node.legalIdentities[0].name} \uD83E\uDDE9")
+            if (node.legalIdentities[0].name.toString().contains("Notary") ||
+                    node.legalIdentities[0].name.toString().contains("Regulator")) {
+                logger.info("\uD83D\uDD35 No need to share state with this node: " +
+                        "${node.legalIdentities[0].name}")
+            } else {
+                if (node.legalIdentities[0].name.toString() != me.name.toString()) {
+                    val userStateAndRef = serviceHub.cordaService(ProfileFinderService::class.java)
+                            .findInvestorProfile(investorAccountId = investorProfile.account.identifier.id.toString())
+                    if (userStateAndRef != null) {
+                        subFlow(ShareStateAndSyncAccounts(
+                                state = userStateAndRef,
+                                partyToShareWith = node.legalIdentities[0]))
+                        logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
+                                "InvestorProfile ${investorProfile.account.name} " +
+                                "has been shared with party ${node.legalIdentities[0].name} \uD83E\uDDE9")
+                    }
                 }
             }
         }
-
 
     }
 

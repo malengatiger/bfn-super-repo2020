@@ -5,6 +5,7 @@ import com.bfn.contractstates.contracts.SupplierPaymentContract
 import com.bfn.contractstates.states.InvoiceOfferState
 import com.bfn.contractstates.states.PaymentRequestState
 import com.bfn.contractstates.states.SupplierPaymentState
+import com.bfn.flows.operator.StellarPaymentFlow
 import com.bfn.flows.services.*
 import com.bfn.flows.todaysDate
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
@@ -29,7 +30,7 @@ class SinglePaymentFlow(private val offerId: String,
         Companion.logger.info("$pp SinglePaymentFlow started ... $pp")
 
         val service = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
-        val acceptedOffer = service.findInvestorOffer(offerId) ?:
+        val acceptedOffer = service.findInvoiceOffer(offerId) ?:
             throw IllegalArgumentException("Accepted offer not found")
         if (!acceptedOffer.state.data.accepted) {
             throw IllegalArgumentException("Offer not accepted by Supplier")

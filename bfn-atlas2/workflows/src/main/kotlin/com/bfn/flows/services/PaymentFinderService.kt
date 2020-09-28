@@ -1,6 +1,7 @@
 package com.bfn.flows.services
 
 import co.paralleluniverse.fibers.Suspendable
+import com.bfn.contractstates.states.InvoiceOfferState
 import com.bfn.contractstates.states.NetworkOperatorState
 import com.bfn.contractstates.states.SupplierPaymentState
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
@@ -9,6 +10,8 @@ import net.corda.core.identity.Party
 import net.corda.core.node.AppServiceHub
 import net.corda.core.node.services.CordaService
 import net.corda.core.node.services.Vault
+import net.corda.core.node.services.queryBy
+import net.corda.core.node.services.vault.DEFAULT_PAGE_NUM
 import net.corda.core.node.services.vault.PageSpecification
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.serialization.SingletonSerializeAsToken
@@ -28,8 +31,20 @@ class PaymentFinderService(private val serviceHub: AppServiceHub) : SingletonSer
      fun findPaymentForInvoice(invoiceId: String): StateAndRef<SupplierPaymentState>? {
 
         var paymentState: StateAndRef<SupplierPaymentState>? = null
-        val list = getAllPaymentStateAndRefs()
-        list.forEach() {
+        var pageNumber = DEFAULT_PAGE_NUM
+        val states = mutableListOf<StateAndRef<SupplierPaymentState>>()
+        do {
+            val pageSpec = PageSpecification(pageNumber = pageNumber, pageSize = pageSize)
+            val results = serviceHub.vaultService
+                    .queryBy<SupplierPaymentState>(QueryCriteria.VaultQueryCriteria(
+                            status = Vault.StateStatus.ALL
+                    ), pageSpec)
+            states.addAll(results.states)
+            pageNumber++
+        } while ((pageSpec.pageSize * (pageNumber - 1)) <= results.totalStatesAvailable)
+
+
+        states.forEach() {
             if (invoiceId == it.state.data.acceptedOffer.invoiceId.toString()) {
                 paymentState = it
             }
@@ -50,26 +65,26 @@ class PaymentFinderService(private val serviceHub: AppServiceHub) : SingletonSer
 
     @Suspendable
     fun findPaymentById(supplierPaymentId: String): StateAndRef<SupplierPaymentState>? {
+        //todo - 🍎 🍎 🍎 refactor this query : this is NOT scalable, check other similar queries 🍎 🍎 🍎
+        var pageNumber = DEFAULT_PAGE_NUM
+        val states = mutableListOf<StateAndRef<SupplierPaymentState>>()
+        do {
+            val pageSpec = PageSpecification(pageNumber = pageNumber, pageSize = pageSize)
+            val results = serviceHub.vaultService
+                    .queryBy<SupplierPaymentState>(QueryCriteria.VaultQueryCriteria(
+                            status = Vault.StateStatus.ALL
+                    ), pageSpec)
+            states.addAll(results.states)
+            pageNumber++
+        } while ((pageSpec.pageSize * (pageNumber - 1)) <= results.totalStatesAvailable)
 
-        var paymentState: StateAndRef<SupplierPaymentState>? = null
-//        val list = getAllPaymentStateAndRefs()
-//        list.forEach() {
-//            if (invoiceId == it.state.data.acceptedOffer.invoiceId.toString()) {
-//                paymentState = it
-//            }
-//        }
-//
-//        if (paymentState == null) {
-//            logger.warn("findPaymentForInvoice :  " +
-//                    "\uD83D\uDE3C \uD83D\uDE3C  \uD83D\uDE3C unconsumed SupplierPayment NOT FOUND: " +
-//                    "\uD83C\uDF4E $invoiceId \uD83C\uDF4E")
-//        } else {
-//            logger.warn("findPaymentForInvoice :  " +
-//                    "\uD83D\uDE3C " +
-//                    "unconsumed SupplierPayment FOUND: \uD83C\uDF4E $invoiceId \uD83C\uDF4E")
-//        }
+        states.forEach() {
+            if (it.state.data.supplierPaymentId == supplierPaymentId) {
+               return it
+            }
+        }
 
-        return paymentState
+        return null
     }
     @Suspendable
     @Throws(Exception::class)

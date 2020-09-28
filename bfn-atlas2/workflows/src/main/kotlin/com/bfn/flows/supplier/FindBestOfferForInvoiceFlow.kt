@@ -2,6 +2,7 @@ package com.bfn.flows.supplier
 
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.states.InvoiceOfferState
+import com.bfn.flows.services.InvoiceOfferFinderService
 import com.bfn.flows.services.ProfileFinderService
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.contracts.StateAndRef
@@ -11,25 +12,29 @@ import net.corda.core.node.services.Vault.StateStatus
 import net.corda.core.node.services.vault.PageSpecification
 import net.corda.core.node.services.vault.QueryCriteria.VaultQueryCriteria
 import org.slf4j.LoggerFactory
+import java.math.BigDecimal
 import java.util.*
 import kotlin.IllegalArgumentException
 
-
+/**
+ * Supplier finds the best offer for their invoice and optionally accepts it when found
+ */
 @InitiatingFlow
 @StartableByRPC
 @SchedulableFlow
 class FindBestOfferForInvoiceFlow(private val supplierAccountId: String,
                                   private val invoiceId: String,
-                                  private val acceptBestOffer: Boolean) : FlowLogic<StateAndRef<InvoiceOfferState>?>() {
+                                  private val acceptBestOffer: Boolean) : FlowLogic<InvoiceOfferState?>() {
 
     @Suspendable
     @Throws(FlowException::class)
-    override fun call(): StateAndRef<InvoiceOfferState>? {
+    override fun call(): InvoiceOfferState? {
         Companion.logger.info("\uD83E\uDD1F \uD83E\uDD1F \uD83E\uDD1F \uD83E\uDD1F \uD83E\uDD1F \uD83E\uDD1F \uD83E\uDD1F \uD83E\uDD1F " +
                 "... \uD83D\uDE3C \uD83D\uDE3C FindBestOfferForInvoiceFlow call started ... \uD83D\uDE3C \uD83D\uDE3C ")
         val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
         val supplierAccount = accountService.accountInfo(UUID.fromString(supplierAccountId))!!.state.data
-        Companion.logger.info(" \uD83C\uDF00 \uD83C\uDF00 ${supplierAccount.name} selecting best offer for invoice: \uD83D\uDE3C $invoiceId...")
+        Companion.logger.info(" \uD83C\uDF00 \uD83C\uDF00 ${supplierAccount.name} " +
+                "selecting best offer for invoice: \uD83D\uDE3C $invoiceId... supplier: ${supplierAccount.name}")
 
         val pair = filterOffersByProfile()
         if (pair == null) {
@@ -49,45 +54,23 @@ class FindBestOfferForInvoiceFlow(private val supplierAccountId: String,
                 "Yebo! Best Offer selected: \uD83C\uDF6F \uD83C\uDF6F ${selected.state.data.offerAmount} " +
                 " supplier : ${selected.state.data.supplier.name}  ${selected.state.data.supplier.host} \uD83D\uDC4C " +
                 " investor: ${selected.state.data.investor.name} ${selected.state.data.investor.host} \uD83E\uDDE9 ")
-        //accept the best offer found
+
         if (acceptBestOffer) {
-            subFlow(OfferAcceptanceBySupplierFlow(selected.state.data.offerId))
+            // 🔵 🔵 accept the best offer found
+            val offerState = subFlow(OfferAcceptanceBySupplierFlow(selected.state.data.offerId))
+            logger.info(" \uD83D\uDD35 \uD83D\uDD35 Best InvoiceOffer has been selected and accepted")
+            return offerState
         }
 
-        return selected
-    }
-
-    private val pageSize: Int = 2000
-    @Suspendable
-    fun query(pageNumber: Int): Vault.Page<InvoiceOfferState> {
-        val criteria = VaultQueryCriteria(
-                status = StateStatus.UNCONSUMED)
-
-        return serviceHub.vaultService.queryBy(
-                contractStateType = InvoiceOfferState::class.java,
-                paging = PageSpecification(pageNumber = pageNumber, pageSize = pageSize),
-                criteria = criteria)
+        return selected.state.data
     }
 
     @Suspendable
     private fun filterOffersByProfile(): Pair<MutableList<StateAndRef<InvoiceOfferState>>, StateAndRef<InvoiceOfferState>>? {
-        val offers: MutableList<StateAndRef<InvoiceOfferState>> = mutableListOf()
 
-        var pageNumber = 1
-        val page: Vault.Page<InvoiceOfferState> = query(pageNumber)
-        addToList(page = page, list = offers)
+        val offerFinder = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
+        val offers = offerFinder.findOffersByInvoice(invoiceId = invoiceId)
 
-        val remainder: Int = (page.totalStatesAvailable % pageSize).toInt()
-        var pageCnt: Int = (page.totalStatesAvailable / pageSize).toInt()
-        if (remainder > 0) pageCnt++
-
-        if (pageCnt > 1) {
-            while (pageNumber < pageCnt) {
-                pageNumber++
-                val pageX = query(pageNumber)
-                addToList(pageX, offers)
-            }
-        }
         Companion.logger.info(" \uD83C\uDFC0 Offers found for the invoice:  \uD83C\uDFC0 " +
                 "${offers.size} offers  \uD83C\uDFC0 ")
         if (offers.isEmpty()) {
@@ -102,11 +85,13 @@ class FindBestOfferForInvoiceFlow(private val supplierAccountId: String,
             throw IllegalArgumentException("Supplier Profile not found")
         } else {
             Companion.logger.info("\uD83C\uDF21 \uD83C\uDF21 \uD83C\uDF21 \uD83C\uDF21 " +
-                    "Filtering ${offers.size} offers based on profile: \uD83C\uDFC0 maxDiscount: ${profile.state.data.maximumDiscount}")
+                    "Filtering ${offers.size} offers based on profile: \uD83C\uDFC0 " +
+                    "maxDiscount: ${profile.state.data.maximumDiscount}")
             val filteredList: MutableList<StateAndRef<InvoiceOfferState>> = mutableListOf()
             offers.forEach() {
-                if (it.state.data.discount < profile.state.data.maximumDiscount
-                        || it.state.data.discount == profile.state.data.maximumDiscount) {
+                val disc = BigDecimal(it.state.data.discount)
+                val max = BigDecimal(profile.state.data.maximumDiscount)
+                if (disc <= max) {
                     filteredList.add(it)
                 } else {
                     numberInvalid++
@@ -135,25 +120,16 @@ class FindBestOfferForInvoiceFlow(private val supplierAccountId: String,
         if (similarDiscount.size == 1) {
             return similarDiscount[0]
         }
-        //todo - there are multiple investors with same offer, select by some parameter; currently random offer is selected
+        //todo - 🍀 🍀 🍀 if there are multiple investors with same offer, select by some parameter; currently random offer is selected 🍀 🍀 🍀
         val index = Random(Date().time).nextInt(similarDiscount.size - 1)
         return similarDiscount[index]
     }
+    @Suspendable
     private fun log(sorted: List<StateAndRef<InvoiceOfferState>>, selected: StateAndRef<InvoiceOfferState>) {
         logger.info("\uD83E\uDDE9 InvoiceOffers found for invoice:  \uD83C\uDF00 ${sorted.size}  selected: " +
                 "\uD83E\uDDE9 ${selected.state.data.offerAmount}")
         logger.info("\uD83E\uDDE9 Best InvoiceOffer found: investor: ${selected.state.data.investor.name}  " +
                 "\uD83E\uDDE9 ${selected.state.data.offerAmount}")
-    }
-
-    @Suspendable
-    private fun addToList(page: Vault.Page<InvoiceOfferState>, list: MutableList<StateAndRef<InvoiceOfferState>>) {
-        page.states.forEach() {
-            if (it.state.data.supplier.identifier.id.toString() == supplierAccountId
-                    && it.state.data.invoiceId.toString() == invoiceId) {
-                list.add(it)
-            }
-        }
     }
 
     companion object {

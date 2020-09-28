@@ -4,11 +4,14 @@ import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.states.InvoiceOfferState
 import com.bfn.contractstates.states.CustomerProfileState
 import com.bfn.contractstates.states.NetworkOperatorState
+import com.bfn.contractstates.states.UserState
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.node.AppServiceHub
 import net.corda.core.node.services.CordaService
 import net.corda.core.node.services.Vault
+import net.corda.core.node.services.queryBy
+import net.corda.core.node.services.vault.DEFAULT_PAGE_NUM
 import net.corda.core.node.services.vault.PageSpecification
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.serialization.SingletonSerializeAsToken
@@ -31,8 +34,19 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
     @Suspendable
     fun getOffersForSupplier(supplierId: String): List<InvoiceOfferState> {
         val list:  MutableList<InvoiceOfferState> = mutableListOf()
-        val allOffers = getOffersOnNode()
-        allOffers.forEach() {
+        var pageNumber = DEFAULT_PAGE_NUM
+        val states = mutableListOf<StateAndRef<InvoiceOfferState>>()
+        do {
+            val pageSpec = PageSpecification(pageNumber = pageNumber, pageSize = pageSize)
+            val results = serviceHub.vaultService
+                    .queryBy<InvoiceOfferState>(QueryCriteria.VaultQueryCriteria(
+                            status = Vault.StateStatus.UNCONSUMED
+                    ), pageSpec)
+            states.addAll(results.states)
+            pageNumber++
+        } while ((pageSpec.pageSize * (pageNumber - 1)) <= results.totalStatesAvailable)
+
+        states.forEach() {
             if (it.state.data.supplier.identifier.id.toString() == supplierId) {
                 list.add(it.state.data)
             }
@@ -42,39 +56,44 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
     @Suspendable
     fun getOffersForInvestor(investorId: String): List<InvoiceOfferState> {
         val list:  MutableList<InvoiceOfferState> = mutableListOf()
-        val allOffers = getOffersOnNode()
-        allOffers.forEach() {
+        var pageNumber = DEFAULT_PAGE_NUM
+        val states = mutableListOf<StateAndRef<InvoiceOfferState>>()
+        do {
+            val pageSpec = PageSpecification(pageNumber = pageNumber, pageSize = pageSize)
+            val results = serviceHub.vaultService
+                    .queryBy<InvoiceOfferState>(QueryCriteria.VaultQueryCriteria(
+                            status = Vault.StateStatus.UNCONSUMED
+                    ), pageSpec)
+            states.addAll(results.states)
+            pageNumber++
+        } while ((pageSpec.pageSize * (pageNumber - 1)) <= results.totalStatesAvailable)
+
+        states.forEach() {
             if (it.state.data.investor.identifier.id.toString() == investorId) {
                 list.add(it.state.data)
             }
         }
+
         return list
     }
+
     @Suspendable
     @Throws(Exception::class)
-    fun findAnchorOffer(invoiceId: String): StateAndRef<InvoiceOfferState>? {
-        logger.info(" \uD83D\uDC2C \uD83D\uDC2C findAnchorOffer: ... " +
-                "\uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C \uD83D\uDC2C")
-        val existingAnchor = serviceHub.vaultService.queryBy( NetworkOperatorState::class.java).states.singleOrNull()
-                ?: throw IllegalArgumentException("Anchor does not exist")
+    fun findInvoiceOffer(offerId: String): StateAndRef<InvoiceOfferState>? {
 
-        val allOffers = getOffersOnNode()
-        allOffers.forEach() {
-            if (it.state.data.invoiceId.toString() == invoiceId
-                    && it.state.data.investor.identifier.id.toString() ==
-                    existingAnchor.state.data.account.identifier.id.toString()) {
-                return it
-            }
-        }
+        var pageNumber = DEFAULT_PAGE_NUM
+        val states = mutableListOf<StateAndRef<InvoiceOfferState>>()
+        do {
+            val pageSpec = PageSpecification(pageNumber = pageNumber, pageSize = pageSize)
+            val results = serviceHub.vaultService
+                    .queryBy<InvoiceOfferState>(QueryCriteria.VaultQueryCriteria(
+                            status = Vault.StateStatus.UNCONSUMED
+                    ), pageSpec)
+            states.addAll(results.states)
+            pageNumber++
+        } while ((pageSpec.pageSize * (pageNumber - 1)) <= results.totalStatesAvailable)
 
-        return null
-    }
-    @Suspendable
-    @Throws(Exception::class)
-    fun findInvestorOffer(offerId: String): StateAndRef<InvoiceOfferState>? {
-
-        val allOffers = getOffersOnNode()
-        allOffers.forEach() {
+        states.forEach() {
             if (it.state.data.offerId == offerId) {
                 return it
             }
@@ -87,20 +106,32 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
     fun getInvestorOffersAccepted(investorId: String): List<StateAndRef<InvoiceOfferState>> {
 
         val offers:MutableList<StateAndRef<InvoiceOfferState>> = mutableListOf()
-        val allOffers = getOffersOnNode()
-        logger.info("\uD83D\uDC2C \uD83D\uDC2C allOffers: ${allOffers.size} investor offers found on node ...")
-        allOffers.forEach() {
+        var pageNumber = DEFAULT_PAGE_NUM
+        val states = mutableListOf<StateAndRef<InvoiceOfferState>>()
+        do {
+            val pageSpec = PageSpecification(pageNumber = pageNumber, pageSize = pageSize)
+            val results = serviceHub.vaultService
+                    .queryBy<InvoiceOfferState>(QueryCriteria.VaultQueryCriteria(
+                            status = Vault.StateStatus.UNCONSUMED
+                    ), pageSpec)
+            states.addAll(results.states)
+            pageNumber++
+        } while ((pageSpec.pageSize * (pageNumber - 1)) <= results.totalStatesAvailable)
+
+        logger.info("\uD83D\uDC2C \uD83D\uDC2C allOffers: ${states.size} " +
+                "investor offers found on node ...")
+        states.forEach() {
             if (it.state.data.investor.identifier.id.toString() == investorId
                     && it.state.data.accepted) {
                     offers.add(it)
             }
 
         }
-        logger.info("\uD83D\uDC2C \uD83D\uDC2C filtered Offers: ${offers.size} " +
+        logger.info("\uD83D\uDC2C \uD83D\uDC2C accepted Offers: ${offers.size} " +
                 "investor offers found for $investorId ...")
         if (offers.isNotEmpty()) {
             logger.info("\uD83D\uDC2C \uD83D\uDC2C INVESTOR: ${offers.first().state.data.investor.name} " +
-                    "has made ${offers.size} offers")
+                    "has ${offers.size} offers accepted")
 
         }
         return offers

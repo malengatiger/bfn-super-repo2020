@@ -28,7 +28,9 @@ class UserFinderService(private val serviceHub: AppServiceHub) : SingletonSerial
         do {
             val pageSpec = PageSpecification(pageNumber = pageNumber, pageSize = pageSize)
             val results = serviceHub.vaultService
-                    .queryBy<UserState>(QueryCriteria.VaultQueryCriteria(), pageSpec)
+                    .queryBy<UserState>(QueryCriteria.VaultQueryCriteria(
+                            status = Vault.StateStatus.UNCONSUMED
+                    ), pageSpec)
             states.addAll(results.states)
             pageNumber++
         } while ((pageSpec.pageSize * (pageNumber - 1)) <= results.totalStatesAvailable)
@@ -48,7 +50,9 @@ class UserFinderService(private val serviceHub: AppServiceHub) : SingletonSerial
         do {
             val pageSpec = PageSpecification(pageNumber = pageNumber, pageSize = pageSize)
             val results = serviceHub.vaultService
-                    .queryBy<UserState>(QueryCriteria.VaultQueryCriteria(), pageSpec)
+                    .queryBy<UserState>(QueryCriteria.VaultQueryCriteria(
+                            status = Vault.StateStatus.UNCONSUMED
+                    ), pageSpec)
             states.addAll(results.states)
             pageNumber++
         } while ((pageSpec.pageSize * (pageNumber - 1)) <= results.totalStatesAvailable)

@@ -125,6 +125,7 @@ class DemoDataService {
         firebaseService.deleteCollection(BFN_CUSTOMER_PROFILES)
         firebaseService.deleteCollection(BFN_INVOICES)
         firebaseService.deleteCollection(BFN_PURCHASE_ORDERS)
+        firebaseService.deleteCollection(BFN_INVOICE_OFFERS)
 
         createCustomers(mProxy)
         generatePurchaseOrders(mProxy)
@@ -462,14 +463,14 @@ class DemoDataService {
 
     private val em1 = "\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 ";
     private var nodes: List<NodeInfoDTO>? = null
-    private var mList: List<InvoiceDTO> = mutableListOf()
+    private var nodeInvoices: List<InvoiceDTO> = mutableListOf()
 
     fun generateOffersForNetworkOperator(proxy: CordaRPCOps): String {
         val operator = firebaseService.getNetworkOperator()
         if (operator != null) {
             logger.info("\uD83D\uDD35 generateOffersFromAccount starting ..... " +
                     "account: ${operator.account.name}: \uD83D\uDCA6 \uD83D\uDCA6")
-            mList = workerBeeService.findInvoicesForNode(proxy)
+            nodeInvoices = workerBeeService.findInvoicesForNode(proxy)
             generateOffersFromAccount(proxy,operator.account)
         }
         val msg = "\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
@@ -480,16 +481,16 @@ class DemoDataService {
     fun generateOffersFromAccount(proxy: CordaRPCOps, accountInfo: AccountInfoDTO): String {
         logger.info("\n\n\n${E.RED_APPLES} generateOffersFromAccount starting ..... " +
                 "account: ${accountInfo.name}: \uD83D\uDCA6 \uD83D\uDCA6")
-        if (mList.isEmpty()) {
-            mList = workerBeeService.findInvoicesForNode(proxy)
+        if (nodeInvoices.isEmpty()) {
+            nodeInvoices = workerBeeService.findInvoicesForNode(proxy)
         }
         logger.info("workerBeeService.findInvoicesForNode found Invoices on Node:" +
-                "  \uD83D\uDE21 \uD83D\uDE21 ️ ${mList.size} ♻️")
+                "  \uD83D\uDE21 \uD83D\uDE21 ️ ${nodeInvoices.size} ♻️")
 
         val profile = firebaseService.getInvestorProfile(accountInfo.identifier)
                 ?: throw Exception("Missing InvestorProfile, offers cannot be generated")
-        var cnt = 0
-        for (invoice in mList) {
+        var cntx = 0
+        for (invoice in nodeInvoices) {
             val ok = workerBeeService.validateInvoiceAgainstProfile(
                     investorProfile = profile, invoice = invoice)
             if (ok) {
@@ -500,7 +501,8 @@ class DemoDataService {
                         discount = profile.defaultDiscount)
                 if (offer != null) {
                     cnt++
-                    logger.info("\n\n\n\uD83D\uDE21 \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66" +
+                    cntx++
+                    logger.info("\uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 " +
                             "SUCCESSFULLY registered InvoiceOffer on Corda Ledger for supplier: \uD83C\uDF4F " +
                             "${invoice.supplier.name} ${invoice.supplier.host} " +
                             "\uD83C\uDF4F \uD83D\uDCA6 investor: ${accountInfo.name} " +
@@ -508,35 +510,28 @@ class DemoDataService {
                             "offerAmount: ${offer.offerAmount} < originalAmount ${offer.originalAmount}" + "\n\n\n")
                 }
             } else {
-                logger.info("\n\uD83D\uDD35 ...... ignoring this baby. did not meet compliance!! Boss!")
+                logger.info("\uD83D\uDD35 ...... ignoring this baby. did not meet compliance!! Boss!\n\n\n")
             }
         }
         val msg = "\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
-                "Total InvoiceOffers made by Account ${accountInfo.name} : $cnt"
+                "Total InvoiceOffers made by Account ${accountInfo.name} : $cntx offers \n\n\n"
         logger.info(msg)
         return msg
     }
-
+    var cnt = 0
     fun generateInvoiceOffers(proxy: CordaRPCOps): String {
 
         logger.info("\n\n\n\uD83D\uDD35 start generateOffers .......... \uD83D\uDCA6 \uD83D\uDCA6\n\n");
         val acctList = workerBeeService.getNodeAccounts(proxy)
-        mList = workerBeeService.findInvoicesForNode(proxy)
+        //todo - find invoices on ALL nodes ... eh?
+        nodeInvoices = workerBeeService.findInvoicesForNode(proxy)
 
         logger.info("\uD83D\uDE21 \uD83D\uDE21 Accounts on Node:  \uD83D\uDE21 \uD83D\uDE21 ️ ${acctList.size} ♻️")
-        logger.info("\uD83D\uDE21 \uD83D\uDE21 Invoices on Node:  \uD83D\uDE21 \uD83D\uDE21 ️ ${mList.size} ♻\n\n️")
+        logger.info("\uD83D\uDE21 \uD83D\uDE21 Invoices on Node:  \uD83D\uDE21 \uD83D\uDE21 ️ ${nodeInvoices.size} ♻\n\n️")
 
-        var cnt = 0
+
         acctList.forEach() {
-            for (invoice in mList) {
-                if (invoice.supplier.identifier == it.identifier) {
-                    logger.info("\uD83D\uDD35 Ignore: ${it.name} Account is the supplier. " +
-                            "\uD83D\uDD35 Cannot offer invoice to self: \uD83C\uDF3A ${it.name}")
-                } else {
-                    generateOffersFromAccount(proxy = proxy, accountInfo = it)
-                    cnt++
-                }
-            }
+            generateOffersFromAccount(proxy = proxy, accountInfo = it)
         }
 
         val msg = "\uD83E\uDDE1 \uD83D\uDC9B generateInvoiceOffers complete: " +

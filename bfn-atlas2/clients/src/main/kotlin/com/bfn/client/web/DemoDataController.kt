@@ -108,7 +108,7 @@ class DemoDataController(rpc: NodeRPCConnection) {
                 "... \uD83C\uDF4F ")
 
         val result = demoDataService.generateInvoiceOffers(proxy)
-        logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+        logger.info("\n\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
                 "DemoDataController:generateInvoiceOffers result: " +
                 " $result   \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
         return result
