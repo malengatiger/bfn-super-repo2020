@@ -4,8 +4,10 @@ import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.states.InvoiceOfferState
 import com.bfn.flows.regulator.ReportToRegulatorFlow
 import com.bfn.flows.services.InvoiceOfferFinderService
+import com.r3.corda.lib.accounts.workflows.flows.ShareStateAndSyncAccounts
 import com.template.InvoiceOfferContract
 import net.corda.core.flows.*
+import net.corda.core.identity.Party
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.ProgressTracker
@@ -120,7 +122,21 @@ class InvoiceOfferFlow(
         }
 
     }
-
+    @Suspendable
+    private fun shareState(party: Party) {
+        val me = serviceHub.myInfo.legalIdentities[0]
+        if (party.name.toString() == me.name.toString()) {
+            return
+        }
+        val offerStateAndRef = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
+                .findInvestorOffer(offerId = invoiceOfferState.offerId)
+        if (offerStateAndRef != null) {
+            subFlow(ShareStateAndSyncAccounts(
+                    state = offerStateAndRef,
+                    partyToShareWith = party))
+            logger.info("\uD83C\uDF4E InvoiceOffer has been shared with ${party.name}")
+        }
+    }
     @Suspendable
     @Throws(FlowException::class)
     private fun reportToRegulator(mSignedTransactionDone: SignedTransaction) {
@@ -172,6 +188,10 @@ class InvoiceOfferFlow(
         progressTracker.currentStep = finalizingTransaction
         val mSignedTransactionDone = subFlow(
                 FinalityFlow(signedTransaction, sessions))
+
+        shareState(invoiceOfferState.customer.host)
+        shareState(invoiceOfferState.supplier.host)
+        shareState(invoiceOfferState.investor.host)
 
         reportToRegulator(mSignedTransactionDone)
 

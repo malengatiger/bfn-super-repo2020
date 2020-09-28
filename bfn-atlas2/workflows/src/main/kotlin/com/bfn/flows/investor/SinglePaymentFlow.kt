@@ -7,11 +7,10 @@ import com.bfn.contractstates.states.PaymentRequestState
 import com.bfn.contractstates.states.SupplierPaymentState
 import com.bfn.flows.services.*
 import com.bfn.flows.todaysDate
-import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
-import com.r3.corda.lib.tokens.workflows.utilities.toParty
+import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.workflows.flows.ShareStateAndSyncAccounts
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
-import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.transactions.TransactionBuilder
 import org.slf4j.LoggerFactory
@@ -78,25 +77,44 @@ class SinglePaymentFlow(private val offerId: String,
                 supplierPayment = payment,
                 stellarAnchorUrl = stellarAnchorUrl))
         if (result.statusCode == 200) {
-            return processOKPayment(investorParty.host, supplierParty.host,
-                    customerParty.host, txBuilder, command, acceptedOffer, payment)
+            return processOKPayment(investorParty, supplierParty,
+                    customerParty, txBuilder, command, acceptedOffer, payment)
         } else {
             throw Exception("Payment failed, statusCode: ${result.statusCode} text: ${result.text}")
         }
     }
+    @Suspendable
+    private fun shareState(party: Party, supplierPaymentId: String) {
+        val me = serviceHub.myInfo.legalIdentities[0]
+        if (party.name.toString() == me.name.toString()) {
+            return
+        }
+        val paymentStateAndRef = serviceHub.cordaService(PaymentFinderService::class.java)
+                .findPaymentById(supplierPaymentId = supplierPaymentId)
+        if (paymentStateAndRef != null) {
+            subFlow(ShareStateAndSyncAccounts(
+                    state = paymentStateAndRef,
+                    partyToShareWith = party))
+            logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
+                    "Supplier Payment $supplierPaymentId " +
+                    "has been shared with party ${party.name} \uD83E\uDDE9")
+        }
+    }
 
-    private fun processOKPayment(investorParty: Party,
-                                 supplierParty: Party,
-                                 customerParty: Party,
+    @Suspendable
+    private fun processOKPayment(investor: AccountInfo,
+                                 supplier: AccountInfo,
+                                 customer: AccountInfo,
                                  txBuilder: TransactionBuilder,
                                  command: SupplierPaymentContract.Pay,
                                  acceptedOffer: StateAndRef<InvoiceOfferState>,
                                  payment: SupplierPaymentState): SupplierPaymentState {
         logger.info("SinglePaymentFlow: processOKPayment:  Stellar Anchor payment to supplier is OK ...")
+
         val keys: MutableList<PublicKey> = mutableListOf(
-                investorParty.owningKey,
-                supplierParty.owningKey,
-                customerParty.owningKey
+                investor.host.owningKey,
+                supplier.host.owningKey,
+                customer.host.owningKey
         )
 
         //todo - 🌸 🌸 🌸 check that any offers for this invoice are consumed 🌸
@@ -110,17 +128,17 @@ class SinglePaymentFlow(private val offerId: String,
         val thisParty = serviceHub.myInfo.legalIdentities[0]
         if (acceptedOffer.state.data.supplier.host.name.organisation !=
                 thisParty.name.organisation) {
-            val session = initiateFlow(supplierParty)
+            val session = initiateFlow(acceptedOffer.state.data.supplier.host)
             sessions.add(session)
         }
         if (acceptedOffer.state.data.investor.host.name.organisation !=
                 thisParty.name.organisation) {
-            val session = initiateFlow(investorParty)
+            val session = initiateFlow(acceptedOffer.state.data.investor.host)
             sessions.add(session)
         }
         if (acceptedOffer.state.data.customer.host.name.organisation !=
                 thisParty.name.organisation) {
-            val session = initiateFlow(customerParty)
+            val session = initiateFlow(acceptedOffer.state.data.customer.host)
             sessions.add(session)
         }
         if (sessions.isNotEmpty()) {
@@ -133,6 +151,9 @@ class SinglePaymentFlow(private val offerId: String,
             logger.info("$pp Transaction finalized with Supplier/customer on same node")
         }
         logger.info("$pp Payment state created OK $pp")
+        shareState(acceptedOffer.state.data.supplier.host, payment.supplierPaymentId)
+        shareState(acceptedOffer.state.data.customer.host, payment.supplierPaymentId)
+        shareState(acceptedOffer.state.data.investor.host, payment.supplierPaymentId)
         return payment
     }
 

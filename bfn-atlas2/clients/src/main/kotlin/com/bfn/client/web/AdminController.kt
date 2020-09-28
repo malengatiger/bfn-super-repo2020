@@ -229,6 +229,11 @@ class AdminController(rpc: NodeRPCConnection) {
     fun findInvoicesForNode(): List<InvoiceDTO> {
         return workerBeeService.findInvoicesForNode(proxy)
     }
+    @GetMapping(value = ["/findPurchaseOrdersForNode"])
+    @Throws(Exception::class)
+    fun findPurchaseOrdersForNode(): List<InvoiceDTO> {
+        return workerBeeService.findInvoicesForNode(proxy)
+    }
     @GetMapping(value = ["/findInvoicesForInvestor"])
     @Throws(Exception::class)
     fun findInvoicesForInvestor(@RequestParam(value = "accountId", required = true) accountId: String): List<InvoiceDTO> {

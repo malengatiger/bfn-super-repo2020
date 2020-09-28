@@ -1,12 +1,10 @@
 package com.bfn.flows
 
 import co.paralleluniverse.fibers.Suspendable
-import com.bfn.contractstates.contracts.InvestorProfileContract
 import com.bfn.contractstates.contracts.UserContract
 import com.bfn.contractstates.states.UserState
-import com.bfn.flows.supplier.SupplierProfileFlow
-import com.r3.corda.lib.accounts.contracts.states.AccountInfo
-import com.r3.corda.lib.accounts.workflows.internal.accountService
+import com.bfn.flows.services.UserFinderService
+import com.r3.corda.lib.accounts.workflows.flows.ShareStateAndSyncAccounts
 import com.r3.corda.lib.accounts.workflows.ourIdentity
 import net.corda.core.flows.FinalityFlow
 import net.corda.core.flows.FlowLogic
@@ -39,12 +37,37 @@ class CreateUserFlow(
         val signedTx = subFlow(FinalityFlow(tx, listOf()))
 
         logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D  user : ${user.email} " )
+        shareState()
         return signedTx
+
+    }
+
+    @Suspendable
+    private fun shareState() {
+        logger.info("Sharing user state with all nodes in network")
+        val me = serviceHub.myInfo.legalIdentities[0]
+        val nodes = serviceHub.networkMapCache.allNodes
+        for (node in nodes) {
+            if (node.legalIdentities[0].name.toString() != me.name.toString()) {
+                val userStateAndRef = serviceHub.cordaService(UserFinderService::class.java)
+                        .findUserStateAndRef(accountId = user.accountInfo.identifier.id.toString())
+                if (userStateAndRef != null) {
+                    subFlow(ShareStateAndSyncAccounts(
+                            state = userStateAndRef,
+                            partyToShareWith = node.legalIdentities[0]))
+                    logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
+                            "User ${user.accountInfo.name} " +
+                            "has been shared with party ${node.legalIdentities[0].name} \uD83E\uDDE9")
+                }
+            }
+        }
+
 
     }
     companion object {
         private val logger = LoggerFactory.getLogger(CreateUserFlow::class.java)
     }
+
 
 }
 

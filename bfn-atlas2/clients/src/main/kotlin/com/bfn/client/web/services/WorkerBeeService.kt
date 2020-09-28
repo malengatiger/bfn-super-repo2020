@@ -283,6 +283,23 @@ class WorkerBeeService {
         logger.info(m)
         return dtos
     }
+//    @Throws(Exception::class)
+//    fun findPurchaseOrdersForNode(proxy: CordaRPCOps): List<PurchaseOrderDTO> {
+//        val fut = proxy.startTrackedFlowDynamic(
+//                InvoiceQueryFlow::class.java, null,
+//                InvoiceQueryFlow.FIND_FOR_NODE).returnValue
+//        val invoices = fut.get()
+//        val dtos: MutableList<PurchaseOrderDTO> = mutableListOf()
+//        invoices.forEach() {
+//            if (it.supplierInfo.host.toString() ==
+//                    proxy.nodeInfo().legalIdentities.first().toString()) {
+//                dtos.add(DTOUtil.getDTO(it))
+//            }
+//        }
+//        val m = "\uD83C\uDF3A done listing InvoiceStates:  \uD83C\uDF3A " + invoices.size
+//        logger.info(m)
+//        return dtos
+//    }
 
 
     @Throws(Exception::class)

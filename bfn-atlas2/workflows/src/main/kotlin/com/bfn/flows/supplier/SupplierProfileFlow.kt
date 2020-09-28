@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.contracts.InvestorProfileContract
 import com.bfn.contractstates.states.SupplierProfileState
 import com.bfn.flows.services.ProfileFinderService
+import com.r3.corda.lib.accounts.workflows.flows.ShareStateAndSyncAccounts
 import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.accounts.workflows.ourIdentity
 import net.corda.core.flows.FinalityFlow
@@ -46,7 +47,30 @@ class SupplierProfileFlow(private val supplierProfileState: SupplierProfileState
         Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 " +
                 "Supplier Profile has been created for account:" +
                 " ${account.state.data.name} \uD83E\uDD8A \uD83E\uDD8A")
+        shareState()
         return signedTx
+    }
+    @Suspendable
+    private fun shareState() {
+        logger.info("Sharing InvestorProfile state with all nodes in network")
+        val me = serviceHub.myInfo.legalIdentities[0]
+        val nodes = serviceHub.networkMapCache.allNodes
+        for (node in nodes) {
+            if (node.legalIdentities[0].name.toString() != me.name.toString()) {
+                val profileStateAndRef = serviceHub.cordaService(ProfileFinderService::class.java)
+                        .findSupplierProfile(supplierAccountId = supplierProfileState.account.identifier.id.toString())
+                if (profileStateAndRef != null) {
+                    subFlow(ShareStateAndSyncAccounts(
+                            state = profileStateAndRef,
+                            partyToShareWith = node.legalIdentities[0]))
+                    logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
+                            "InvestorProfile ${supplierProfileState.account.name} " +
+                            "has been shared with party ${node.legalIdentities[0].name} \uD83E\uDDE9")
+                }
+            }
+        }
+
+
     }
 
     companion object {

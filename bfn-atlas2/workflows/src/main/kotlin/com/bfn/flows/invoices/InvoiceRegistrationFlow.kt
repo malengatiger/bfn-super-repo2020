@@ -5,10 +5,12 @@ import com.bfn.contractstates.contracts.InvoiceContract
 import com.bfn.contractstates.states.InvoiceState
 import com.bfn.flows.regulator.BroadcastTransactionFlow
 import com.bfn.flows.regulator.ReportToRegulatorFlow
+import com.bfn.flows.services.InvoiceFinderService
 import com.bfn.flows.services.PurchaseOrderFinderService
 import com.bfn.flows.services.RegulatorFinderService
+import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
+import com.r3.corda.lib.accounts.workflows.flows.ShareStateAndSyncAccounts
 import net.corda.core.flows.*
-import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.node.ServiceHub
 import net.corda.core.node.services.Vault.StateStatus
@@ -72,22 +74,22 @@ class InvoiceRegistrationFlow(private val invoiceState: InvoiceState) : FlowLogi
 
         val command = InvoiceContract.Register()
         progressTracker.currentStep = GENERATING_TRANSACTION
-        val regulatorNode = serviceHub.cordaService(RegulatorFinderService::class.java).findRegulatorNode()
 
+//        val supKey = subFlow(RequestKeyForAccount(accountInfo = invoiceState.supplierInfo)).owningKey
+//        val custKey = subFlow(RequestKeyForAccount(accountInfo = invoiceState.customerInfo)).owningKey
         val txBuilder = TransactionBuilder(notary)
                 .addOutputState(invoiceState, InvoiceContract.ID)
                 .addCommand(
                         command,
                         supplierParty.host.owningKey,
-                        customerParty.host.owningKey,
-                        regulatorNode!!.legalIdentities.first().owningKey)
+                        customerParty.host.owningKey)
 
         if (invoiceState.purchaseOrder != null) {
             val mPO = serviceHub.cordaService(PurchaseOrderFinderService::class.java)
                     .findPurchaseOrderStateAndRef(invoiceState.purchaseOrder!!.purchaseOrderId)
             val poAmt = BigDecimal(invoiceState.purchaseOrder!!.amount)
             val invAmt = BigDecimal(invoiceState.amount)
-            //todo - write algorithm to check if there are multiple invoices for 1 purchaseOrder
+            //todo -  🍎 🍎 write algorithm to check if there are multiple invoices for 1 purchaseOrder
             //assuming that there is only 1 invoice per purchaseOrder. Lets think about this!
             if (invAmt == poAmt) {
                 if (mPO != null) {
@@ -118,10 +120,12 @@ class InvoiceRegistrationFlow(private val invoiceState: InvoiceState) : FlowLogi
         }
 
         val tranx = processTransaction(supplierStatus, customerStatus, customerParty.host, signedTx,
-                supplierParty.host, regulatorNode.legalIdentities.first())
+                supplierParty.host)
         if (tranx != null) {
             reportToRegulator(tranx)
         }
+
+        shareState(customerParty = customerParty.host)
 
         return tranx
     }
@@ -129,28 +133,25 @@ class InvoiceRegistrationFlow(private val invoiceState: InvoiceState) : FlowLogi
     @Suspendable
     private fun processTransaction(supplierStatus: Int, customerStatus: Int,
                                    customerParty: Party, signedTx: SignedTransaction,
-                                   supplierParty: Party, regulatorParty: Party): SignedTransaction? {
+                                   supplierParty: Party): SignedTransaction? {
         Companion.logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 Supplier and Customer are NOT on the same node ..." +
                 "  \uD83D\uDE21 flowSession(s) required ... \uD83D\uDE21")
 
-        val regulatorSession = initiateFlow(regulatorParty)
+//        val regulatorSession = initiateFlow(regulatorParty)
         var supplierSession: FlowSession
         var customerSession: FlowSession
 
         var signedTransaction: SignedTransaction? = null
-        if (supplierStatus == LOCAL_SUPPLIER && customerStatus == LOCAL_CUSTOMER) {
-            Companion.logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 LOCAL_SUPPLIER and LOCAL_CUSTOMER \uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21")
-            signedTransaction = getSignedTransaction(signedTx, listOf(regulatorSession))
-        }
+
         if (supplierStatus == LOCAL_SUPPLIER && customerStatus == REMOTE_CUSTOMER) {
             Companion.logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 LOCAL_SUPPLIER and REMOTE_CUSTOMER \uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21")
             customerSession = initiateFlow(customerParty)
-            signedTransaction = getSignedTransaction(signedTx, listOf(customerSession, regulatorSession))
+            signedTransaction = getSignedTransaction(signedTx, listOf(customerSession))
         }
         if (supplierStatus == REMOTE_SUPPLIER && customerStatus == LOCAL_CUSTOMER) {
             Companion.logger.info("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 REMOTE_SUPPLIER and LOCAL_CUSTOMER \uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21")
             supplierSession = initiateFlow(supplierParty)
-            signedTransaction = getSignedTransaction(signedTx, listOf(supplierSession, regulatorSession))
+            signedTransaction = getSignedTransaction(signedTx, listOf(supplierSession))
         }
 
         if (supplierStatus == REMOTE_SUPPLIER && customerStatus == REMOTE_CUSTOMER) {
@@ -159,13 +160,30 @@ class InvoiceRegistrationFlow(private val invoiceState: InvoiceState) : FlowLogi
             if (invoiceState.supplierInfo.host.name != invoiceState.customerInfo.host.name) {
                 customerSession = initiateFlow(customerParty)
                 signedTransaction = getSignedTransaction(signedTx,
-                        listOf(supplierSession, customerSession, regulatorSession))
+                        listOf(supplierSession, customerSession))
             } else {
-                signedTransaction = getSignedTransaction(signedTx, listOf(supplierSession, regulatorSession))
+                signedTransaction = getSignedTransaction(signedTx, listOf(supplierSession))
             }
         }
-
+        if (signedTransaction != null) {
+            reportToRegulator(signedTransaction)
+        }
         return signedTransaction
+    }
+    @Suspendable
+    private fun shareState(customerParty: Party) {
+        val me = serviceHub.myInfo.legalIdentities[0]
+        if (customerParty.name.toString() == me.name.toString()) {
+            return
+        }
+        val invoiceStateAndRef = serviceHub.cordaService(InvoiceFinderService::class.java)
+                .findInvoiceStateAndRef(invoiceId = invoiceState.invoiceId.toString())
+        if (invoiceStateAndRef != null) {
+            subFlow(ShareStateAndSyncAccounts(
+                    state = invoiceStateAndRef,
+                    partyToShareWith = customerParty))
+            logger.info("\uD83C\uDF4E Invoice has been shared with Customer")
+        }
     }
     @Suspendable
     @Throws(FlowException::class)

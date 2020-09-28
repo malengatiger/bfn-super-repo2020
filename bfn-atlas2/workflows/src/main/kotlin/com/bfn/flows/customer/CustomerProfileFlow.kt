@@ -5,12 +5,12 @@ import com.bfn.contractstates.contracts.CustomerProfileContract
 import com.bfn.contractstates.contracts.InvestorProfileContract
 import com.bfn.contractstates.states.CustomerProfileState
 import com.bfn.flows.services.ProfileFinderService
+import com.bfn.flows.services.UserFinderService
+import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
+import com.r3.corda.lib.accounts.workflows.flows.ShareStateAndSyncAccounts
 import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.accounts.workflows.ourIdentity
-import net.corda.core.flows.FinalityFlow
-import net.corda.core.flows.FlowLogic
-import net.corda.core.flows.InitiatingFlow
-import net.corda.core.flows.StartableByRPC
+import net.corda.core.flows.*
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import org.slf4j.LoggerFactory
@@ -36,7 +36,7 @@ class CustomerProfileFlow(private val customerProfile: CustomerProfileState) : F
 
         Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95  build tx ...")
         val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
-        txBuilder.addCommand(command, serviceHub.ourIdentity.owningKey)
+        txBuilder.addCommand(command, listOf(serviceHub.ourIdentity.owningKey))
         if (profile != null) {
             txBuilder.addInputState(profile)
         }
@@ -45,11 +45,37 @@ class CustomerProfileFlow(private val customerProfile: CustomerProfileState) : F
 
         Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95  Signing transaction ... ")
         val tx = serviceHub.signInitialTransaction(txBuilder)
-        val signedTx = subFlow(FinalityFlow(tx, listOf()))
-        Companion.logger.info("\uD83D\uDE39 \uD83D\uDE39 \uD83D\uDE39  " +
-                "Customer Profile has been created on the ledger for: " +
-                "${account.state.data.name} \uD83E\uDD8A \uD83E\uDD8A")
-        return signedTx
+        if (customerProfile.account.host.name.toString() == serviceHub.ourIdentity.name.toString()) {
+            val signedTx = subFlow(FinalityFlow(tx, listOf()))
+            Companion.logger.info("\uD83D\uDE39 \uD83D\uDE39 \uD83D\uDE39  " +
+                    "Customer Profile has been created on the ledger for: " +
+                    "${account.state.data.name} \uD83E\uDD8A \uD83E\uDD8A")
+            return signedTx
+        } else {
+            throw FlowException("Under Construction - how do we handle this?")
+        }
+    }
+    @Suspendable
+    private fun shareState() {
+        logger.info("Sharing CustomerProfile state with all nodes in network")
+        val me = serviceHub.myInfo.legalIdentities[0]
+        val nodes = serviceHub.networkMapCache.allNodes
+        for (node in nodes) {
+            if (node.legalIdentities[0].name.toString() != me.name.toString()) {
+                val userStateAndRef = serviceHub.cordaService(UserFinderService::class.java)
+                        .findUserStateAndRef(accountId = customerProfile.account.identifier.id.toString())
+                if (userStateAndRef != null) {
+                    subFlow(ShareStateAndSyncAccounts(
+                            state = userStateAndRef,
+                            partyToShareWith = node.legalIdentities[0]))
+                    logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
+                            "CustomerProfile ${customerProfile.account.name} " +
+                            "has been shared with party ${node.legalIdentities[0].name} \uD83E\uDDE9")
+                }
+            }
+        }
+
+
     }
 
     companion object {

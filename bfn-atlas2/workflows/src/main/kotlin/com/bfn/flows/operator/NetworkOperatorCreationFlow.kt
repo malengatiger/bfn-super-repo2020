@@ -39,6 +39,7 @@ class NetworkOperatorCreationFlow(private val networkOperatorState: NetworkOpera
 
         val tx = serviceHub.signInitialTransaction(txBuilder)
         subFlow(FinalityFlow(tx, listOf()))
+
         Companion.logger.info("$pp Yebo Gogo!! - NetworkOperator has been created: ${networkOperatorState.account.name} $pp")
         return tx
     }
