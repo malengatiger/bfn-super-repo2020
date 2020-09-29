@@ -1,5 +1,6 @@
 package com.bfn.client.web
 
+import com.bfn.client.Emo
 import com.bfn.client.data.NodeInfoDTO
 import com.bfn.client.web.ResponseTimer
 import com.google.auth.oauth2.GoogleCredentials
@@ -17,6 +18,7 @@ import org.springframework.util.Assert
 import org.springframework.util.FileCopyUtils
 import java.io.File
 import java.io.InputStream
+import java.lang.Exception
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 
@@ -36,15 +38,19 @@ fun buildFirebase(nodePropertiesFile: File, nodeIndex: Int): List<NodeInfoDTO> {
     logger.info("\uD83D\uDD35 \uD83D\uDD35 Selected node:  \uD83D\uDD35 " +
             "\uD83D\uDD35 ${gson.toJson(node)}  \uD83D\uDD35 \uD83D\uDD35 ")
 
-    val options = FirebaseOptions.Builder()
-            .setCredentials(GoogleCredentials.getApplicationDefault())
-            .setProjectId(node.firebaseProjectId)
-            .setDatabaseUrl(node.firebaseUrl).build()
-    val app = FirebaseApp.initializeApp(options)
+    try {
+        val options = FirebaseOptions.Builder()
+                .setCredentials(GoogleCredentials.getApplicationDefault())
+                .setProjectId(node.firebaseProjectId)
+                .setDatabaseUrl(node.firebaseUrl).build()
+        val app = FirebaseApp.initializeApp(options)
 
-    logger.info("\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9  \uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9 "
-            + "Firebase Admin SDK Setup OK:  \uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9 app: "
-            + app.toString())
+        logger.info("\uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9  \uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9 "
+                + "Firebase Admin SDK Setup OK:  \uD83E\uDDE9\uD83E\uDDE9\uD83E\uDDE9 app: "
+                + app.toString())
+    } catch (e: Exception) {
+        logger.warn("FirebaseApp already initialized ${Emo.FROG} ${e.message}")
+    }
     return nodes
 }
 
@@ -95,6 +101,7 @@ const val BFN_SUPPLIER_PROFILES:String = "bfnSupplierProfiles"
 const val BFN_INVESTOR_PROFILES:String = "bfnInvestorProfiles"
 const val BFN_NODES:String = "bfnNodes"
 const val BFN_INVOICES:String = "bfnInvoices"
+const val BFN_SUPPLIER_PAYMENTS:String = "bfnSupplierPayments"
 const val BFN_INVOICE_OFFERS:String = "bfnInvoiceOffers"
 const val BFN_TOKENS:String = "bfnTokens"
 const val BFN_WEBSERVER_STARTS:String = "bfnWebServerStarts"

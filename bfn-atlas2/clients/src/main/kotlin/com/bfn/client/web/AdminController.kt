@@ -135,6 +135,14 @@ class AdminController(rpc: NodeRPCConnection) {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting getAccounts ... \uD83C\uDF4F ")
         return workerBeeService.getNodeAccounts(proxy)
     }
+    @GetMapping(value = ["/getNetworkAccounts"], produces = [MediaType.APPLICATION_JSON_VALUE])
+    @Throws(Exception::class)
+    private fun getNetworkAccounts(): List<AccountInfoDTO> {
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                "starting getNetworkAccounts ... \uD83C\uDF4F ")
+        return workerBeeService.getNetworkAccounts(proxy)
+    }
+
 
     @GetMapping(value = ["/generateInvoices"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
@@ -259,6 +267,13 @@ class AdminController(rpc: NodeRPCConnection) {
     fun findOffersForInvestor(@RequestParam(value = "accountId", required = true) accountId: String): List<InvoiceOfferDTO> {
         return workerBeeService.findOffersForInvestor(proxy, accountId)
     }
+    @GetMapping(value = ["/makePaymentForOffer"])
+    @Throws(Exception::class)
+    fun makePaymentForOffer(
+            investorId: String,
+            offerId: String): SupplierPaymentDTO {
+        return workerBeeService.makePaymentForOffer(proxy, offerId = offerId, investorId = investorId)
+    }
     @GetMapping(value = ["/findOffersForSupplier"])
     @Throws(Exception::class)
     fun findOffersForSupplier(@RequestParam(value = "accountId", required = true) accountId: String): List<InvoiceOfferDTO> {
@@ -321,12 +336,12 @@ class AdminController(rpc: NodeRPCConnection) {
         return users
     }
 
-
     @GetMapping(value = ["/getAccount"])
     @Throws(Exception::class)
     fun getAccount(@RequestParam(value = "accountId") accountId: String?): AccountInfoDTO {
         return workerBeeService.getAccount(proxy, accountId)
     }
+
 
 
     @GetMapping(value = ["/hello"], produces = ["text/plain"])

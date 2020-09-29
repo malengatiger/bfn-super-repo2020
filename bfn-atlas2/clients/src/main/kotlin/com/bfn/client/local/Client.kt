@@ -1,11 +1,14 @@
 package com.bfn.client.local
 
 
+import com.bfn.client.Emo
 import com.bfn.client.data.*
 import com.bfn.client.web.DTOUtil.getDTO
 import com.bfn.contractstates.states.*
+import com.bfn.flows.Em
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonArray
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import net.corda.client.rpc.CordaRPCClient
@@ -16,8 +19,11 @@ import net.corda.core.node.services.vault.PageSpecification
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.utilities.NetworkHostAndPort
 import net.corda.core.utilities.loggerFor
+import org.json.JSONArray
 import org.springframework.http.MediaType
+import java.io.StringReader
 import java.util.*
+import javax.json.Json
 import kotlin.collections.set
 import khttp.get as httpGet
 
@@ -46,7 +52,9 @@ public class Client {
 
     fun main(args: Array<String>) {
 //        setupLocalNodes()
-        startTheWork( "http://localhost:10050", "http://localhost:10053");
+//        startTheWork( "http://localhost:10050", "http://localhost:10053");
+
+        generateOfferAcceptances("http://localhost:10050")
 
     }
 
@@ -58,14 +66,65 @@ public class Client {
         generateAnchorNodeData(networkOperatorUrl, headers)
 
         generateCustomerNodeData(customerUrl, headers)
-        
+
         generateOffersForNetworkOperator(networkOperatorUrl, headers)
 
         generateInvoiceOffers(networkOperatorUrl, headers)
 
-
+        generateOfferAcceptances(networkOperatorUrl)
 
     }
+    private val gson = GsonBuilder().setPrettyPrinting().create()
+    private fun generateOfferAcceptances(networkOperatorUrl: String) {
+        logger.info("${Emo.RAIN_DROPS} generateOfferAcceptances started .... at $networkOperatorUrl ${Emo.RAIN_DROPS}")
+        val headers = mapOf("Content-Type" to MediaType.APPLICATION_JSON_VALUE)
+        val suffix = "/bfn/admin/findInvoicesForNode"
+        val url = "$networkOperatorUrl$suffix"
+        logger.info("${Emo.FROG} ${Emo.FROG}Searching for invoices using $url")
+        val resp1 = httpGet(url = url,
+                timeout = 900000000.0, headers = headers)
+        logger.info("${Emo.RAIN_DROPS} RESPONSE: \uD83C\uDF4E statusCode: ${resp1.statusCode}  \uD83C\uDF4E ${resp1.text}")
+        logger.info("${Emo.RAIN_DROPS} ...... Turn response into list of invoices ........")
+
+        val stringReader = StringReader(resp1.text)
+        val mList: MutableList<InvoiceDTO> = gson.fromJson(
+                stringReader , Array<InvoiceDTO>::class.java).toMutableList()
+
+        logger.info(" \uD83D\uDD35 getInvoicesAcrossNodes: " +
+                "Result list from JSON string has ${mList.size} invoices")
+
+        for (invoice in mList) {
+            logger.info("\n\n\n${Emo.FLOWER_PINK} finding BestOfferForInvoice: " +
+                    "customer: ${invoice.customer.name} " +
+                    "supplier: ${invoice.supplier.name} ${Emo.FLOWER_RED} amount: ${invoice.totalAmount}")
+            findBestOfferForInvoice(
+                    networkOperatorUrl = networkOperatorUrl,
+                    supplierAccountId = invoice.supplier.identifier,
+                    invoiceId = invoice.invoiceId,
+                    acceptBestOffer = true)
+        }
+    }
+    private fun findBestOfferForInvoice(networkOperatorUrl: String,
+                                        supplierAccountId: String,
+                                        invoiceId: String,
+                                        acceptBestOffer: Boolean) {
+
+
+        val headers = mapOf("Content-Type" to MediaType.TEXT_PLAIN_VALUE)
+        val resp1 = httpGet(url = "$networkOperatorUrl/bfn/admin/findBestOfferForInvoice?" +
+                "supplierAccountId=$supplierAccountId" +
+                "&invoiceId=$invoiceId" +
+                "&acceptBestOffer=$acceptBestOffer",
+                timeout = 900000000.0, headers = headers)
+
+        logger.info("findBestOfferForInvoice: ${Emo.BLUE_BIRD} ${Emo.BLUE_BIRD} ${Emo.BLUE_BIRD}" +
+                " RESPONSE: \uD83C\uDF4E statusCode: ${resp1.statusCode} \uD83C\uDF4E ${resp1.text}")
+        val acceptedOffer = gson.fromJson(resp1.text, InvoiceDTO::class.java)
+        logger.info("${Emo.RED_APPLES} findBestOfferForInvoice: " +
+                "Accepted Offer is ${gson.toJson(acceptedOffer)} ${Emo.RED_APPLE} \n\n\n")
+
+    }
+
 
     private fun generateAnchorNodeData(networkOperatorUrl: String, headers: Map<String, String>) {
         val resp1 = httpGet(url = "$networkOperatorUrl/bfn/demo/generateAnchorNodeData?numberOfAccounts=8",
@@ -138,7 +197,7 @@ public class Client {
         val nodeAddressNotary = NetworkHostAndPort(host = "localhost", port = 10019)
         val nodeAddressAnchor = NetworkHostAndPort(host = "localhost", port = 10006)
         val nodeAddressCustomer = NetworkHostAndPort(host = "localhost", port = 10009)
-        val nodeAddressRegulator = NetworkHostAndPort(host = "localhost", port = 10017)
+//        val nodeAddressRegulator = NetworkHostAndPort(host = "localhost", port = 10017)
         val rpcUsername = "user1"
         val rpcPassword = "test"
 
@@ -154,11 +213,11 @@ public class Client {
         proxyCustomerNode1 = clientB.start(rpcUsername, rpcPassword).proxy
         getThisNode(proxyCustomerNode1)
 
-        val clientReg = CordaRPCClient(nodeAddressRegulator)
-        proxyRegulator = clientReg.start(rpcUsername, rpcPassword).proxy
+//        val clientReg = CordaRPCClient(nodeAddressRegulator)
+//        proxyRegulator = clientReg.start(rpcUsername, rpcPassword).proxy
 
-        getThisNode(proxyRegulator)
-        doNodesAndAggregates(proxyNetworkAnchorNode, proxyCustomerNode1, proxyRegulator)
+        getThisNode(proxyNetworkAnchorNode)
+        //doNodesAndAggregates(proxyNetworkAnchorNode, proxyCustomerNode1, proxyRegulator)
     }
 
     fun getRegulatorTotals(proxy: CordaRPCOps) {

@@ -121,6 +121,16 @@ class FirebaseService() {
         logger.info("\uD83D\uDE3C \uD83D\uDE3C Invoice added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
     @Throws(ExecutionException::class, InterruptedException::class)
+    fun addSupplierPayment(supplierPayment: SupplierPaymentDTO) {
+        val future: ApiFuture<DocumentReference> = db.collection(BFN_SUPPLIER_PAYMENTS).add(supplierPayment);
+        logger.info("\uD83D\uDE3C \uD83D\uDE3C SupplierPayment added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+    }
+    @Throws(ExecutionException::class, InterruptedException::class)
+    fun addInvoiceOffer(invoiceOffer: InvoiceOfferDTO) {
+        val future: ApiFuture<DocumentReference> = db.collection(BFN_INVOICE_OFFERS).add(invoiceOffer);
+        logger.info("\uD83D\uDE3C \uD83D\uDE3C InvoiceOffer added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+    }
+    @Throws(ExecutionException::class, InterruptedException::class)
     fun addInvestorProfile(profile: InvestorProfileStateDTO) {
         val future: ApiFuture<DocumentReference> = db.collection(BFN_INVESTOR_PROFILES).add(profile);
         logger.info("\uD83D\uDE3C \uD83D\uDE3C InvestorProfileState added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")

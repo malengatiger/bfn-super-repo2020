@@ -1,6 +1,6 @@
 package com.bfn.client.web
 
-import com.bfn.client.E
+import com.bfn.client.Emo
 import com.bfn.client.data.*
 import com.bfn.client.web.services.FirebaseService
 import com.bfn.client.web.services.NetworkOperatorBeeService
@@ -479,7 +479,7 @@ class DemoDataService {
         return msg
     }
     fun generateOffersFromAccount(proxy: CordaRPCOps, accountInfo: AccountInfoDTO): String {
-        logger.info("\n\n\n${E.RED_APPLES} generateOffersFromAccount starting ..... " +
+        logger.info("\n\n\n${Emo.RED_APPLES} generateOffersFromAccount starting ..... " +
                 "account: ${accountInfo.name}: \uD83D\uDCA6 \uD83D\uDCA6")
         if (nodeInvoices.isEmpty()) {
             nodeInvoices = workerBeeService.findInvoicesForNode(proxy)

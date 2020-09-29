@@ -41,6 +41,7 @@ class MultiplePaymentsFlow(
                 val response = subFlow(SinglePaymentFlow(
                         offerId = offer.state.data.offerId,
                         stellarAnchorUrl = stellarAnchorUrl,
+                        investorId = offer.state.data.investor.identifier.id.toString(),
                         delayMinutesUntilNextPaymentFlow = delayMinutesUntilNextPaymentFlow))
                 paymentList.add(response)
             } catch (e:Exception) {

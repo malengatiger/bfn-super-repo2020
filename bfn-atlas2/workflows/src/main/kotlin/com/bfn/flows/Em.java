@@ -1,6 +1,6 @@
-package com.bfn.client;
+package com.bfn.flows;
 
-public class E {
+public class Em {
     public static final String
             ERRORS = "\uD83D\uDC7F \uD83D\uDC7F \uD83D\uDC7F ",        // 👿
             ANGRIES = "\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 ",        // 😡

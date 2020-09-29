@@ -1,8 +1,7 @@
 package com.bfn.client.web.services
 
-import com.bfn.client.E
+import com.bfn.client.Emo
 import com.bfn.client.data.*
-import com.bfn.client.web.BFN_INVOICE_OFFERS
 import com.bfn.client.web.DTOUtil
 import com.bfn.contractstates.states.*
 import com.bfn.flows.CreateAccountFlow
@@ -12,6 +11,7 @@ import com.bfn.flows.customer.PurchaseOrderFlow
 import com.bfn.flows.investor.InvestorProfileFlow
 import com.bfn.flows.investor.InvoiceOfferFlow
 import com.bfn.flows.investor.MultiInvoiceOfferFlow
+import com.bfn.flows.investor.SinglePaymentFlow
 import com.bfn.flows.invoices.InvoiceRegistrationFlow
 import com.bfn.flows.queries.AccountInfoQueryFlow
 import com.bfn.flows.queries.FindInvoiceFlow
@@ -20,7 +20,6 @@ import com.bfn.flows.queries.InvoiceQueryFlow
 import com.bfn.flows.scheduled.CreateInvoiceOffersFlow
 import com.bfn.flows.supplier.FindBestOfferForInvoiceFlow
 import com.bfn.flows.supplier.SupplierProfileFlow
-import com.google.firebase.cloud.FirestoreClient
 import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import net.corda.core.contracts.ContractState
@@ -51,6 +50,8 @@ class WorkerBeeService {
     @Autowired
     private lateinit var stellarAccountService: StellarAccountService
 
+    @Value("\${stellarAnchorUrl}")
+    private lateinit var stellarAnchorUrl: String
     @PostConstruct
     fun init() {
         logger.info("\uD83C\uDF3C \uD83C\uDF3C  WorkerBee service has been constructed")
@@ -617,11 +618,13 @@ class WorkerBeeService {
                                       investorProfile: InvestorProfileStateDTO): Boolean {
 
         if (invoice.supplier.identifier == investorProfile.account.identifier) {
-            logger.info("${E.RED_APPLE} supplier cannot be the investor: ${E.ERROR} id check failed")
+            logger.info("${Emo.RED_APPLE} supplier cannot be the investor: " +
+                    "${Emo.ERROR} id check failed")
             return false;
         }
         if (invoice.customer.identifier == investorProfile.account.identifier) {
-            logger.info("${E.RED_APPLE} customer cannot be the investor:  ${E.ERROR} id check failed")
+            logger.info("${Emo.RED_APPLE} customer cannot be the investor:  " +
+                    "${Emo.ERROR} id check failed")
             return false;
         }
 
@@ -644,7 +647,7 @@ class WorkerBeeService {
             }
         }
         //todo - 🍎 🍎 🍎 🍎  add validation against industry, specific blackList, whiteList etc. 🍎 🍎 🍎 🍎
-        logger.info("${E.NOT_OK} invoice amount failed trade matrix check ${E.ERROR}")
+        logger.info("${Emo.NOT_OK} invoice amount failed trade matrix check ${Emo.ERROR}")
         return false
     }
 
@@ -933,6 +936,7 @@ class WorkerBeeService {
             val mOffer = DTOUtil.getDTO(acceptedOffer)
             logger.info("\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
                     "Accepted Offer is : ${gson.toJson(mOffer)}  \uD83C\uDF40 \n\n")
+            firebaseService.addInvoiceOffer(mOffer)
             return mOffer
         }
 
@@ -1084,10 +1088,7 @@ class WorkerBeeService {
                 "\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C  txId: $txId ")
         val offer = DTOUtil.getDTO(invoiceOfferState)
         try {
-            val db = FirestoreClient.getFirestore()
-            val reference = db.collection(BFN_INVOICE_OFFERS).add(offer)
-            logger.info("\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 added to " +
-                    "Firestore invoiceOffers path: " + reference.get().path)
+            firebaseService.addInvoiceOffer(offer)
             firebaseService.sendInvoiceOfferMessage(offer)
         } catch (e: Exception) {
             logger.error("\uD83D\uDC7F \uD83D\uDC7F \uD83D\uDC7F\uD83D\uDC7F " +
@@ -1124,5 +1125,33 @@ class WorkerBeeService {
     private val xx = "\uD83C\uDF53 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35"
     private val xx1 = "\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 "
 
+
+    @Throws(Exception::class)
+    fun makePaymentForOffer(proxy: CordaRPCOps,
+                            investorId: String,
+                            offerId:String): SupplierPaymentDTO {
+
+        logger.info("\n\n${Emo.RAIN_DROPS} starting makePaymentForOffer, " +
+                "${Emo.RED_DOT} investor: $investorId offer: $offerId")
+        val suffix = "/bfn/admin/makePaymentForOffer"
+        val url = "$stellarAnchorUrl$suffix"
+        logger.info("${Emo.RAIN_DROPS} Stellar Anchor URL: $url")
+        val cordaFuture = proxy.startTrackedFlowDynamic(
+                SinglePaymentFlow::class.java, offerId, investorId, url, 360)
+                .returnValue
+        val supplierPaymentState = cordaFuture.get()
+        val supplierPayment = DTOUtil.getDTO(supplierPaymentState)
+        logger.info("\uD83C\uDF4F \uD83C\uDF4F .... SinglePaymentFlow completed on ledger ... " +
+                "\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C  payment: ${gson.toJson(supplierPayment)} ")
+        try {
+            firebaseService.addSupplierPayment(supplierPayment)
+            return supplierPayment
+        } catch (e: Exception) {
+            logger.error("\uD83D\uDC7F \uD83D\uDC7F \uD83D\uDC7F\uD83D\uDC7F " +
+                    "Failed to add invoiceOffer to Firestore", e)
+            throw e
+
+        }
+    }
 }
 

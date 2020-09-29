@@ -5,6 +5,7 @@ import com.bfn.contractstates.contracts.SupplierPaymentContract
 import com.bfn.contractstates.states.InvoiceOfferState
 import com.bfn.contractstates.states.PaymentRequestState
 import com.bfn.contractstates.states.SupplierPaymentState
+import com.bfn.flows.Em
 import com.bfn.flows.operator.StellarPaymentFlow
 import com.bfn.flows.services.*
 import com.bfn.flows.todaysDate
@@ -18,10 +19,13 @@ import org.slf4j.LoggerFactory
 import java.security.PublicKey
 import java.util.*
 
-
+/**
+ * Investor pays for an accepted offer using a Stellar Anchor server
+ */
 @InitiatingFlow
 @StartableByRPC
 class SinglePaymentFlow(private val offerId: String,
+                        private val investorId: String,
                         private val stellarAnchorUrl: String,
                         private val delayMinutesUntilNextPaymentFlow: Long) : FlowLogic<SupplierPaymentState>() {
 
@@ -31,16 +35,17 @@ class SinglePaymentFlow(private val offerId: String,
 
         val service = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
         val acceptedOffer = service.findInvoiceOffer(offerId) ?:
-            throw IllegalArgumentException("Accepted offer not found")
+            throw IllegalArgumentException(Em.NOT_OK+"Accepted offer not found")
         if (!acceptedOffer.state.data.accepted) {
-            throw IllegalArgumentException("Offer not accepted by Supplier")
+            throw IllegalArgumentException(Em.NOT_OK+"Offer not accepted yet by Supplier")
         }
         //todo -  🍊 🍊 🍊 fix this query - find a way!!  🍊 🍊 🍊
-        val payments = serviceHub.cordaService(PaymentFinderService::class.java).getAllPaymentStateAndRefs()
+        val payments = serviceHub.cordaService(PaymentFinderService::class.java)
+                .getAllPaymentStateAndRefs()
 
         payments.forEach() {
             if (it.state.data.acceptedOffer.offerId == offerId) {
-                throw IllegalArgumentException("Payment already exists for this invoice: $offerId")
+                throw IllegalArgumentException(Em.NOT_OK+"Payment already exists for this offer: $offerId")
             }
         }
         val command = SupplierPaymentContract.Pay()
@@ -50,10 +55,16 @@ class SinglePaymentFlow(private val offerId: String,
         val customerParty =  acceptedOffer.state.data.customer
         val investorParty =  acceptedOffer.state.data.investor
 
+        val investorProfile = serviceHub.cordaService(ProfileFinderService::class.java).findInvestorProfile(investorId)
+                ?: throw IllegalArgumentException(Em.NOT_OK+"InvestorProfile not found for: $investorId")
+
         val supplierProfile = serviceHub.cordaService(ProfileFinderService::class.java)
                 .findSupplierProfile(acceptedOffer.state.data.supplier.identifier.id.toString())
-                ?: throw java.lang.IllegalArgumentException("Supplier profile not found")
 
+                ?: throw java.lang.IllegalArgumentException("${Em.ERROR} Supplier profile not found")
+        logger.info("Investor making payment: ${investorProfile.state.data.account.name} " +
+                "to supplier: ${supplierProfile.state.data.account.name}")
+        //create new supplier payment
         val payment = SupplierPaymentState(
                 supplierPaymentId = UUID.randomUUID().toString(),
                 acceptedOffer = acceptedOffer.state.data,
@@ -73,7 +84,8 @@ class SinglePaymentFlow(private val offerId: String,
 
         )
         //todo - make EFT payment to supplier ... OR do this externally; kicked off in api?
-        logger.info("SinglePaymentFlow: make Stellar Anchor payment to supplier ...")
+        logger.info("SinglePaymentFlow: ${Em.FERNS} make Stellar Anchor payment to supplier " +
+                "using StellarPaymentFlow ...${Em.RED_APPLE}")
         val result = subFlow(StellarPaymentFlow(
                 supplierPayment = payment,
                 stellarAnchorUrl = stellarAnchorUrl))
@@ -81,7 +93,8 @@ class SinglePaymentFlow(private val offerId: String,
             return processOKPayment(investorParty, supplierParty,
                     customerParty, txBuilder, command, acceptedOffer, payment)
         } else {
-            throw Exception("Payment failed, statusCode: ${result.statusCode} text: ${result.text}")
+            throw Exception("${Em.ERRORS} Payment failed, " +
+                    "statusCode: ${result.statusCode} text: ${result.text}")
         }
     }
     @Suspendable
@@ -110,7 +123,9 @@ class SinglePaymentFlow(private val offerId: String,
                                  command: SupplierPaymentContract.Pay,
                                  acceptedOffer: StateAndRef<InvoiceOfferState>,
                                  payment: SupplierPaymentState): SupplierPaymentState {
-        logger.info("SinglePaymentFlow: processOKPayment:  Stellar Anchor payment to supplier is OK ...")
+
+        logger.info("SinglePaymentFlow: ${Em.RED_APPLES} processOKPayment:  " +
+                "Stellar Anchor payment to supplier is OK ...")
 
         val keys: MutableList<PublicKey> = mutableListOf(
                 investor.host.owningKey,
@@ -146,12 +161,13 @@ class SinglePaymentFlow(private val offerId: String,
             val signedTransaction = subFlow(CollectSignaturesFlow(
                     partiallySignedTx = tx, sessionsToCollectFrom = sessions))
             subFlow(FinalityFlow(signedTransaction, sessions))
-            logger.info("$pp Transaction finalized with Supplier/customer on ${sessions.size} remote nodes")
+            logger.info("$pp Transaction finalized with Supplier/Customer on ${sessions.size} remote nodes")
         } else {
             subFlow(FinalityFlow(tx, listOf()))
-            logger.info("$pp Transaction finalized with Supplier/customer on same node")
+            logger.info("$pp Transaction finalized with Supplier/Customer on same node")
         }
-        logger.info("$pp Payment state created OK $pp")
+        logger.info("$pp SupplierPayment state created OK; " +
+                "${Em.YELLOW_BIRD} attempting to share state with foreign nodes ... $pp")
         shareState(acceptedOffer.state.data.supplier.host, payment.supplierPaymentId)
         shareState(acceptedOffer.state.data.customer.host, payment.supplierPaymentId)
         shareState(acceptedOffer.state.data.investor.host, payment.supplierPaymentId)
