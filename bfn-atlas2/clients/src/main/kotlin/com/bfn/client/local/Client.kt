@@ -4,28 +4,22 @@ package com.bfn.client.local
 import com.bfn.client.data.*
 import com.bfn.client.web.DTOUtil.getDTO
 import com.bfn.contractstates.states.*
-import com.bfn.flows.todaysDate
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import net.corda.client.rpc.CordaRPCClient
 import net.corda.core.contracts.ContractState
-import net.corda.core.contracts.StateAndRef
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.node.services.Vault
 import net.corda.core.node.services.vault.PageSpecification
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.utilities.NetworkHostAndPort
 import net.corda.core.utilities.loggerFor
-import org.json.JSONArray
-import org.json.JSONObject
 import org.springframework.http.MediaType
-import org.springframework.stereotype.Service
 import java.util.*
 import kotlin.collections.set
 import khttp.get as httpGet
-import khttp.post as httpPost
 
 
 /**
@@ -61,18 +55,40 @@ public class Client {
                 "Starting the Demo Data Generation for the BFN Network .....  \uD83D\uDD35 \uD83D\uDD35")
         val headers = mapOf("Content-Type" to MediaType.TEXT_PLAIN_VALUE)
 
-        val resp1 = httpGet(url = "$networkOperatorUrl/bfn/demo/generateAnchorNodeData?numberOfAccounts=8",
-        timeout = 900000000.0, headers = headers)
-        logger.info("RESPONSE: \uD83C\uDF4E statusCode: ${resp1.statusCode}  \uD83C\uDF4E ${resp1.text}")
+        generateAnchorNodeData(networkOperatorUrl, headers)
 
+        generateCustomerNodeData(customerUrl, headers)
+        
+        generateOffersForNetworkOperator(networkOperatorUrl, headers)
+
+        generateInvoiceOffers(networkOperatorUrl, headers)
+
+
+
+    }
+
+    private fun generateAnchorNodeData(networkOperatorUrl: String, headers: Map<String, String>) {
+        val resp1 = httpGet(url = "$networkOperatorUrl/bfn/demo/generateAnchorNodeData?numberOfAccounts=8",
+                timeout = 900000000.0, headers = headers)
+        logger.info("RESPONSE: \uD83C\uDF4E statusCode: ${resp1.statusCode}  \uD83C\uDF4E ${resp1.text}")
+    }
+
+    private fun generateCustomerNodeData(customerUrl: String, headers: Map<String, String>) {
         val resp2 = httpGet(url = "$customerUrl/bfn/demo/generateCustomerNodeData",
                 timeout = 900000000.0, headers = headers)
         logger.info("RESPONSE: \uD83C\uDF4E statusCode: ${resp2.statusCode}  \uD83C\uDF4E ${resp2.text}")
+    }
 
+    private fun generateInvoiceOffers(networkOperatorUrl: String, headers: Map<String, String>) {
         val resp3 = httpGet(url = "$networkOperatorUrl/bfn/demo/generateInvoiceOffers",
                 timeout = 900000000.0, headers = headers)
         logger.info("RESPONSE: \uD83C\uDF4E statusCode: ${resp3.statusCode}  \uD83C\uDF4E ${resp3.text}")
+    }
 
+    private fun generateOffersForNetworkOperator(networkOperatorUrl: String, headers: Map<String, String>) {
+        val resp4 = httpGet(url = "$networkOperatorUrl/bfn/demo/generateOffersForNetworkOperator",
+                timeout = 900000000.0, headers = headers)
+        logger.info("RESPONSE: \uD83C\uDF4E statusCode: ${resp4.statusCode}  \uD83C\uDF4E ${resp4.text}")
     }
 
 

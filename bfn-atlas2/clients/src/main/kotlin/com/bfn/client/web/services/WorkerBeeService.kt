@@ -18,6 +18,7 @@ import com.bfn.flows.queries.FindInvoiceFlow
 import com.bfn.flows.queries.InvoiceOfferQueryFlow
 import com.bfn.flows.queries.InvoiceQueryFlow
 import com.bfn.flows.scheduled.CreateInvoiceOffersFlow
+import com.bfn.flows.supplier.FindBestOfferForInvoiceFlow
 import com.bfn.flows.supplier.SupplierProfileFlow
 import com.google.firebase.cloud.FirestoreClient
 import com.google.gson.GsonBuilder
@@ -615,7 +616,6 @@ class WorkerBeeService {
     fun validateInvoiceAgainstProfile( invoice: InvoiceDTO,
                                       investorProfile: InvestorProfileStateDTO): Boolean {
 
-        val invoiceAmount = BigDecimal(invoice.amount)
         if (invoice.supplier.identifier == investorProfile.account.identifier) {
             logger.info("${E.RED_APPLE} supplier cannot be the investor: ${E.ERROR} id check failed")
             return false;
@@ -625,6 +625,7 @@ class WorkerBeeService {
             return false;
         }
 
+        val invoiceAmount = BigDecimal(invoice.amount)
         for (item in investorProfile.tradeMatrixItems) {
             val startInvoiceAmount = BigDecimal(item.startInvoiceAmount)
             val endInvoiceAmount = BigDecimal(item.endInvoiceAmount)
@@ -632,8 +633,18 @@ class WorkerBeeService {
                 return true
             }
         }
+        if (investorProfile.tradeMatrixItems.isEmpty()) {
+            val minimum = BigDecimal(investorProfile.minimumInvoiceAmount)
+            val maximum = BigDecimal(investorProfile.maximumInvoiceAmount)
+            if (invoiceAmount < minimum) {
+                return false
+            }
+            if (invoiceAmount > maximum) {
+                return false
+            }
+        }
         //todo - 🍎 🍎 🍎 🍎  add validation against industry, specific blackList, whiteList etc. 🍎 🍎 🍎 🍎
-        logger.info("${E.RED_APPLE} invoice amount failed trade matrix check ${E.ERROR}")
+        logger.info("${E.NOT_OK} invoice amount failed trade matrix check ${E.ERROR}")
         return false
     }
 
@@ -909,7 +920,39 @@ class WorkerBeeService {
         }
 
     }
+    @Throws(Exception::class)
+    fun findBestOfferForInvoice(proxy: CordaRPCOps,
+                                invoiceId:String,
+                                supplierAccountId:String,
+                                acceptBestOffer:Boolean = false) : InvoiceOfferDTO? {
+        val offerCordaFuture = proxy.startFlowDynamic(
+                FindBestOfferForInvoiceFlow::class.java,
+                supplierAccountId, invoiceId, acceptBestOffer).returnValue
+        val acceptedOffer = offerCordaFuture.get()
+        if (acceptedOffer != null) {
+            val mOffer = DTOUtil.getDTO(acceptedOffer)
+            logger.info("\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
+                    "Accepted Offer is : ${gson.toJson(mOffer)}  \uD83C\uDF40 \n\n")
+            return mOffer
+        }
 
+        return null
+    }
+    @Throws(Exception::class)
+    fun findOffersForInvoice(
+            proxy: CordaRPCOps,
+            invoiceId:String) : List<InvoiceOfferDTO> {
+        val offerCordaFuture = proxy.startFlowDynamic(
+                InvoiceOfferQueryFlow::class.java,
+                invoiceId, InvoiceOfferQueryFlow.FIND_FOR_INVOICE).returnValue
+        val offers = offerCordaFuture.get()
+        logger.info("\uD83C\uDF4E Offers found for invoice $invoiceId: ${offers.size} \uD83C\uDF4E")
+        val mList: MutableList<InvoiceOfferDTO> = mutableListOf()
+        for (offer in offers) {
+            mList.add(DTOUtil.getDTO(offer))
+        }
+        return mList
+    }
     @Throws(Exception::class)
     fun startCustomerProfileFlow(proxy: CordaRPCOps,
                                  profile: CustomerProfileStateDTO): String {

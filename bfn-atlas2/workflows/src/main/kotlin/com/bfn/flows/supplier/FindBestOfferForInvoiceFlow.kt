@@ -29,11 +29,11 @@ class FindBestOfferForInvoiceFlow(private val supplierAccountId: String,
     @Suspendable
     @Throws(FlowException::class)
     override fun call(): InvoiceOfferState? {
-        Companion.logger.info("\uD83E\uDD1F \uD83E\uDD1F \uD83E\uDD1F \uD83E\uDD1F \uD83E\uDD1F \uD83E\uDD1F \uD83E\uDD1F \uD83E\uDD1F " +
+        logger.info("\uD83E\uDD1F \uD83E\uDD1F \uD83E\uDD1F \uD83E\uDD1F \uD83E\uDD1F \uD83E\uDD1F \uD83E\uDD1F \uD83E\uDD1F " +
                 "... \uD83D\uDE3C \uD83D\uDE3C FindBestOfferForInvoiceFlow call started ... \uD83D\uDE3C \uD83D\uDE3C ")
         val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
         val supplierAccount = accountService.accountInfo(UUID.fromString(supplierAccountId))!!.state.data
-        Companion.logger.info(" \uD83C\uDF00 \uD83C\uDF00 ${supplierAccount.name} " +
+        logger.info(" \uD83C\uDF00 \uD83C\uDF00 ${supplierAccount.name} " +
                 "selecting best offer for invoice: \uD83D\uDE3C $invoiceId... supplier: ${supplierAccount.name}")
 
         val pair = filterOffersByProfile()
@@ -43,14 +43,13 @@ class FindBestOfferForInvoiceFlow(private val supplierAccountId: String,
             throw IllegalArgumentException(msg)
         }
         val offers = pair.first
-
         if (offers.isEmpty()) {
             val msg = "\uD83D\uDC80 \uD83D\uDC80 \uD83D\uDC80 No invoiceOffers found on node \uD83D\uDC80 "
             logger.info(msg)
             throw IllegalArgumentException(msg)
         }
         val selected = pair.second
-        Companion.logger.info("\uD83C\uDF6F \uD83C\uDF6F \uD83C\uDF6F \uD83C\uDF6F " +
+        logger.info("\uD83C\uDF6F \uD83C\uDF6F \uD83C\uDF6F \uD83C\uDF6F " +
                 "Yebo! Best Offer selected: \uD83C\uDF6F \uD83C\uDF6F ${selected.state.data.offerAmount} " +
                 " supplier : ${selected.state.data.supplier.name}  ${selected.state.data.supplier.host} \uD83D\uDC4C " +
                 " investor: ${selected.state.data.investor.name} ${selected.state.data.investor.host} \uD83E\uDDE9 ")
@@ -58,7 +57,8 @@ class FindBestOfferForInvoiceFlow(private val supplierAccountId: String,
         if (acceptBestOffer) {
             // 🔵 🔵 accept the best offer found
             val offerState = subFlow(OfferAcceptanceBySupplierFlow(selected.state.data.offerId))
-            logger.info(" \uD83D\uDD35 \uD83D\uDD35 Best InvoiceOffer has been selected and accepted")
+            logger.info(" \uD83D\uDD35 \uD83D\uDD35 FindBestOfferForInvoiceFlow: " +
+                    "\uD83C\uDF4E Best InvoiceOffer has been selected and accepted")
             return offerState
         }
 
@@ -71,7 +71,7 @@ class FindBestOfferForInvoiceFlow(private val supplierAccountId: String,
         val offerFinder = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
         val offers = offerFinder.findOffersByInvoice(invoiceId = invoiceId)
 
-        Companion.logger.info(" \uD83C\uDFC0 Offers found for the invoice:  \uD83C\uDFC0 " +
+        logger.info(" \uD83C\uDFC0 Offers found for the invoice:  \uD83C\uDFC0 " +
                 "${offers.size} offers  \uD83C\uDFC0 ")
         if (offers.isEmpty()) {
             return null
@@ -84,7 +84,7 @@ class FindBestOfferForInvoiceFlow(private val supplierAccountId: String,
             logger.info("\uD83C\uDFB1 \uD83C\uDFB1 \uD83C\uDFB1  Profile is NULL. returning last of ${offers.size}")
             throw IllegalArgumentException("Supplier Profile not found")
         } else {
-            Companion.logger.info("\uD83C\uDF21 \uD83C\uDF21 \uD83C\uDF21 \uD83C\uDF21 " +
+            logger.info("\uD83C\uDF21 \uD83C\uDF21 \uD83C\uDF21 \uD83C\uDF21 " +
                     "Filtering ${offers.size} offers based on profile: \uD83C\uDFC0 " +
                     "maxDiscount: ${profile.state.data.maximumDiscount}")
             val filteredList: MutableList<StateAndRef<InvoiceOfferState>> = mutableListOf()
@@ -104,7 +104,7 @@ class FindBestOfferForInvoiceFlow(private val supplierAccountId: String,
                 log(filteredList, selected)
                 Pair(filteredList, selected)
             } else {
-                Companion.logger.info("\uD83D\uDD25\uD83D\uDD25 \uD83D\uDD25 No Offers made the cut:")
+                logger.info("\uD83D\uDD25\uD83D\uDD25 \uD83D\uDD25 No Offers made the cut:")
                 null
             }
         }

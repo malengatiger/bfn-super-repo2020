@@ -234,10 +234,24 @@ class AdminController(rpc: NodeRPCConnection) {
     fun findPurchaseOrdersForNode(): List<InvoiceDTO> {
         return workerBeeService.findInvoicesForNode(proxy)
     }
+
     @GetMapping(value = ["/findInvoicesForInvestor"])
     @Throws(Exception::class)
     fun findInvoicesForInvestor(@RequestParam(value = "accountId", required = true) accountId: String): List<InvoiceDTO> {
         return workerBeeService.findInvoicesForInvestor(proxy, accountId)
+    }
+
+    @GetMapping(value = ["/findBestOfferForInvoice"])
+    @Throws(Exception::class)
+    fun findBestOfferForInvoice(
+            supplierAccountId: String,
+            invoiceId: String,
+            acceptBestOffer: Boolean): InvoiceOfferDTO? {
+
+        return workerBeeService.findBestOfferForInvoice(proxy = proxy,
+                supplierAccountId = supplierAccountId,
+                invoiceId = invoiceId,
+                acceptBestOffer = acceptBestOffer)
     }
 
     @GetMapping(value = ["/findOffersForInvestor"])
