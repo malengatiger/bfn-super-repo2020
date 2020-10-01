@@ -2,6 +2,7 @@ package com.bfn.flows.investor
 
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.states.SupplierPaymentState
+import com.bfn.flows.PaymentRequestParams
 import com.bfn.flows.regulator.ReportToRegulatorFlow
 import com.bfn.flows.services.InvoiceOfferFinderService
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
@@ -18,9 +19,7 @@ import org.slf4j.LoggerFactory
 @StartableByRPC
 @SchedulableFlow
 class MultiplePaymentsFlow(
-        private val investor: AccountInfo,
-        private val stellarAnchorUrl: String,
-        private val delayMinutesUntilNextPaymentFlow: Long) : FlowLogic<List<SupplierPaymentState>>() {
+        private val paymentRequestParams: PaymentRequestParams) : FlowLogic<List<SupplierPaymentState>>() {
 
     @Suspendable
     override fun call(): List<SupplierPaymentState> {
@@ -28,21 +27,24 @@ class MultiplePaymentsFlow(
 
         val offerFinderService = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
         val acceptedOffers = offerFinderService.getInvestorOffersAccepted(
-                investorId = investor.identifier.id.toString())
+                investorId = paymentRequestParams.investorId)
         val paymentList: MutableList<SupplierPaymentState> = mutableListOf()
         if (acceptedOffers.isEmpty()) {
             logger.warn("⚠️ ⚠️ ⚠️  No accepted offers found for anchor")
             return paymentList
         }
         logger.info("⚱️ ⚱️ ⚱️  ${acceptedOffers.size} accepted offers found for investor, " +
-                "start payments using: $stellarAnchorUrl")
+                "start payments using: ${paymentRequestParams.stellarAnchorUrl}")
         for (offer in acceptedOffers) {
             try {
-                val response = subFlow(SinglePaymentFlow(
+                val mParams = PaymentRequestParams(
                         offerId = offer.state.data.offerId,
-                        stellarAnchorUrl = stellarAnchorUrl,
-                        investorId = offer.state.data.investor.identifier.id.toString(),
-                        delayMinutesUntilNextPaymentFlow = delayMinutesUntilNextPaymentFlow))
+                        investorId = paymentRequestParams.investorId,
+                        stellarAnchorUrl = paymentRequestParams.stellarAnchorUrl,
+                        delayMinutesUntilNextPaymentFlow = paymentRequestParams.delayMinutesUntilNextPaymentFlow
+                )
+                val response = subFlow(SinglePaymentFlow(
+                        paymentRequestParams = mParams))
                 paymentList.add(response)
             } catch (e:Exception) {
                 logger.error("SinglePaymentFlow failed", e)

@@ -420,7 +420,7 @@ class DemoDataService {
 
     fun generateProfiles(proxy: CordaRPCOps): String {
         val accountInfos = workerBeeService.getNodeAccounts(proxy = proxy)
-        logger.info("$em1 getNodeAccounts complete ..." +
+        logger.info("\n\n\n$em1 getNodeAccounts complete ..." +
                 "  \uD83D\uDD06 \uD83D\uDD06 found  ${accountInfos.size} ... " +
                 "adding investor and supplier profiles for all accounts ........")
         //add profiles and generate invoices
@@ -874,17 +874,17 @@ class DemoDataService {
                 minimumInvoiceAmount = "50000.00",
                 maximumInvoiceAmount = "100000000.00"))
         logger.info("\n\n\n\n")
-        doOneCustomer(proxy, buildCustomerProfile(
-                "Department of Health",
-                minimumInvoiceAmount = "10000.00",
-                maximumInvoiceAmount = "1000000.00"))
-        logger.info("\n\n\n\n")
+//        doOneCustomer(proxy, buildCustomerProfile(
+//                "Department of Health",
+//                minimumInvoiceAmount = "10000.00",
+//                maximumInvoiceAmount = "1000000.00"))
+//        logger.info("\n\n\n\n")
 
-        doOneCustomer(proxy, buildCustomerProfile(
-                "BMW South Africa Limited",
-                minimumInvoiceAmount =  "5000.00",
-                maximumInvoiceAmount =  "40000000.00"))
-        logger.info("\n\n\n\n")
+//        doOneCustomer(proxy, buildCustomerProfile(
+//                "BMW South Africa Limited",
+//                minimumInvoiceAmount =  "5000.00",
+//                maximumInvoiceAmount =  "40000000.00"))
+//        logger.info("\n\n\n\n")
 
 
     }

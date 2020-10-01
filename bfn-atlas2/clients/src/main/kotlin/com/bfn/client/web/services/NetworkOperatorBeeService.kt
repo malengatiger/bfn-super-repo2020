@@ -33,7 +33,7 @@ class NetworkOperatorBeeService {
     private lateinit var workerBeeService: WorkerBeeService
 
     @Autowired
-    private lateinit var stellarAccountService: StellarAccountService
+    private lateinit var stellarAnchorService: StellarAnchorService
 
     @PostConstruct
     fun init() {

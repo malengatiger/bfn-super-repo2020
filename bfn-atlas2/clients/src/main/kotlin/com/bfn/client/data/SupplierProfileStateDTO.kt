@@ -3,11 +3,11 @@ package com.bfn.client.data
 import java.util.*
 
 data class SupplierProfileStateDTO (
-        val account: AccountInfoDTO,
-        val bank: String,
-        val bankAccount: String,
-        val maximumDiscount: String,
-        val stellarAccountId: String,
-        val rippleAccountId: String,
-        val assetCode: String,
-        val date: String = Date().toString())
+        var account: AccountInfoDTO? = null,
+        var bank: String = "",
+        var bankAccount: String= "",
+        var maximumDiscount: String= "",
+        var stellarAccountId: String= "",
+        var rippleAccountId: String= "",
+        var assetCode: String= "",
+        var date: String = "")

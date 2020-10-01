@@ -48,8 +48,6 @@ object DTOUtil {
                 supplierProfile = getDTO(a.supplierProfile),
                 acceptedOffer = getDTO(a.acceptedOffer),
                 date = a.date,
-                paid = a.paid,
-                paymentRequest = null,
                 supplierPaymentId = a.supplierPaymentId
         )
     }

@@ -3,10 +3,9 @@ package com.bfn.flows.investor
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.contracts.SupplierPaymentContract
 import com.bfn.contractstates.states.InvoiceOfferState
-import com.bfn.contractstates.states.PaymentRequestState
 import com.bfn.contractstates.states.SupplierPaymentState
 import com.bfn.flows.Em
-import com.bfn.flows.operator.StellarPaymentFlow
+import com.bfn.flows.PaymentRequestParams
 import com.bfn.flows.services.*
 import com.bfn.flows.todaysDate
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
@@ -24,17 +23,14 @@ import java.util.*
  */
 @InitiatingFlow
 @StartableByRPC
-class SinglePaymentFlow(private val offerId: String,
-                        private val investorId: String,
-                        private val stellarAnchorUrl: String,
-                        private val delayMinutesUntilNextPaymentFlow: Long) : FlowLogic<SupplierPaymentState>() {
+class SinglePaymentFlow(private val paymentRequestParams: PaymentRequestParams) : FlowLogic<SupplierPaymentState>() {
 
     @Suspendable
     override fun call(): SupplierPaymentState {
         Companion.logger.info("$pp SinglePaymentFlow started ... $pp")
 
         val service = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
-        val acceptedOffer = service.findInvoiceOffer(offerId) ?:
+        val acceptedOffer = service.findInvoiceOffer(paymentRequestParams.offerId) ?:
             throw IllegalArgumentException(Em.NOT_OK+"Accepted offer not found")
         if (!acceptedOffer.state.data.accepted) {
             throw IllegalArgumentException(Em.NOT_OK+"Offer not accepted yet by Supplier")
@@ -44,8 +40,9 @@ class SinglePaymentFlow(private val offerId: String,
                 .getAllPaymentStateAndRefs()
 
         payments.forEach() {
-            if (it.state.data.acceptedOffer.offerId == offerId) {
-                throw IllegalArgumentException(Em.NOT_OK+"Payment already exists for this offer: $offerId")
+            if (it.state.data.acceptedOffer.offerId == paymentRequestParams.offerId) {
+                throw IllegalArgumentException(Em.NOT_OK + "Payment already exists for this offer: " +
+                        paymentRequestParams.offerId)
             }
         }
         val command = SupplierPaymentContract.Pay()
@@ -55,8 +52,10 @@ class SinglePaymentFlow(private val offerId: String,
         val customerParty =  acceptedOffer.state.data.customer
         val investorParty =  acceptedOffer.state.data.investor
 
-        val investorProfile = serviceHub.cordaService(ProfileFinderService::class.java).findInvestorProfile(investorId)
-                ?: throw IllegalArgumentException(Em.NOT_OK+"InvestorProfile not found for: $investorId")
+        val investorProfile = serviceHub.cordaService(ProfileFinderService::class.java)
+                .findInvestorProfile(paymentRequestParams.investorId)
+                ?: throw IllegalArgumentException(Em.NOT_OK + "InvestorProfile not found for: " +
+                        "${paymentRequestParams.investorId} ")
 
         val supplierProfile = serviceHub.cordaService(ProfileFinderService::class.java)
                 .findSupplierProfile(acceptedOffer.state.data.supplier.identifier.id.toString())
@@ -69,33 +68,11 @@ class SinglePaymentFlow(private val offerId: String,
                 supplierPaymentId = UUID.randomUUID().toString(),
                 acceptedOffer = acceptedOffer.state.data,
                 supplierProfile = supplierProfile.state.data,
-                date = todaysDate(), paid = false,
-                delayMinutesUntilNextPaymentFlow = delayMinutesUntilNextPaymentFlow,
-                stellarAnchorUrl = stellarAnchorUrl,
-                paymentRequest = PaymentRequestState(
-                        paymentRequestId = UUID.randomUUID().toString(),
-                        amount = acceptedOffer.state.data.offerAmount,
-                        assetCode = supplierProfile.state.data.assetCode,
-                        customerInfo = acceptedOffer.state.data.customer,
-                        supplierInfo = acceptedOffer.state.data.supplier,
-                        investorInfo = acceptedOffer.state.data.investor,
-                        date = todaysDate()
-                )
-
+                date = todaysDate()
         )
-        //todo - make EFT payment to supplier ... OR do this externally; kicked off in api?
-        logger.info("SinglePaymentFlow: ${Em.FERNS} make Stellar Anchor payment to supplier " +
-                "using StellarPaymentFlow ...${Em.RED_APPLE}")
-        val result = subFlow(StellarPaymentFlow(
-                supplierPayment = payment,
-                stellarAnchorUrl = stellarAnchorUrl))
-        if (result.statusCode == 200) {
-            return processOKPayment(investorParty, supplierParty,
-                    customerParty, txBuilder, command, acceptedOffer, payment)
-        } else {
-            throw Exception("${Em.ERRORS} Payment failed, " +
-                    "statusCode: ${result.statusCode} text: ${result.text}")
-        }
+
+        return processOKPayment(investorParty, supplierParty,
+                customerParty, txBuilder, command, acceptedOffer, payment)
     }
     @Suspendable
     private fun shareState(party: Party, supplierPaymentId: String) {

@@ -110,7 +110,7 @@ class SupplierController(rpc: NodeRPCConnection) {
     @PostMapping(value = ["createSupplierProfile"])
     @Throws(Exception::class)
     fun createSupplierProfile(@RequestBody profile: SupplierProfileStateDTO): String? {
-        val acct = workerBeeService.getNodeAccount(proxy, identifier = profile.account.identifier)
+        val acct = workerBeeService.getNodeAccount(proxy, identifier = profile.account!!.identifier)
         return acct.let { workerBeeService.createSupplierProfile(proxy, profile, it!!) }
     }
 

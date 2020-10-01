@@ -2,6 +2,7 @@ package com.bfn.flows.investor
 
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.states.InvoiceOfferState
+import com.bfn.flows.Em
 import com.bfn.flows.regulator.ReportToRegulatorFlow
 import com.bfn.flows.services.InvoiceOfferFinderService
 import com.r3.corda.lib.accounts.workflows.flows.ShareStateAndSyncAccounts
@@ -156,7 +157,7 @@ class InvoiceOfferFlow(
         val srv = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
         val list = srv.getOffersOnNode();
         var isFound = false
-        Companion.logger.info(" \uD83D\uDCA6  \uD83D\uDCA6 Number of InvoiceOfferStates:  \uD83D\uDCA6 ${list.size} \uD83D\uDCA6")
+        Companion.logger.info("\uD83D\uDCA6 \uD83D\uDCA6 Number of InvoiceOfferStates: \uD83D\uDCA6 ${list.size} \uD83D\uDCA6")
 
         list.forEach() {
             if (invoiceOfferState.invoiceId.toString()
@@ -168,7 +169,7 @@ class InvoiceOfferFlow(
             }
         }
         if (isFound) {
-            throw FlowException("\uD83D\uDC7F InvoiceOfferState is already on file")
+            throw IllegalArgumentException("${Em.ERRORS} InvoiceOfferState is already on file")
         }
     }
 

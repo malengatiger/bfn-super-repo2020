@@ -43,7 +43,7 @@ class DemoDataController(rpc: NodeRPCConnection) {
     private lateinit var  crossNodeService: CrossNodeService
 
     @Autowired
-    private lateinit var  networkService: StellarAccountService
+    private lateinit var  networkService: StellarAnchorService
 
 
 

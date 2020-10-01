@@ -20,6 +20,7 @@ buildscript {
         confidential_id_release_group = "com.r3.corda.lib.ci"
         confidential_id_release_version = "1.0"
         vaultaire_version = "0.30"
+        khttp_version = "1.0.0"
     }
 
     repositories {
@@ -94,7 +95,7 @@ dependencies {
     cordaCompile "com.github.manosbatsis.vaultaire:vaultaire:$vaultaire_version"
     // Annotation processing
 //    kapt "com.github.manosbatsis.vaultaire:vaultaire-processor:$vaultaire_version"
-
+    compile group: 'khttp', name: 'khttp', version: '1.0.0'
     // Corda dependencies.
     cordaCompile "$corda_release_group:corda-core:$corda_release_version"
     cordaCompile "$corda_release_group:corda-node-api:$corda_release_version"

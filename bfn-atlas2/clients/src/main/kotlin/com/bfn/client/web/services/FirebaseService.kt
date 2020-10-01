@@ -1,5 +1,6 @@
 package com.bfn.client.web.services
 
+import com.bfn.client.Emo
 import com.bfn.client.data.*
 import com.bfn.client.web.*
 import com.google.api.core.ApiFuture
@@ -108,6 +109,11 @@ class FirebaseService() {
     @Throws(ExecutionException::class, InterruptedException::class)
     fun addPurchaseOrder(purchaseOrder: PurchaseOrderDTO) {
         val future: ApiFuture<DocumentReference> = db.collection(BFN_PURCHASE_ORDERS).add(purchaseOrder);
+        logger.info("\uD83D\uDE3C \uD83D\uDE3C purchaseOrder added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+    }
+    @Throws(ExecutionException::class, InterruptedException::class)
+    fun addPaymentRequest(paymentRequest: PaymentRequestDTO) {
+        val future: ApiFuture<DocumentReference> = db.collection(PAYMENT_REQUESTS).add(paymentRequest);
         logger.info("\uD83D\uDE3C \uD83D\uDE3C purchaseOrder added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
     @Throws(ExecutionException::class, InterruptedException::class)
@@ -283,9 +289,7 @@ class FirebaseService() {
 
     @Throws(FirebaseAuthException::class)
     fun createBFNUser(user: UserDTO): UserDTO? {
-        logger.info("\uD83D\uDD37 \uD83D\uDD37 ..... FirebaseService:createBFNUser: " +
-                " \uD83C\uDF4E \uD83C\uDF4E writing to Firestore; " +
-                "Check the properties of this user record; uid not set yet ... ${gson.toJson(user)}... \uD83D\uDD37 ")
+
 
         val userRecord = createAuthUser(
                 name = user.accountInfo.name,
@@ -294,6 +298,11 @@ class FirebaseService() {
         if (userRecord != null) {
             user.uid = userRecord.uid
         }
+
+        logger.info("\uD83D\uDD37 \uD83D\uDD37 ..... FirebaseService:createBFNUser: " +
+                " \uD83C\uDF4E \uD83C\uDF4E writing to Firestore; " +
+                "Check the properties of this user record; uid not set yet ... ${gson.toJson(user)}... \uD83D\uDD37 ")
+
         val future = db.collection(BFN_USERS).add(user)
         logger.info("\n\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 " +
                 " BFN user record added to Firestore; path: " + future.get().path)
@@ -354,7 +363,8 @@ class FirebaseService() {
     }
     @Throws(FirebaseAuthException::class)
     fun getBFNUserByAccountName(accountName:String): UserDTO? {
-        logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 Getting BFN user by account name, look out for data parsing error ...")
+        logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 " +
+                "Getting BFN user by account name: $accountName, look out for data parsing error ...")
         var record: UserDTO? = null
         try {
             val page = db.collection(BFN_USERS)
@@ -373,29 +383,99 @@ class FirebaseService() {
             logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 Found BFN user, " +
                     "name: ${record!!.accountInfo.name} host: ${record!!.accountInfo.host}")
         } else {
-            logger.info("User not found on firestore")
+            logger.info("${Emo.ERRORS}User not found on firestore")
         }
         return record
     }
-    fun getInvestorProfile(accountId:String): InvestorProfileStateDTO? {
-        logger.info("getInvestorProfile started .... accountId: $accountId")
-        var record: InvestorProfileStateDTO? = null
+    @Throws(FirebaseAuthException::class)
+    fun getBFNUserById(accountId:String): UserDTO? {
+        logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 " +
+                "Getting BFN user by account name: $accountId, look out for data parsing error ...")
+        var record: UserDTO? = null
         try {
-            val page = db.collection(BFN_INVESTOR_PROFILES)
-                    .whereEqualTo("account.identifier", accountId)
-                    .orderBy("date" )
+            val apiFuture = db.collection(BFN_USERS)
+                    .whereEqualTo("accountInfo.identifier", accountId)
+                    .limit(1)
                     .get()
-            val m = page.get()
-            m.documents.forEach {
-                record = it.toObject(InvestorProfileStateDTO::class.java)
+            val querySnapshot = apiFuture.get()
+            logger.info("\uD83D\uDD06 user records in snapshot: ${querySnapshot.documents.size}")
+            querySnapshot.documents.forEach {
+                record = it.toObject(UserDTO::class.java)
             }
 
         } catch (e: Exception) {
             logger.error(e.message)
         }
         if (record != null) {
-            logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 getInvestorProfile Found " +
+            logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 Found BFN user, " +
+                    "name: ${record!!.accountInfo.name} host: ${record!!.accountInfo.host}")
+        } else {
+            logger.info("${Emo.ERRORS} User not found on firestore")
+        }
+        return record
+    }
+    fun getInvestorProfile(accountId:String): InvestorProfileStateDTO? {
+        logger.info("............... ${Emo.FERN} getInvestorProfile started .... accountId: $accountId")
+        var record: InvestorProfileStateDTO? = null
+        try {
+            val page = db.collection(BFN_INVESTOR_PROFILES)
+                    .whereEqualTo("account.identifier", accountId)
+                    .get()
+            val m = page.get()
+            m.documents.forEach {
+//                val obj = JSONObject(it.toString())
+                record =it.toObject( InvestorProfileStateDTO::class.java)
+            }
+
+        } catch (e: Exception) {
+            logger.error(e.message)
+        }
+        if (record != null) {
+            logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 getInvestorProfile Found: " +
                     "name: ${record!!.account.name} ")
+        }
+        return record
+    }
+    fun getSupplierProfile(accountId:String): SupplierProfileStateDTO? {
+        logger.info("............... ${Emo.FERN} getSupplierProfile started .... accountId: $accountId")
+        var record: SupplierProfileStateDTO? = null
+        try {
+            val page = db.collection(BFN_SUPPLIER_PROFILES)
+                    .whereEqualTo("account.identifier", accountId)
+                    .get()
+            val m = page.get()
+            m.documents.forEach {
+                record = it.toObject(SupplierProfileStateDTO::class.java)
+            }
+
+        } catch (e: Exception) {
+            logger.error(e.message)
+        }
+        if (record != null) {
+            logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 getSupplierProfile Found: " +
+                    "name: ${record!!.account!!.name} ")
+        }
+        return record
+    }
+    fun getInvoiceOffer(offerId:String): InvoiceOfferDTO? {
+        logger.info("getInvoiceOffer started .... offerId: $offerId")
+        var record: InvoiceOfferDTO? = null
+        try {
+            val page = db.collection(BFN_INVOICE_OFFERS)
+                    .whereEqualTo("offerId", offerId)
+                    .get()
+            val m = page.get()
+            m.documents.forEach {
+                record = it.toObject(InvoiceOfferDTO::class.java)
+            }
+
+        } catch (e: Exception) {
+            logger.info("${Emo.PIG} ${Emo.PIG} ${Emo.PIG} query is fucked!! ${e.message}")
+            logger.warn(e.message)
+        }
+        if (record != null) {
+            logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 getInvoiceOffer Found " +
+                    "name: ${record!!.investor?.name} ")
         }
         return record
     }

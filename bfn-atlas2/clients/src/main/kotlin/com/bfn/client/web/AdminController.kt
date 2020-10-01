@@ -33,6 +33,7 @@ class AdminController(rpc: NodeRPCConnection) {
     
     @Autowired
     private lateinit var  workerBeeService: WorkerBeeService
+
     @Autowired
     private  lateinit var  demoDataService: DemoDataService
 
@@ -46,7 +47,7 @@ class AdminController(rpc: NodeRPCConnection) {
     private lateinit var  crossNodeService: CrossNodeService
 
     @Autowired
-    private lateinit var  stellarAccountService: StellarAccountService
+    private lateinit var  stellarAnchorService: StellarAnchorService
 
 
     @GetMapping(value = ["/test"], produces = [MediaType.TEXT_PLAIN_VALUE])
@@ -87,12 +88,7 @@ class AdminController(rpc: NodeRPCConnection) {
         return networkOperatorBeeService.makeOffers(proxy)
     }
 
-    @GetMapping(value = ["/makeSinglePayment"], produces = [MediaType.APPLICATION_JSON_VALUE])
-    @Throws(Exception::class)
-    private fun makeSinglePayment(@RequestParam invoiceId: String): SupplierPaymentDTO? {
-        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting makeSinglePayment: ... \uD83C\uDF4F ")
-        return networkOperatorBeeService.makeSinglePayment(proxy, invoiceId = invoiceId)
-    }
+
     @GetMapping(value = ["/makeMultiplePayments"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun makeMultiplePayments(delayMinutesUntilNextPaymentFlow: Long): List<SupplierPaymentDTO>? {
@@ -113,15 +109,15 @@ class AdminController(rpc: NodeRPCConnection) {
         }
         return list
     }
-    @GetMapping(value = ["/generateOffers"], produces = [MediaType.APPLICATION_JSON_VALUE])
-    @Throws(Exception::class)
-    private fun generateOffers(@RequestParam max: Int?): String? {
-        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting demoDataService: generateOffers ... \uD83C\uDF4F ")
-
-        val result = demoDataService.generateInvoiceOffers(proxy)
-        logger.info(result)
-        return result
-    }
+//    @GetMapping(value = ["/generateOffers"], produces = [MediaType.APPLICATION_JSON_VALUE])
+//    @Throws(Exception::class)
+//    private fun generateOffers(@RequestParam max: Int?): String? {
+//        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting demoDataService: generateOffers ... \uD83C\uDF4F ")
+//
+//        val result = demoDataService.generateInvoiceOffers(proxy)
+//        logger.info(result)
+//        return result
+//    }
 
     @GetMapping(value = ["/getNetworkOperator"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
@@ -142,16 +138,16 @@ class AdminController(rpc: NodeRPCConnection) {
                 "starting getNetworkAccounts ... \uD83C\uDF4F ")
         return workerBeeService.getNetworkAccounts(proxy)
     }
-
-
-    @GetMapping(value = ["/generateInvoices"], produces = [MediaType.APPLICATION_JSON_VALUE])
-    @Throws(Exception::class)
-    private fun generateInvoices(numberOfInvoicesPerAccount:Int ): String? {
-        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 AdminController: ... generateInvoices ...")
-        val result = demoDataService.generateInvoices(proxy)
-        logger.info(result)
-        return result
-    }
+//
+//
+//    @GetMapping(value = ["/generateInvoices"], produces = [MediaType.APPLICATION_JSON_VALUE])
+//    @Throws(Exception::class)
+//    private fun generateInvoices(numberOfInvoicesPerAccount:Int ): String? {
+//        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 AdminController: ... generateInvoices ...")
+//        val result = demoDataService.generateInvoices(proxy)
+//        logger.info(result)
+//        return result
+//    }
 
     @PostMapping(value = ["/createStellarAccount"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
@@ -159,7 +155,7 @@ class AdminController(rpc: NodeRPCConnection) {
         logger.info("\n\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E  " +
                 "Creating Stellar Account by calling Stellar anchor server $stellarAnchorUrl ")
         val stellarResponse
-                = stellarAccountService.createStellarAccount(proxy = proxy)
+                = stellarAnchorService.createStellarAccount(proxy = proxy)
 
         logger.info(" \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
                 "AdminController.createStellarAccount returns responseBag:  ${GSON.toJson(stellarResponse)}")
@@ -204,7 +200,7 @@ class AdminController(rpc: NodeRPCConnection) {
     @PostMapping(value = ["/addSupplierProfile"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun addSupplierProfile(@RequestBody profile: SupplierProfileStateDTO): String? {
-        val acct = workerBeeService.getNodeAccount(proxy, identifier = profile.account.identifier)
+        val acct = workerBeeService.getNodeAccount(proxy, identifier = profile.account!!.identifier)
        return acct.let { workerBeeService.createSupplierProfile(proxy, profile, it!!) }
     }
     @PostMapping(value = ["/addInvestorProfile"], produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -264,16 +260,17 @@ class AdminController(rpc: NodeRPCConnection) {
 
     @GetMapping(value = ["/findOffersForInvestor"])
     @Throws(Exception::class)
-    fun findOffersForInvestor(@RequestParam(value = "accountId", required = true) accountId: String): List<InvoiceOfferDTO> {
-        return workerBeeService.findOffersForInvestor(proxy, accountId)
+    fun findOffersForInvestor(
+            investorId: String): List<InvoiceOfferDTO> {
+        return workerBeeService.findOffersForInvestor(proxy, investorId)
     }
+
     @GetMapping(value = ["/makePaymentForOffer"])
     @Throws(Exception::class)
-    fun makePaymentForOffer(
-            investorId: String,
-            offerId: String): SupplierPaymentDTO {
-        return workerBeeService.makePaymentForOffer(proxy, offerId = offerId, investorId = investorId)
+    fun makePaymentForOffer( offerId: String): SupplierPaymentDTO? {
+        return stellarAnchorService.makePaymentForOffer(proxy, offerId = offerId)
     }
+
     @GetMapping(value = ["/findOffersForSupplier"])
     @Throws(Exception::class)
     fun findOffersForSupplier(@RequestParam(value = "accountId", required = true) accountId: String): List<InvoiceOfferDTO> {
@@ -303,18 +300,18 @@ class AdminController(rpc: NodeRPCConnection) {
     }
     @GetMapping(value = ["/getSupplierProfile"])
     @Throws(Exception::class)
-    fun getSupplierProfile(@RequestParam(value = "accountId") accountId: String?): SupplierProfileStateDTO? {
+    fun getSupplierProfile(@RequestParam(value = "accountId") accountId: String): SupplierProfileStateDTO? {
         return workerBeeService.getSupplierProfile(proxy, accountId)
     }
     @GetMapping(value = ["/getInvestorProfile"])
     @Throws(Exception::class)
-    fun getInvestorProfile(@RequestParam(value = "accountId") accountId: String?): InvestorProfileStateDTO? {
-        return workerBeeService.getInvestorProfile(proxy, accountId)
+    fun getInvestorProfile(@RequestParam(value = "accountId") accountId: String): InvestorProfileStateDTO? {
+        return firebaseService.getInvestorProfile(accountId)
     }
     @PostMapping(value = ["/createSupplierProfile"])
     @Throws(Exception::class)
     fun createSupplierProfile(@RequestBody profile: SupplierProfileStateDTO): String? {
-        val acct = workerBeeService.getNodeAccount(proxy, identifier = profile.account.identifier)
+        val acct = workerBeeService.getNodeAccount(proxy, identifier = profile.account!!.identifier)
         return acct.let { workerBeeService.createSupplierProfile(proxy, profile, it!!) }
     }
 

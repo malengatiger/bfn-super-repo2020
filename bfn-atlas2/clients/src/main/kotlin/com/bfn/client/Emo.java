@@ -41,7 +41,7 @@ public class Emo {
             YELLOW_DIAMOND = "\uD83D\uDD36 ",   // 🔶
             GOLD_BELL = "\uD83D\uDD14 ",        // 🔔
             HAPPY = "\uD83E\uDD22 ",        // 🤢
-            FROG = " \uD83D\uDC38 ",        // 🐸
+            FROG = "\uD83D\uDC38 ",        // 🐸
             DOLPHIN = "\uD83D\uDC2C ",      //  🐬
             GLOBE = "\uD83C\uDF0D ",        //  🌍
             ALIEN = "\uD83D\uDC7D ",        // 👽
@@ -62,7 +62,7 @@ public class Emo {
             FERN = "\uD83C\uDF3F ",             // 🌿
             FERNS = "\uD83C\uDF3F \uD83C\uDF3F \uD83C\uDF3F  ",             // 🌿
             RAIN_DROP = "\uD83D\uDCA7 ",        // 💧
-            RAIN_DROPS = "\uD83D\uDCA6 ",       // 💦
+            RAIN_DROPS = "\uD83D\uDCA6 \uD83D\uDCA6 \uD83D\uDCA6 ",       // 💦
             GEAR = "⚙️ ",                       // ⚙️
             DIAMOND = "\uD83D\uDC8E ",          // 💎
             CANCEL = "❎ ",                     // ❎
