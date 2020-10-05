@@ -3,9 +3,11 @@ package com.bfn.client.data;
 public class UserDTO {
     private AccountInfoDTO accountInfo;
     private String  email, password,cellphone,uid, stellarAccountId,
-            rippleAccountId;
+            rippleAccountId, dateRegistered;
 
-    public UserDTO(AccountInfoDTO accountInfo, String email, String password, String cellphone, String uid, String stellarAccountId, String rippleAccountId) {
+    public UserDTO(AccountInfoDTO accountInfo, String email, String password,
+                   String cellphone, String uid, String stellarAccountId,
+                   String rippleAccountId, String dateRegistered) {
         this.accountInfo = accountInfo;
         this.email = email;
         this.password = password;
@@ -16,6 +18,14 @@ public class UserDTO {
     }
 
     public UserDTO() {
+    }
+
+    public String getDateRegistered() {
+        return dateRegistered;
+    }
+
+    public void setDateRegistered(String dateRegistered) {
+        this.dateRegistered = dateRegistered;
     }
 
     public AccountInfoDTO getAccountInfo() {

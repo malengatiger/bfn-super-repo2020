@@ -20,7 +20,7 @@ class SupplierProfileState(
         val stellarAccountId: String,
         val rippleAccountId: String,
         val assetCode: String,
-        val date: Date = Date()
+        val dateRegistered: String
                    ) : ContractState {
 
     override val participants: List<AbstractParty>

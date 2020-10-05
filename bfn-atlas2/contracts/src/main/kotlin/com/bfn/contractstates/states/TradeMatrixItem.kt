@@ -7,7 +7,7 @@ data class TradeMatrixItem (
         val startInvoiceAmount: String,
         val endInvoiceAmount: String,
         val offerDiscount: String,
-        val date: String
+        val dateRegistered: String
 
 ) {
 }

@@ -20,7 +20,7 @@ class PaymentRequestState(
         val investorInfo: AccountInfo,
         val assetCode: String,
         val amount: String,
-        val date: String) : ContractState {
+        val dateRegistered: String) : ContractState {
 
     override val participants: List<AbstractParty>
         get() = listOf(supplierInfo.host,

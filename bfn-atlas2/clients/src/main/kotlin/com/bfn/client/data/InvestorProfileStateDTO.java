@@ -13,7 +13,7 @@ public class InvestorProfileStateDTO {
     String stellarAccountId;
     String rippleAccountId;
     List<TradeMatrixItemDTO> tradeMatrixItems;
-    String date;
+    String dateRegistered;
 
     public InvestorProfileStateDTO() {
     }
@@ -22,7 +22,7 @@ public class InvestorProfileStateDTO {
                                    String maximumInvoiceAmount, String totalInvestment,
                                    String defaultDiscount, String bank, String bankAccount,
                                    String stellarAccountId, String rippleAccountId,
-                                   List<TradeMatrixItemDTO> tradeMatrixItems, String date) {
+                                   List<TradeMatrixItemDTO> tradeMatrixItems, String dateRegistered) {
         this.account = account;
         this.minimumInvoiceAmount = minimumInvoiceAmount;
         this.maximumInvoiceAmount = maximumInvoiceAmount;
@@ -33,7 +33,7 @@ public class InvestorProfileStateDTO {
         this.stellarAccountId = stellarAccountId;
         this.rippleAccountId = rippleAccountId;
         this.tradeMatrixItems = tradeMatrixItems;
-        this.date = date;
+        this.dateRegistered = dateRegistered;
     }
 
     public AccountInfoDTO getAccount() {
@@ -116,11 +116,11 @@ public class InvestorProfileStateDTO {
         this.tradeMatrixItems = tradeMatrixItems;
     }
 
-    public String getDate() {
-        return date;
+    public String getDateRegistered() {
+        return dateRegistered;
     }
 
-    public void setDate(String date) {
-        this.date = date;
+    public void setDateRegistered(String dateRegistered) {
+        this.dateRegistered = dateRegistered;
     }
 }

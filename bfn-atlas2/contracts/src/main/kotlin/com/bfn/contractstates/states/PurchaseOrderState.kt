@@ -16,7 +16,7 @@ class PurchaseOrderState(
                     val customer: AccountInfo,
                     val supplier: AccountInfo,
                     val amount: String,
-                    val dateRegistered: Date,
+                    val dateRegistered: String,
                     val description: String
                    ) : ContractState {
 

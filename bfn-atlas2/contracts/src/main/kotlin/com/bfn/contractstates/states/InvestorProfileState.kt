@@ -21,7 +21,7 @@ class InvestorProfileState(
         val stellarAccountId: String,
         val rippleAccountId: String,
         val tradeMatrixItems: MutableList<TradeMatrixItem>,
-        var date: Date
+        var date: String
                    ) : ContractState {
 
     override val participants: List<AbstractParty>

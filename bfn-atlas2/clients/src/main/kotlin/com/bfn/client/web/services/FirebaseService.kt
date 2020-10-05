@@ -93,7 +93,114 @@ class FirebaseService() {
                 + "Successfully sent FCM ACCOUNT message to topic: \uD83D\uDE21 ") + topic + "; Response: \uD83E\uDD6C \uD83E\uDD6C " + response + " \uD83E\uDD6C \uD83E\uDD6C")
     }
 
+    ////////// 🔵 lists
+    @Throws(Exception::class)
+    fun getPurchaseOrders(startDate:String,endDate:String): List<PurchaseOrderDTO> {
+        val mList: MutableList<PurchaseOrderDTO> = mutableListOf()
+        val querySnapshot = db.collection(BFN_PURCHASE_ORDERS)
+                .whereGreaterThanOrEqualTo("dateRegistered", startDate)
+                .whereLessThanOrEqualTo("dateRegistered", endDate)
+                .get().get()
+        querySnapshot.documents.forEach {
+            mList.add(it.toObject(PurchaseOrderDTO::class.java))
+        }
 
+        logger.info("PurchaseOrders found: ${mList.size}")
+        return mList;
+    }
+    @Throws(Exception::class)
+    fun getInvoices(startDate:String,endDate:String): List<InvoiceDTO> {
+        val mList: MutableList<InvoiceDTO> = mutableListOf()
+        val querySnapshot = db.collection(BFN_INVOICES)
+                .whereGreaterThanOrEqualTo("dateRegistered", startDate)
+                .whereLessThanOrEqualTo("dateRegistered", endDate)
+                .get().get()
+        querySnapshot.documents.forEach {
+            mList.add(it.toObject(InvoiceDTO::class.java))
+        }
+
+        logger.info("PurchaseOrders found: ${mList.size}")
+        return mList;
+    }
+    @Throws(Exception::class)
+    fun getInvoiceOffers(startDate:String,endDate:String): List<InvoiceOfferDTO> {
+        val mList: MutableList<InvoiceOfferDTO> = mutableListOf()
+        val querySnapshot = db.collection(BFN_INVOICE_OFFERS)
+                .whereGreaterThanOrEqualTo("dateRegistered", startDate)
+                .whereLessThanOrEqualTo("dateRegistered", endDate)
+                .get().get()
+        querySnapshot.documents.forEach {
+            mList.add(it.toObject(InvoiceOfferDTO::class.java))
+        }
+
+        logger.info("InvoiceOffers found: ${mList.size}")
+        return mList;
+    }
+    @Throws(Exception::class)
+    fun getAcceptedInvoiceOffers(startDate:String,endDate:String): List<InvoiceOfferDTO> {
+        val mList: MutableList<InvoiceOfferDTO> = mutableListOf()
+        val querySnapshot = db.collection(BFN_INVOICE_OFFERS)
+                .whereEqualTo("accepted", true)
+                .whereGreaterThanOrEqualTo("dateRegistered", startDate)
+                .whereLessThanOrEqualTo("dateRegistered", endDate)
+                .get().get()
+        querySnapshot.documents.forEach {
+            mList.add(it.toObject(InvoiceOfferDTO::class.java))
+        }
+
+        logger.info("Accepted InvoiceOffers found: ${mList.size}")
+        return mList;
+    }
+    @Throws(Exception::class)
+    fun getCustomerProfiles(): List<CustomerProfileStateDTO> {
+        val mList: MutableList<CustomerProfileStateDTO> = mutableListOf()
+        val querySnapshot = db.collection(BFN_CUSTOMER_PROFILES)
+                .get().get()
+        querySnapshot.documents.forEach {
+            mList.add(it.toObject(CustomerProfileStateDTO::class.java))
+        }
+
+        logger.info("CustomerProfiles found: ${mList.size}")
+        return mList;
+    }
+    @Throws(Exception::class)
+    fun getInvestorProfiles(): List<InvestorProfileStateDTO> {
+        val mList: MutableList<InvestorProfileStateDTO> = mutableListOf()
+        val querySnapshot = db.collection(BFN_INVESTOR_PROFILES)
+                .get().get()
+        querySnapshot.documents.forEach {
+            mList.add(it.toObject(InvestorProfileStateDTO::class.java))
+        }
+
+        logger.info("InvestorProfiles found: ${mList.size}")
+        return mList;
+    }
+    @Throws(Exception::class)
+    fun getSupplierProfiles(): List<SupplierProfileStateDTO> {
+        val mList: MutableList<SupplierProfileStateDTO> = mutableListOf()
+        val querySnapshot = db.collection(BFN_SUPPLIER_PROFILES)
+                .get().get()
+        querySnapshot.documents.forEach {
+            mList.add(it.toObject(SupplierProfileStateDTO::class.java))
+        }
+
+        logger.info("SupplierProfiles found: ${mList.size}")
+        return mList;
+    }
+    @Throws(Exception::class)
+    fun getNetworkNodes(): List<NodeInfoDTO> {
+        val mList: MutableList<NodeInfoDTO> = mutableListOf()
+        val querySnapshot = db.collection(BFN_NODES)
+                .get().get()
+        querySnapshot.documents.forEach {
+            mList.add(it.toObject(NodeInfoDTO::class.java))
+        }
+
+        logger.info("NodeInfos found: ${mList.size}")
+        return mList;
+    }
+
+    ///////////////
     @Throws(ExecutionException::class, InterruptedException::class)
     fun addToken(token: TokenDTO) {
         val future: ApiFuture<DocumentReference> = db.collection(BFN_TOKENS).add(token);

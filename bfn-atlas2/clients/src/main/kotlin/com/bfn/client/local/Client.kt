@@ -51,27 +51,30 @@ public class Client {
     fun main(args: Array<String>) {
         startTheWork( "http://localhost:10050",
                 "http://localhost:10053");
-
-
     }
 
     private fun startTheWork(networkOperatorUrl: String, customerUrl: String) {
         logger.info("\n\n\n  \uD83D\uDD35 \uD83D\uDD35  \uD83D\uDD35 \uD83D\uDD35 " +
                 "Starting the Demo Data Generation for the BFN Network .....  \uD83D\uDD35 \uD83D\uDD35")
         val headers = mapOf("Content-Type" to MediaType.TEXT_PLAIN_VALUE)
-//
-//        generateAnchorNodeData(networkOperatorUrl, headers)
-//
-//        generateCustomerNodeData(customerUrl, headers)
-//
-//        generateOffersForNetworkOperator(networkOperatorUrl, headers)
-//
-//        generateInvoiceOffers(networkOperatorUrl, headers)
-//
-//        generateOfferAcceptances(networkOperatorUrl)
+        logger.info("  🍎   🍎   🍎  START DANCING!  🍎  🍎  🍎 ")
 
-        generatePayments(networkOperatorUrl)
+        generateAnchorNodeData(networkOperatorUrl, headers)
 
+        generateCustomerNodeData(customerUrl, headers = headers, numberOfMonths = 3)
+
+        generateOffersForNetworkOperator(networkOperatorUrl, headers)
+
+        generateInvoiceOffers(networkOperatorUrl, headers)
+
+        generateOfferAcceptances(networkOperatorUrl)
+
+//        generatePayments(networkOperatorUrl)
+
+        logger.info("\n\n\n  \uD83D\uDD35 \uD83D\uDD35  \uD83D\uDD35 \uD83D\uDD35" +
+                " Client.kt:startTheWork is COMPLETE !!!  \uD83C\uDF4E  \uD83C\uDF4E  \uD83C\uDF4E ");
+
+        logger.info("  🍎   🍎   🍎  DONE DANCING!  🍎  🍎  🍎 \n\n")
     }
     private val gson = GsonBuilder().setPrettyPrinting().create()
     private fun generateOfferAcceptances(networkOperatorUrl: String) {
@@ -235,7 +238,9 @@ public class Client {
                     if (resp1.statusCode == 200) {
                         logger.info("makePaymentForInvestorOffers: ${Emo.YELLOW_BIRD} ${Emo.YELLOW_BIRD} ${Emo.YELLOW_BIRD}" +
                                 " RESPONSE: \uD83C\uDF4E statusCode: ${resp1.statusCode} ${Emo.PRETZEL}${Emo.PRETZEL}")
+
                         val payment = gson.fromJson(resp1.text, SupplierPaymentDTO::class.java)
+
                         logger.info("${Emo.RED_APPLES} makePaymentForOffer: " +
                                 "SupplierPayment is ${gson.toJson(payment)} ${Emo.RED_APPLE} \n\n\n")
                     } else {
@@ -258,13 +263,13 @@ public class Client {
 
 
     private fun generateAnchorNodeData(networkOperatorUrl: String, headers: Map<String, String>) {
-        val resp1 = httpGet(url = "$networkOperatorUrl/bfn/demo/generateAnchorNodeData?numberOfAccounts=4",
+        val resp1 = httpGet(url = "$networkOperatorUrl/bfn/demo/generateAnchorNodeData?numberOfAccounts=8",
                 timeout = 900000000.0, headers = headers)
         logger.info("RESPONSE: \uD83C\uDF4E statusCode: ${resp1.statusCode}  \uD83C\uDF4E ${resp1.text}")
     }
 
-    private fun generateCustomerNodeData(customerUrl: String, headers: Map<String, String>) {
-        val resp2 = httpGet(url = "$customerUrl/bfn/demo/generateCustomerNodeData",
+    private fun generateCustomerNodeData(customerUrl: String, numberOfMonths:Int, headers: Map<String, String>) {
+        val resp2 = httpGet(url = "$customerUrl/bfn/demo/generateCustomerNodeData?numberOfMonths=$numberOfMonths",
                 timeout = 900000000.0, headers = headers)
         logger.info("RESPONSE: \uD83C\uDF4E statusCode: ${resp2.statusCode}  \uD83C\uDF4E ${resp2.text}")
     }

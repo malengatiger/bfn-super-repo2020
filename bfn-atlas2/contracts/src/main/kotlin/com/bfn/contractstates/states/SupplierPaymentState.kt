@@ -18,7 +18,7 @@ class SupplierPaymentState(
         val supplierPaymentId: String,
         val acceptedOffer: InvoiceOfferState,
         val supplierProfile: SupplierProfileState,
-        val date: String) : QueryableState {
+        val dateRegistered: String) : QueryableState {
 
     override val participants: List<AbstractParty>
         get() = listOf(acceptedOffer.supplier.host,

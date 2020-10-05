@@ -17,6 +17,7 @@ class UserState(val accountInfo: AccountInfo,
                 val cellphone: String,
                 val stellarAccountId: String,
                 val rippleAccountId: String,
+                val dateRegistered: String,
                 val uid: String) : ContractState {
 
     override val participants: List<AbstractParty>

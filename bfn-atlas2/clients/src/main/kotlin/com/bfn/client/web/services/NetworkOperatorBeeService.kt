@@ -9,6 +9,7 @@ import com.bfn.flows.operator.*
 import com.bfn.flows.investor.MultiplePaymentsFlow
 import com.bfn.flows.investor.SinglePaymentFlow
 import com.bfn.flows.queries.AccountInfoQueryFlow
+import com.bfn.flows.todaysDate
 import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import net.corda.core.messaging.CordaRPCOps
@@ -226,7 +227,7 @@ class NetworkOperatorBeeService {
                 account = mAccount,
                 email = networkOperator.email,
                 cellphone = networkOperator.cellphone,
-                date = Date())
+                dateRegistered = todaysDate())
 
         val fut = proxy.startTrackedFlowDynamic(
                 NetworkOperatorCreationFlow::class.java, anc).returnValue
@@ -253,7 +254,7 @@ class NetworkOperatorBeeService {
                     startInvoiceAmount = dto.startInvoiceAmount,
                     endInvoiceAmount = dto.endInvoiceAmount,
                     offerDiscount = dto.offerDiscount,
-                    date = dto.date
+                    dateRegistered = dto.date
             ))
         }
         return mList;

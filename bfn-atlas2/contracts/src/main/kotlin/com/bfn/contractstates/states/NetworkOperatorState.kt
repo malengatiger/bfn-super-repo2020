@@ -13,9 +13,9 @@ import java.util.*
 @BelongsToContract(NetworkOperatorContract::class)
 class NetworkOperatorState(
                            val account: AccountInfo,
-                           val date: Date,
                            val email: String,
-                           val cellphone: String
+                           val cellphone: String,
+                           val dateRegistered: String
                    ) : ContractState {
 
     override val participants: List<AbstractParty>

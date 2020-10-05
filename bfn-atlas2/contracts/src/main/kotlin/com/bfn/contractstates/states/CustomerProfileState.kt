@@ -14,7 +14,7 @@ class CustomerProfileState(
                     val account: AccountInfo,
                     val minimumInvoiceAmount: String,
                     val maximumInvoiceAmount: String,
-                    val dateRegistered: Date,
+                    val dateRegistered: String,
                     val email: String,
                     val stellarAccountId: String,
                     val rippleAccountId: String,

@@ -29,6 +29,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.*
 import javax.annotation.PostConstruct
+import kotlin.collections.HashMap
 
 @Service
 class DemoDataService {
@@ -47,6 +48,9 @@ class DemoDataService {
 
     @Value("\${customerNodeUrl}")
     private lateinit var customerNodeUrl: String
+
+    @Value("\${spring.profiles.active}")
+    private var profile: String = "dev"
 
     @PostConstruct
     fun init() {
@@ -70,7 +74,9 @@ class DemoDataService {
      */
     fun generateAnchorNodeData(mProxy: CordaRPCOps, numberOfAccounts: Int): String {
         logger.info("\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
-                "Generating data for the main anchor Node: NetworkOperator + Suppliers + Investors")
+                "Generating data for the main anchor Node: " +
+                "NetworkOperator + Suppliers + Investors; " +
+                "${Emo.BLUE_DOT}numberOfAccounts to generate: $numberOfAccounts")
 
         deleteFirebaseShit()
         createNetworkOperator(mProxy)
@@ -85,7 +91,9 @@ class DemoDataService {
     private fun deleteFirebaseShit() {
         val users = firebaseService.getBFNUsers()
         users.forEach {
-            firebaseService.deleteAuthUser(it.uid)
+            if (it.email != "bfnadmin@bfn.com") {
+                firebaseService.deleteAuthUser(it.uid)
+            }
         }
         firebaseService.deleteCollection(collectionName = BFN_SUPPLIER_PROFILES)
         firebaseService.deleteCollection(collectionName = NETWORK_OPERATOR)
@@ -102,7 +110,7 @@ class DemoDataService {
     /**
      * Generate data for the customer node : Accounts are created for several customers
      */
-    fun generateCustomerNodeData(mProxy: CordaRPCOps): String {
+    fun generateCustomerNodeData(mProxy: CordaRPCOps, numberOfMonths:Int): String {
         logger.info("\n\n\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
                 "Generating data for the Customer Node: Customers only, Boss!")
 
@@ -128,7 +136,7 @@ class DemoDataService {
         firebaseService.deleteCollection(BFN_INVOICE_OFFERS)
 
         createCustomers(mProxy)
-        generatePurchaseOrders(mProxy)
+        generatePurchaseOrders(mProxy, numberOfMonths)
         generateInvoices(mProxy)
 
         val msg = "\n\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
@@ -139,7 +147,8 @@ class DemoDataService {
         return msg
     }
     var purchaseOrderCount = 0
-    fun generatePurchaseOrders(mProxy: CordaRPCOps): String {
+
+    fun generatePurchaseOrders(mProxy: CordaRPCOps, numberOfMonths:Int = 3): String {
         val msg = "\n\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
                 "DemoDataService: generatePurchaseOrders starting ........! " +
                 "\uD83E\uDD6E \uD83E\uDD6E \uD83E\uDD6E\n"
@@ -159,8 +168,17 @@ class DemoDataService {
         logger.info("\n\n\n\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E\uD83C\uDF4E" +
                 " Start creating PurchaseOrders for " +
                 "${customers.size} customers and ${suppliers.size} suppliers.... ")
+
+
         for (customer in customers) {
-            createCustomerPurchaseOrders(mProxy,customer)
+            var mthIncrement = 0
+            val startDate = DateTime().minusMonths(numberOfMonths);
+            while (mthIncrement < numberOfMonths) {
+                val date = startDate.plusMonths(mthIncrement)
+                        .plusDays(random.nextInt(14))
+                createCustomerPurchaseOrders(mProxy, customer, date.toDateTimeISO().toString());
+                mthIncrement++
+            }
         }
         val msg2 = "\n\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
                 "DemoDataService: generatePurchaseOrders COMPLETE! " +
@@ -170,10 +188,13 @@ class DemoDataService {
         return msg2
     }
     private fun createCustomerPurchaseOrders(mProxy: CordaRPCOps,
-                                             customer: AccountInfoDTO): String {
+                                             customer: AccountInfoDTO, date:String): String {
+
 
         for (supplier in suppliers) {
-            createSmallAndLargePurchaseOrders(mProxy,customer,supplier)
+            if (customer.identifier != supplier.identifier) {
+                createSmallAndLargePurchaseOrders(mProxy, customer, supplier, date)
+            }
         }
         val msg = "\n\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
                 "DemoDataService: generatePurchaseOrders COMPLETE! " +
@@ -184,7 +205,7 @@ class DemoDataService {
     }
     private fun createSmallAndLargePurchaseOrders(mProxy: CordaRPCOps,
                                                   customer: AccountInfoDTO,
-                                                  supplier: AccountInfoDTO): String {
+                                                  supplier: AccountInfoDTO, date: String): String {
 
         val poSmall = PurchaseOrderDTO(
                 purchaseOrderId = "tbd",
@@ -192,7 +213,7 @@ class DemoDataService {
                 customer = customer,
                 supplier = supplier,
                 amount = getSmallPOAmount(),
-                dateRegistered = Date(),
+                dateRegistered = date,
                 description = "\uD83C\uDF40 Demo: Small Purchase Order: ${customer.name} " +
                         "to supplier: ${supplier.name}. Used for testing and demo")
 
@@ -202,17 +223,24 @@ class DemoDataService {
                 customer = customer,
                 supplier = supplier,
                 amount = getLargePOAmount(),
-                dateRegistered = Date(),
+                dateRegistered = date,
                 description = "\uD83C\uDF40 Demo: Large Purchase Order: ${customer.name} " +
                         "to supplier: ${supplier.name}. Used for testing and demo")
 
-        val msg1 =  workerBeeService.createPurchaseOrder(mProxy, purchaseOrder = poSmall)
-        purchaseOrderCount++
-        val msg2 =  workerBeeService.createPurchaseOrder(mProxy, purchaseOrder = poLarge)
-        purchaseOrderCount++
-        logger.info("\uD83D\uDD35 \uD83D\uDD35 PurchaseOrderFlow results: small: $msg1 large: $msg2")
+        val choice = random.nextInt(10)
+        if (choice <= 5) {
+            val msg1 = workerBeeService.createPurchaseOrder(mProxy, purchaseOrder = poSmall)
+            purchaseOrderCount++
+            logger.info(msg1)
+        }
+        val choice2 = random.nextInt(10)
+        if (choice2 >= 5) {
+            val msg2 = workerBeeService.createPurchaseOrder(mProxy, purchaseOrder = poLarge)
+            purchaseOrderCount++
+            logger.info(msg2)
+        }
 
-        return "$msg1 $msg2"
+        return "createSmallAndLargePurchaseOrders: completed"
 
     }
     private fun getLargePOAmount(): String {
@@ -256,11 +284,12 @@ class DemoDataService {
             mDisc1 = 10.0
         }
         val m2 = TradeMatrixItemDTO(
-                "2000001.00",
+                "20000.00",
                 "300000.00",
                 "$mDisc1",
                 date
         )
+
         var mDisc2 = random.nextInt(15) * 1.5
         if (mDisc2 < 8.0) {
             mDisc2 = 8.5
@@ -271,6 +300,7 @@ class DemoDataService {
                 "$mDisc2",
                 date
         )
+
         var mDisc3 = random.nextInt(10) * 1.5
         if (mDisc3 < 7.0) {
             mDisc3 = 7.0
@@ -309,6 +339,9 @@ class DemoDataService {
                 "$mDisc6",
                 date)
 
+        logger.info("${Emo.DICE}${Emo.DICE}Discounts: ${m2.offerDiscount}%, " +
+                "${m3.offerDiscount}%, ${m4.offerDiscount}%, ${m5.offerDiscount}%, " +
+                "${m6.offerDiscount}%, ${m7.offerDiscount}%")
         return mutableListOf(m2, m3, m4, m5, m6, m7)
     }
 
@@ -350,7 +383,7 @@ class DemoDataService {
     fun generateLocalNodeAccounts(mProxy: CordaRPCOps, numberOfAccounts: Int = 10): DemoSummary {
         val start = Date().time;
         logger.info(em4 +
-                "DemoDataService started, proxy: ${mProxy.toString()}...   " +
+                "DemoDataService started, proxy: $mProxy...   " +
                 "will generate data $em4 ")
 
         myNode = mProxy.nodeInfo()
@@ -393,11 +426,12 @@ class DemoDataService {
     fun generateAccounts(proxy: CordaRPCOps, numberOfAccounts: Int = 20): String {
         logger.info("\n\n$em1 ..... generateAccounts started ...  " +
                 "\uD83D\uDD06 \uD83D\uDD06 ................. generating numberOfAccounts: $numberOfAccounts")
+
         var cnt = 0
         for (x in 0..numberOfAccounts) {
             val prefix = "account" + System.currentTimeMillis()
             try {
-                val mName = randomName
+                val mName = getRandomName()
                 logger.info("\n\n\n$em1 ..... Starting AccountRegistrationFlow for $mName ...........\n")
                 workerBeeService.startAccountRegistrationFlow(proxy,
                         mName,
@@ -529,7 +563,6 @@ class DemoDataService {
         logger.info("\uD83D\uDE21 \uD83D\uDE21 Accounts on Node:  \uD83D\uDE21 \uD83D\uDE21 ️ ${acctList.size} ♻️")
         logger.info("\uD83D\uDE21 \uD83D\uDE21 Invoices on Node:  \uD83D\uDE21 \uD83D\uDE21 ️ ${nodeInvoices.size} ♻\n\n️")
 
-
         acctList.forEach() {
             generateOffersFromAccount(proxy = proxy, accountInfo = it)
         }
@@ -620,7 +653,7 @@ class DemoDataService {
 
         val prof = SupplierProfileStateDTO(
                 account = DTOUtil.getDTO(account.state.data),
-                date = DateTime().toDateTimeISO().toString(),
+                dateRegistered = DateTime().toDateTimeISO().toString(),
                 bankAccount = (random.nextInt(123445) * 132647).toString(),
                 bank = "BlackOx Investment Bank",
                 maximumDiscount = "$disc",
@@ -703,7 +736,7 @@ class DemoDataService {
                     supplier = DTOUtil.getDTO(po.supplier),
                     description = po.description,
                     invoiceId = UUID.randomUUID().toString(),
-                    dateRegistered = todaysDate(),
+                    dateRegistered = po.dateRegistered,
                     valueAddedTax = "15.0",
                     totalAmount = "tbd",
                     externalId = "tbd",
@@ -827,20 +860,28 @@ class DemoDataService {
         val nTotalAmount = BigDecimal(invoice.totalAmount)
         val hundred = BigDecimal("100")
         val offer = (hundred - nDisc).divide(hundred).multiply(nTotalAmount)
+        val mDate = DateTime.parse(invoice.dateRegistered);
+        var plus = random.nextInt(7)
+        if (plus == 0) {
+            plus = 3
+        }
+
+        val xDate = mDate.plusDays(plus).plusHours(random.nextInt(10))
         val invoiceOffer = InvoiceOfferDTO(
                 invoiceId = invoice.invoiceId,
                 supplier = invoice.supplier,
                 investor = investor,
-                offerDate = DateTime().toDateTimeISO().toString(),
+                offerDate = xDate.toDateTimeISO().toString(),
                 discount = discount,
                 accepted = false,
                 offerAmount = "$offer",
                 originalAmount = invoice.totalAmount,
                 externalId = invoice.externalId,
                 invoiceNumber = invoice.invoiceNumber,
-                investorDate = DateTime().toDateTimeISO().toString(),
+                investorDate = "tbd",
                 acceptanceDate = "tbd",
-                offerId = UUID.randomUUID().toString()
+                offerId = UUID.randomUUID().toString(),
+                dateRegistered = xDate.toDateTimeISO().toString()
         )
 
 
@@ -869,22 +910,24 @@ class DemoDataService {
                 minimumInvoiceAmount = "5000.00",
                 maximumInvoiceAmount = "100000.00"))
         logger.info("\n\n\n\n")
+
         doOneCustomer(proxy, buildCustomerProfile(
                 "Department of Public Works",
                 minimumInvoiceAmount = "50000.00",
                 maximumInvoiceAmount = "100000000.00"))
         logger.info("\n\n\n\n")
-//        doOneCustomer(proxy, buildCustomerProfile(
-//                "Department of Health",
-//                minimumInvoiceAmount = "10000.00",
-//                maximumInvoiceAmount = "1000000.00"))
-//        logger.info("\n\n\n\n")
 
-//        doOneCustomer(proxy, buildCustomerProfile(
-//                "BMW South Africa Limited",
-//                minimumInvoiceAmount =  "5000.00",
-//                maximumInvoiceAmount =  "40000000.00"))
-//        logger.info("\n\n\n\n")
+        doOneCustomer(proxy, buildCustomerProfile(
+                "Department of Health",
+                minimumInvoiceAmount = "10000.00",
+                maximumInvoiceAmount = "1000000.00"))
+        logger.info("\n\n\n\n")
+
+        doOneCustomer(proxy, buildCustomerProfile(
+                "BMW South Africa Limited",
+                minimumInvoiceAmount =  "5000.00",
+                maximumInvoiceAmount =  "40000000.00"))
+        logger.info("\n\n\n\n")
 
 
     }
@@ -901,7 +944,7 @@ class DemoDataService {
                 maximumInvoiceAmount,
                 cellphone = phone,
                 email = "$prefix${System.currentTimeMillis()}$suffix",
-                dateRegistered = Date(),
+                dateRegistered = todaysDate(),
                 stellarAccountId = "tbd",
                 rippleAccountId = "tbd"
         )
@@ -923,15 +966,11 @@ class DemoDataService {
     }
 
     var names: MutableList<String> = ArrayList()
-    var map = HashMap<String, String?>()
+    var uniqueNamesMap = HashMap<String, String?>()
 
-    fun getSomeName(): String {
-        return randomName
-    }
 
-    @get:Throws(Exception::class)
-    val randomName: String
-        get() {
+    private fun  getRandomName(): String {
+
             names.add("Jones Pty Ltd")
             names.add("Nkosi Associates")
             names.add("Maddow Enterprises")
@@ -1029,10 +1068,10 @@ class DemoDataService {
             names.add("DLT TechStars Inc")
             names.add("CordaBrokers Pty Ltd")
             val name = names[random.nextInt(names.size - 1)]
-            if (map.containsKey(name)) {
-                throw Exception("Random name collision")
+            if (uniqueNamesMap.containsKey(name)) {
+                getRandomName();
             } else {
-                map[name] = name
+                uniqueNamesMap[name] = name
             }
             return name
         }

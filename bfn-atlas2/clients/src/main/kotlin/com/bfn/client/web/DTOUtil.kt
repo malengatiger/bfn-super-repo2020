@@ -40,6 +40,13 @@ object DTOUtil {
                 description = a.description
         )
     }
+    @JvmStatic
+    fun getDTO(a: UserState): UserDTO {
+        return UserDTO(
+                getDTO(a.accountInfo), a.email, "",
+                a.cellphone, a.uid, a.stellarAccountId, a.rippleAccountId, a.dateRegistered
+        )
+    }
 
     @JvmStatic
     fun getDTO(a: SupplierPaymentState): SupplierPaymentDTO {
@@ -47,7 +54,7 @@ object DTOUtil {
         return SupplierPaymentDTO(
                 supplierProfile = getDTO(a.supplierProfile),
                 acceptedOffer = getDTO(a.acceptedOffer),
-                date = a.date,
+                date = a.dateRegistered,
                 supplierPaymentId = a.supplierPaymentId
         )
     }
@@ -62,7 +69,7 @@ object DTOUtil {
                 supplierInfo = getDTO(a.supplierInfo),
                 assetCode = a.assetCode,
                 amount = a.amount,
-                date = a.date
+                date = a.dateRegistered
         )
     }
 
@@ -74,7 +81,7 @@ object DTOUtil {
                 cellphone = a.cellphone,
                 email = a.email,
                 password = "",
-                date = a.date.toString()
+                date = a.dateRegistered
         )
     }
     @JvmStatic
@@ -94,7 +101,7 @@ object DTOUtil {
                 a.startInvoiceAmount,
                 a.endInvoiceAmount,
                 a.offerDiscount,
-                a.date
+                a.dateRegistered
 
         )
     }
@@ -113,7 +120,8 @@ object DTOUtil {
                 investorDate = a.acceptanceDate,
                 accepted = a.accepted, externalId = a.externalId,
                 acceptanceDate = a.acceptanceDate,
-                offerId = a.offerId
+                offerId = a.offerId,
+                dateRegistered = a.dateRegistered
 
         )
     }
@@ -134,7 +142,7 @@ object DTOUtil {
                     item.startInvoiceAmount,
                     item.endInvoiceAmount,
                     item.offerDiscount,
-                    item.date
+                    item.dateRegistered
 
             ))
         }
@@ -142,7 +150,7 @@ object DTOUtil {
         prof.account = getDTO(a.account)
         prof.bank = a.bank
         prof.bankAccount = a.bankAccount
-        prof.date = a.date.toString()
+        prof.dateRegistered = a.date.toString()
         prof.defaultDiscount = a.defaultDiscount
         prof.minimumInvoiceAmount = a.minimumInvoiceAmount
         prof.maximumInvoiceAmount = a.maximumInvoiceAmount
@@ -156,7 +164,7 @@ object DTOUtil {
     @JvmStatic
     fun getDTO(a: SupplierProfileState): SupplierProfileStateDTO {
         return SupplierProfileStateDTO(
-                account = getDTO(a.account), date = a.date.toString(),
+                account = getDTO(a.account), dateRegistered = a.dateRegistered.toString(),
                 maximumDiscount = a.maximumDiscount,
                 bankAccount = a.bankAccount,
                 bank = a.bank,

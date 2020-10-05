@@ -21,6 +21,7 @@ import com.bfn.flows.queries.InvoiceQueryFlow
 import com.bfn.flows.scheduled.CreateInvoiceOffersFlow
 import com.bfn.flows.supplier.FindBestOfferForInvoiceFlow
 import com.bfn.flows.supplier.SupplierProfileFlow
+import com.bfn.flows.todaysDate
 import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import net.corda.core.contracts.ContractState
@@ -356,7 +357,7 @@ class WorkerBeeService {
             matrixItems.add(TradeMatrixItem(
                     startInvoiceAmount = item.startInvoiceAmount,
                     endInvoiceAmount = item.endInvoiceAmount,
-                    date = item.date,
+                    dateRegistered = item.date,
                     offerDiscount = item.offerDiscount))
         }
         val state = InvestorProfileState(
@@ -366,7 +367,7 @@ class WorkerBeeService {
                 totalInvestment = profile.totalInvestment,
                 bank = profile.bank, bankAccount = profile.bankAccount,
                 minimumInvoiceAmount = profile.minimumInvoiceAmount,
-                date = Date(),
+                date = DateTime().toDateTimeISO().toString(),
                 stellarAccountId = profile.stellarAccountId,
                 rippleAccountId = profile.rippleAccountId,
                 tradeMatrixItems = matrixItems
@@ -391,7 +392,7 @@ class WorkerBeeService {
                 maximumDiscount = profile.maximumDiscount,
                 bank = profile.bank,
                 bankAccount = profile.bankAccount,
-                date = Date(),
+                dateRegistered = DateTime().toDateTimeISO().toString(),
                 stellarAccountId = profile.stellarAccountId,
                 rippleAccountId = profile.rippleAccountId,
                 assetCode = profile.assetCode
@@ -889,7 +890,10 @@ class WorkerBeeService {
                         stellarAccountId = mStellarId,
                         rippleAccountId = mRippleId)
                 if (user != null) {
-                    val userState = UserState(acctInfo, email, cellphone, mStellarId, mRippleId, user.uid)
+                    val userState = UserState(accountInfo = acctInfo,
+                            email = email, cellphone = cellphone,
+                            stellarAccountId = mStellarId, rippleAccountId = mRippleId,
+                            uid = user.uid, dateRegistered = todaysDate())
                     val future = proxy.startFlowDynamic(CreateUserFlow::class.java, userState).returnValue
                     logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D " +
                             "CreateUserFlow completed ${future.get()} \uD83D\uDE21" +
@@ -937,7 +941,7 @@ class WorkerBeeService {
                         customer = customerAccount,
                         supplier = supplierAccount,
                         amount = purchaseOrder.amount,
-                        dateRegistered = Date(),
+                        dateRegistered = DateTime().toDateTimeISO().toString(),
                         description = purchaseOrder.description)
 
                 val profileCordaFuture = proxy.startFlowDynamic(
@@ -1013,7 +1017,7 @@ class WorkerBeeService {
                 val profileState = CustomerProfileState(
                         account = mAccount,
                         cellphone = profile.cellphone,
-                        dateRegistered = Date(),
+                        dateRegistered = DateTime().toDateTimeISO().toString(),
                         email = profile.email,
                         maximumInvoiceAmount = profile.maximumInvoiceAmount,
                         minimumInvoiceAmount = profile.minimumInvoiceAmount,
@@ -1061,7 +1065,8 @@ class WorkerBeeService {
                 cellphone,
                 "tbd",
                 stellarAccountId,
-                rippleAccountId
+                rippleAccountId,
+                DateTime().toDateTimeISO().toString()
 
         )
 
@@ -1120,7 +1125,8 @@ class WorkerBeeService {
                 acceptanceDate = invoiceOffer.acceptanceDate,
                 accepted = false,
                 offerId = invoiceOffer.offerId,
-                externalId = invoiceState.externalId
+                externalId = invoiceState.externalId,
+                dateRegistered = DateTime().toDateTimeISO().toString()
         )
         val signedTransactionCordaFuture = proxy.startTrackedFlowDynamic(
                 InvoiceOfferFlow::class.java, invoiceOfferState)

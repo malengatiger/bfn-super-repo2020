@@ -10,4 +10,4 @@ data class SupplierProfileStateDTO (
         var stellarAccountId: String= "",
         var rippleAccountId: String= "",
         var assetCode: String= "",
-        var date: String = "")
+        var dateRegistered: String = "")

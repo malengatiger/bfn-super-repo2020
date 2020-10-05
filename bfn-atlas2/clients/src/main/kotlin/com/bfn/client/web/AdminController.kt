@@ -216,6 +216,57 @@ class AdminController(rpc: NodeRPCConnection) {
             return workerBeeService.getStates(proxy)
         }
 
+    //// LISTS 🔵🔵🔵🔵🔵🔵🔵🔵🔵
+    @GetMapping(value = ["/getPurchaseOrders"])
+    @Throws(Exception::class)
+    fun getPurchaseOrders(
+            @RequestParam startDate: String,
+            @RequestParam endDate: String): List<PurchaseOrderDTO> {
+        return firebaseService.getPurchaseOrders(startDate,endDate)
+    }
+    @GetMapping(value = ["/getInvoices"])
+    @Throws(Exception::class)
+    fun getInvoices(
+            @RequestParam startDate: String,
+            @RequestParam endDate: String): List<InvoiceDTO> {
+        return firebaseService.getInvoices(startDate,endDate)
+    }
+    @GetMapping(value = ["/getInvoiceOffers"])
+    @Throws(Exception::class)
+    fun getInvoiceOffers(
+            @RequestParam startDate: String,
+            @RequestParam endDate: String): List<InvoiceOfferDTO> {
+        return firebaseService.getInvoiceOffers(startDate,endDate)
+    }
+    @GetMapping(value = ["/getAcceptedInvoiceOffers"])
+    @Throws(Exception::class)
+    fun getAcceptedInvoiceOffers(
+            @RequestParam startDate: String,
+            @RequestParam endDate: String): List<InvoiceOfferDTO> {
+        return firebaseService.getAcceptedInvoiceOffers(startDate,endDate)
+    }
+    @GetMapping(value = ["/getCustomerProfiles"])
+    @Throws(Exception::class)
+    fun getCustomerProfiles(): List<CustomerProfileStateDTO> {
+        return firebaseService.getCustomerProfiles()
+    }
+    @GetMapping(value = ["/getInvestorProfiles"])
+    @Throws(Exception::class)
+    fun getInvestorProfiles(): List<InvestorProfileStateDTO> {
+        return firebaseService.getInvestorProfiles()
+    }
+    @GetMapping(value = ["/getSupplierProfiles"])
+    @Throws(Exception::class)
+    fun getSupplierProfiles(): List<SupplierProfileStateDTO> {
+        return firebaseService.getSupplierProfiles()
+    }
+    @GetMapping(value = ["/getNetworkNodes"])
+    @Throws(Exception::class)
+    fun getNetworkNodes(): List<NodeInfoDTO> {
+        return firebaseService.getNetworkNodes()
+    }
+
+    //// 🔵🔵🔵🔵
     @GetMapping(value = ["/findInvoicesForCustomer"])
     @Throws(Exception::class)
     fun findInvoicesForCustomer(

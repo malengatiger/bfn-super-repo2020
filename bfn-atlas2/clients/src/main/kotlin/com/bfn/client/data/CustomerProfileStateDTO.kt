@@ -6,7 +6,7 @@ data class CustomerProfileStateDTO (
         var account: AccountInfoDTO,
         val minimumInvoiceAmount: String,
         val maximumInvoiceAmount: String,
-        val dateRegistered: Date,
+        val dateRegistered: String,
         val email: String,
         var stellarAccountId: String,
         val rippleAccountId: String,

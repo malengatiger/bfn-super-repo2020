@@ -68,7 +68,7 @@ class SinglePaymentFlow(private val paymentRequestParams: PaymentRequestParams) 
                 supplierPaymentId = UUID.randomUUID().toString(),
                 acceptedOffer = acceptedOffer.state.data,
                 supplierProfile = supplierProfile.state.data,
-                date = todaysDate()
+                dateRegistered = todaysDate()
         )
 
         return processOKPayment(investorParty, supplierParty,

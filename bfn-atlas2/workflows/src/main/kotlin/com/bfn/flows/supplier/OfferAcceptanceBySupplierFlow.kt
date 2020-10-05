@@ -61,7 +61,7 @@ class OfferAcceptanceBySupplierFlow(
                 investor = invoiceOfferState.state.data.investor,
                 offerId = invoiceOfferState.state.data.offerId,
                 acceptanceDate = todaysDate(),
-                accepted = true
+                accepted = true, dateRegistered = invoiceOfferState.state.data.dateRegistered
         )
         val command = InvoiceOfferContract.AcceptOffer()
         val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities[0])

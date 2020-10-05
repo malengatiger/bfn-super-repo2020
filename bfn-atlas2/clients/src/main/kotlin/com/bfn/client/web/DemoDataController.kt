@@ -155,11 +155,11 @@ class DemoDataController(rpc: NodeRPCConnection) {
     }
     @GetMapping(value = ["/generateCustomerNodeData"], produces = [MediaType.TEXT_PLAIN_VALUE])
     @Throws(Exception::class)
-    private fun generateCustomerNodeData(): String? {
+    private fun generateCustomerNodeData(numberOfMonths:Int): String? {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
                 "starting DemoDataController: generateCustomerNodeData ... \uD83C\uDF4F ")
 
-        val result = demoDataService.generateCustomerNodeData(proxy)
+        val result = demoDataService.generateCustomerNodeData(proxy, numberOfMonths)
         logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 DemoDataController:generateCustomerNodeData result: " +
                 " \uD83C\uDF4F " + GSON.toJson(result)
                 + "    \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")

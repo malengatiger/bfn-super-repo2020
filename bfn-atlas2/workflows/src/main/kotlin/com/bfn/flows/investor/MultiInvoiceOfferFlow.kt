@@ -56,7 +56,8 @@ class MultiInvoiceOfferFlow(
                 supplier = invoice.supplierInfo, customer = invoice.customerInfo,
                 externalId = invoice.externalId,acceptanceDate = "tbd",
                 accepted = false, invoiceNumber = invoice.invoiceNumber,
-                investor = investorProfile.account
+                investor = investorProfile.account,
+                dateRegistered = todaysDate()
         )
     }
 

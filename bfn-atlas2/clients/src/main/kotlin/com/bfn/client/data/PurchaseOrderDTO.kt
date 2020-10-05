@@ -9,7 +9,7 @@ class PurchaseOrderDTO (
         val customer: AccountInfoDTO,
         val supplier: AccountInfoDTO,
         val amount: String,
-        val dateRegistered: Date,
+        val dateRegistered: String,
         val description: String
 ) {
 }
