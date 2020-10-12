@@ -1,13 +1,13 @@
 package com.bfn.flows.supplier
 
 import co.paralleluniverse.fibers.Suspendable
-import com.bfn.contractstates.states.InvoiceOfferState
+import com.bfn.contractstates.states.AcceptedOfferState
 import com.bfn.flows.regulator.ReportToRegulatorFlow
 import com.bfn.flows.services.InvoiceFinderService
 import com.bfn.flows.services.InvoiceOfferFinderService
 import com.bfn.flows.todaysDate
 import com.r3.corda.lib.accounts.workflows.ourIdentity
-import com.template.InvoiceOfferContract
+import com.template.AcceptedOfferContract
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
 import net.corda.core.transactions.SignedTransaction
@@ -16,26 +16,20 @@ import org.slf4j.LoggerFactory
 
 
 /**
- * Supplier accepts offer made by Investor
+ * Supplier accepts offer made by Investor and creates an AcceptedOfferState
  */
 @InitiatingFlow
 @StartableByRPC
 class OfferAcceptanceBySupplierFlow(
-        private val offerId: String) : FlowLogic<InvoiceOfferState>() {
+        private val offerId: String) : FlowLogic<AcceptedOfferState>() {
     @Suspendable
     @Throws(FlowException::class, IllegalArgumentException::class)
-    override fun call(): InvoiceOfferState {
+    override fun call(): AcceptedOfferState {
         Companion.logger.info("$nn OfferAcceptanceBySupplierFlow started ..offerId: \uD83C\uDF4E $offerId \uD83D\uDE21 ")
 
         val offerFinderService = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
         val invoiceOfferState = offerFinderService.findInvoiceOffer(offerId)
                 ?: throw IllegalArgumentException("Offer not found")
-
-        if (invoiceOfferState.state.data.accepted) {
-            val msg = "\uD83D\uDE21 Offer has already been accepted \uD83D\uDE21 "
-            logger.warn(msg)
-            throw IllegalArgumentException("Offer already accepted")
-        }
 
         val allOffersByInvoice = offerFinderService.findOffersByInvoice(
                 invoiceOfferState.state.data.invoiceId.toString())
@@ -48,10 +42,9 @@ class OfferAcceptanceBySupplierFlow(
             throw IllegalArgumentException(msg)
         }
 
-        val acceptedOffer = InvoiceOfferState(
+        val acceptedOffer = AcceptedOfferState(
                 invoiceId = invoiceOfferState.state.data.invoiceId,
                 invoiceNumber = invoiceOfferState.state.data.invoiceNumber,
-                offerDate = invoiceOfferState.state.data.offerDate,
                 offerAmount = invoiceOfferState.state.data.offerAmount,
                 discount = invoiceOfferState.state.data.discount,
                 externalId = invoiceOfferState.state.data.externalId,
@@ -61,9 +54,9 @@ class OfferAcceptanceBySupplierFlow(
                 investor = invoiceOfferState.state.data.investor,
                 offerId = invoiceOfferState.state.data.offerId,
                 acceptanceDate = todaysDate(),
-                accepted = true, dateRegistered = invoiceOfferState.state.data.dateRegistered
+                dateRegistered = invoiceOfferState.state.data.dateRegistered
         )
-        val command = InvoiceOfferContract.AcceptOffer()
+        val command = AcceptedOfferContract.AcceptOffer()
         val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities[0])
 
         val supplierParty = acceptedOffer.supplier
@@ -106,7 +99,7 @@ class OfferAcceptanceBySupplierFlow(
 //todo - 🍎 🍎 🍎 resolve the Party vs AnonymousParty thing with Accounts SDK - keys fail when trying RequestAccountKey thing ... 🍎
     @Suspendable
     private fun processAcceptance(
-            offer: InvoiceOfferState,
+            offer: AcceptedOfferState,
             customer: Party,
             supplier: Party,
             investor: Party,

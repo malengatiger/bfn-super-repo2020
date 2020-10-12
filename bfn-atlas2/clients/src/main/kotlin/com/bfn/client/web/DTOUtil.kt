@@ -105,6 +105,25 @@ object DTOUtil {
 
         )
     }
+    @JvmStatic
+    fun getDTO(a: AcceptedOfferState): AcceptedOfferDTO {
+        return AcceptedOfferDTO(
+                invoiceId = a.invoiceId.toString(),
+                invoiceNumber = a.invoiceNumber,
+                offerAmount = a.offerAmount,
+                originalAmount = a.originalAmount,
+                discount = a.discount,
+                supplier = getDTO(a.supplier),
+                investor = getDTO(a.investor),
+                investorDate = a.acceptanceDate,
+                externalId = a.externalId,
+                acceptanceDate = a.acceptanceDate,
+                offerId = a.offerId,
+                dateRegistered = a.dateRegistered
+
+        )
+    }
+
 
     @JvmStatic
     fun getDTO(a: InvoiceOfferState): InvoiceOfferDTO {
@@ -116,9 +135,8 @@ object DTOUtil {
                 discount = a.discount,
                 supplier = getDTO(a.supplier),
                 investor = getDTO(a.investor),
-                offerDate = a.offerDate,
                 investorDate = a.acceptanceDate,
-                accepted = a.accepted, externalId = a.externalId,
+                externalId = a.externalId,
                 acceptanceDate = a.acceptanceDate,
                 offerId = a.offerId,
                 dateRegistered = a.dateRegistered

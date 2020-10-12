@@ -19,7 +19,7 @@ import com.bfn.flows.queries.FindInvoiceFlow
 import com.bfn.flows.queries.InvoiceOfferQueryFlow
 import com.bfn.flows.queries.InvoiceQueryFlow
 import com.bfn.flows.scheduled.CreateInvoiceOffersFlow
-import com.bfn.flows.supplier.FindBestOfferForInvoiceFlow
+import com.bfn.flows.supplier.AcceptBestOfferForInvoiceFlow
 import com.bfn.flows.supplier.SupplierProfileFlow
 import com.bfn.flows.todaysDate
 import com.google.gson.GsonBuilder
@@ -410,11 +410,11 @@ class WorkerBeeService {
                               customerProfile: CustomerProfileStateDTO,
                               password: String): CustomerProfileStateDTO {
         logger.info("\n\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
-                "Creating Customer ${customerProfile.account.name} .............")
+                "Creating Customer ${customerProfile.account?.name} .............")
 
         try {
             val acctInfo1 = startAccountRegistrationFlow(proxy = proxy,
-                    accountName = customerProfile.account.name,
+                    accountName = customerProfile.account!!.name,
                     email = customerProfile.email,
                     password = password, cellphone = customerProfile.cellphone
             )
@@ -432,7 +432,7 @@ class WorkerBeeService {
             firebaseService.addCustomerProfile(customerProfile)
             logger.info("\n\n\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
                     "WorkerBee: CustomerProfile has been created: " +
-                    "${customerProfile.account.name} \uD83C\uDF4F txId: $txId \n\n")
+                    "${customerProfile.account?.name} \uD83C\uDF4F txId: $txId \n\n")
             return customerProfile
         } catch (e: Exception) {
             logger.info("\uD83D\uDD25 \uD83D\uDD25 \uD83D\uDD25 Customer creation failed ")
@@ -660,12 +660,12 @@ class WorkerBeeService {
     fun validateInvoiceAgainstProfile( invoice: InvoiceDTO,
                                       investorProfile: InvestorProfileStateDTO): Boolean {
 
-        if (invoice.supplier.identifier == investorProfile.account.identifier) {
+        if (invoice.supplier!!.identifier == investorProfile.account.identifier) {
             logger.info("${Emo.RED_APPLE} supplier cannot be the investor: " +
                     "${Emo.ERROR} id check failed")
             return false;
         }
-        if (invoice.customer.identifier == investorProfile.account.identifier) {
+        if (invoice.customer!!.identifier == investorProfile.account.identifier) {
             logger.info("${Emo.RED_APPLE} customer cannot be the investor:  " +
                     "${Emo.ERROR} id check failed")
             return false;
@@ -699,10 +699,10 @@ class WorkerBeeService {
         logger.info("\uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 " +
                 ".... starting startInvoiceRegistrationFlow ........ \uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C " +
                 " \n\n")
-        if (invoice.customer.host == null) {
+        if (invoice.customer!!.host == null) {
             throw Exception("\uD83D\uDE21 Customer object is missing data; invalid")
         }
-        if (invoice.supplier.host == null) {
+        if (invoice.supplier!!.host == null) {
             throw Exception("\uD83D\uDE21 Supplier object is missing data; invalid")
         }
         return try {
@@ -712,10 +712,10 @@ class WorkerBeeService {
             var supplierInfo: AccountInfo? = null
             var customerInfo: AccountInfo? = null
             for ((state) in accounts) {
-                if (state.data.identifier.id.toString().equals(invoice.customer.identifier, ignoreCase = true)) {
+                if (state.data.identifier.id.toString().equals(invoice.customer!!.identifier, ignoreCase = true)) {
                     customerInfo = state.data
                 }
-                if (state.data.identifier.id.toString().equals(invoice.supplier.identifier, ignoreCase = true)) {
+                if (state.data.identifier.id.toString().equals(invoice.supplier!!.identifier, ignoreCase = true)) {
                     supplierInfo = state.data
                 }
             }
@@ -733,11 +733,11 @@ class WorkerBeeService {
             //
             logger.info("\uD83C\uDF51 \uD83C\uDF51 startInvoiceRegistrationFlow: " +
                     "\uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C " +
-                    "about to add InvoiceState to the Corda ledger .......}")
+                    "about to add InvoiceState to the Corda ledger .......profile: $profile")
 
-            var mDate = DateTime().toDateTimeISO().toString()
-            if (profile == "dev") {
-                mDate = invoice.dateRegistered
+            var mDate = invoice.dateRegistered
+            if (profile == "prod") {
+                mDate = DateTime().toDateTimeISO().toString()
             }
             var poState: PurchaseOrderState? = null
             if (invoice.purchaseOrder != null) {
@@ -922,18 +922,22 @@ class WorkerBeeService {
     @Throws(Exception::class)
     fun startPurchaseOrderFlow(proxy: CordaRPCOps,
                                  purchaseOrder: PurchaseOrderDTO): String {
-        var tranxId = "tbd"
+        var tranxId: String
         try {
 
             logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
                     "Starting the PurchaseOrderFlow ...................... " +
-                    "customer: ${purchaseOrder.customer.name} " +
-                    "supplier: ${purchaseOrder.supplier.name} " +
+                    "customer: ${purchaseOrder.customer?.name} " +
+                    "supplier: ${purchaseOrder.supplier?.name} " +
                     "amount: ${purchaseOrder.amount}" +
                     "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35\n\n")
 
-            val customerAccount = getNodeAccount(proxy, purchaseOrder.customer.identifier)
-            val supplierAccount = getNodeAccount(proxy, purchaseOrder.supplier.identifier)
+            val customerAccount = getNodeAccount(proxy, purchaseOrder.customer!!.identifier)
+            val supplierAccount = getNodeAccount(proxy, purchaseOrder.supplier!!.identifier)
+            var mDate = purchaseOrder.dateRegistered
+            if (profile == "prod") {
+                mDate = todaysDate()
+            }
             if (customerAccount != null && supplierAccount != null) {
                 val po = PurchaseOrderState(
                         purchaseOrderId = UUID.randomUUID().toString(),
@@ -941,7 +945,7 @@ class WorkerBeeService {
                         customer = customerAccount,
                         supplier = supplierAccount,
                         amount = purchaseOrder.amount,
-                        dateRegistered = DateTime().toDateTimeISO().toString(),
+                        dateRegistered = mDate,
                         description = purchaseOrder.description)
 
                 val profileCordaFuture = proxy.startFlowDynamic(
@@ -953,7 +957,7 @@ class WorkerBeeService {
                         " PurchaseOrderFlow completed ... " +
                         "\uD83D\uDC4C signedTx: " + tranxId +
                         "; \n\uD83D\uDD35 \uD83D\uDD35 PurchaseOrder now created for " +
-                        "customer: ${purchaseOrder.customer.name} supplier: ${purchaseOrder.supplier.name}\n\n")
+                        "customer: ${purchaseOrder.customer!!.name} supplier: ${purchaseOrder.supplier!!.name}\n\n")
                 return tranxId
             } else {
                 throw Exception("\uD83D\uDE21 \uD83D\uDE21 startPurchaseOrderFlow failed; customer or supplier not found")
@@ -970,19 +974,18 @@ class WorkerBeeService {
 
     }
     @Throws(Exception::class)
-    fun findBestOfferForInvoice(proxy: CordaRPCOps,
-                                invoiceId:String,
-                                supplierAccountId:String,
-                                acceptBestOffer:Boolean = false) : InvoiceOfferDTO? {
+    fun acceptBestOfferForInvoice(proxy: CordaRPCOps,
+                                  invoiceId:String,
+                                  supplierAccountId:String) : AcceptedOfferDTO? {
         val offerCordaFuture = proxy.startFlowDynamic(
-                FindBestOfferForInvoiceFlow::class.java,
-                supplierAccountId, invoiceId, acceptBestOffer).returnValue
+                AcceptBestOfferForInvoiceFlow::class.java,
+                supplierAccountId, invoiceId).returnValue
         val acceptedOffer = offerCordaFuture.get()
         if (acceptedOffer != null) {
             val mOffer = DTOUtil.getDTO(acceptedOffer)
             logger.info("\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
                     "Accepted Offer is : ${gson.toJson(mOffer)}  \uD83C\uDF40 \n\n")
-            firebaseService.addInvoiceOffer(mOffer)
+            firebaseService.addAcceptedOffer(mOffer)
             return mOffer
         }
 
@@ -1008,11 +1011,11 @@ class WorkerBeeService {
                                  profile: CustomerProfileStateDTO): String {
         var tranxId = "tbd"
         try {
-            val account = getAccount(proxy, accountId = profile.account.identifier)
+            val account = getAccount(proxy, accountId = profile.account?.identifier)
             logger.info("\n\n................. \uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
                     "Starting the CustomerProfileFlow ...................... " +
                     "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35\n\n")
-            val mAccount = getNodeAccount(proxy, profile.account.identifier)
+            val mAccount = getNodeAccount(proxy, profile.account!!.identifier)
             if (mAccount != null) {
                 val profileState = CustomerProfileState(
                         account = mAccount,
@@ -1120,10 +1123,8 @@ class WorkerBeeService {
                 discount = invoiceOffer.discount,
                 invoiceNumber = invoiceState.invoiceNumber,
                 offerAmount = invoiceOffer.offerAmount,
-                offerDate = invoiceOffer.offerDate,
                 originalAmount = invoiceState.totalAmount,
                 acceptanceDate = invoiceOffer.acceptanceDate,
-                accepted = false,
                 offerId = invoiceOffer.offerId,
                 externalId = invoiceState.externalId,
                 dateRegistered = DateTime().toDateTimeISO().toString()

@@ -1,10 +1,7 @@
 package com.bfn.flows.services
 
 import co.paralleluniverse.fibers.Suspendable
-import com.bfn.contractstates.states.InvoiceOfferState
-import com.bfn.contractstates.states.CustomerProfileState
-import com.bfn.contractstates.states.NetworkOperatorState
-import com.bfn.contractstates.states.UserState
+import com.bfn.contractstates.states.*
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.node.AppServiceHub
@@ -79,6 +76,30 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
 
     @Suspendable
     @Throws(Exception::class)
+    fun findAcceptedOffer(offerId: String): StateAndRef<AcceptedOfferState>? {
+
+        var pageNumber = DEFAULT_PAGE_NUM
+        val states = mutableListOf<StateAndRef<AcceptedOfferState>>()
+        do {
+            val pageSpec = PageSpecification(pageNumber = pageNumber, pageSize = pageSize)
+            val results = serviceHub.vaultService
+                    .queryBy<AcceptedOfferState>(QueryCriteria.VaultQueryCriteria(
+                            status = Vault.StateStatus.UNCONSUMED
+                    ), pageSpec)
+            states.addAll(results.states)
+            pageNumber++
+        } while ((pageSpec.pageSize * (pageNumber - 1)) <= results.totalStatesAvailable)
+
+        states.forEach() {
+            if (it.state.data.offerId == offerId) {
+                return it
+            }
+        }
+
+        return null
+    }
+    @Suspendable
+    @Throws(Exception::class)
     fun findInvoiceOffer(offerId: String): StateAndRef<InvoiceOfferState>? {
 
         var pageNumber = DEFAULT_PAGE_NUM
@@ -103,15 +124,15 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
     }
     @Suspendable
     @Throws(Exception::class)
-    fun getInvestorOffersAccepted(investorId: String): List<StateAndRef<InvoiceOfferState>> {
+    fun getInvestorOffersAccepted(investorId: String): List<StateAndRef<AcceptedOfferState>> {
 
-        val offers:MutableList<StateAndRef<InvoiceOfferState>> = mutableListOf()
+        val offers:MutableList<StateAndRef<AcceptedOfferState>> = mutableListOf()
         var pageNumber = DEFAULT_PAGE_NUM
-        val states = mutableListOf<StateAndRef<InvoiceOfferState>>()
+        val states = mutableListOf<StateAndRef<AcceptedOfferState>>()
         do {
             val pageSpec = PageSpecification(pageNumber = pageNumber, pageSize = pageSize)
             val results = serviceHub.vaultService
-                    .queryBy<InvoiceOfferState>(QueryCriteria.VaultQueryCriteria(
+                    .queryBy<AcceptedOfferState>(QueryCriteria.VaultQueryCriteria(
                             status = Vault.StateStatus.UNCONSUMED
                     ), pageSpec)
             states.addAll(results.states)
@@ -121,8 +142,7 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
         logger.info("\uD83D\uDC2C \uD83D\uDC2C allOffers: ${states.size} " +
                 "investor offers found on node ...")
         states.forEach() {
-            if (it.state.data.investor.identifier.id.toString() == investorId
-                    && it.state.data.accepted) {
+            if (it.state.data.investor.identifier.id.toString() == investorId) {
                     offers.add(it)
             }
 
@@ -148,9 +168,8 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
         logger.info("\uD83D\uDC2C \uD83D\uDC2C ${allOffers.size} anchor offers found on node ...")
         allOffers.forEach() {
             if (it.state.data.investor.name == existingAnchor.state.data.account.name) {
-                if (it.state.data.accepted) {
                    offers.add(it)
-                }
+
             }
         }
 

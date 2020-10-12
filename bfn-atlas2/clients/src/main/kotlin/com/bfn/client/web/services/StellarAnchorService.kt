@@ -2,6 +2,7 @@ package com.bfn.client.web.services
 
 
 import com.bfn.client.Emo
+import com.bfn.client.data.AcceptedOfferDTO
 import com.bfn.client.data.InvoiceOfferDTO
 import com.bfn.client.data.StellarResponse
 import com.bfn.client.data.SupplierPaymentDTO
@@ -104,11 +105,9 @@ class StellarAnchorService {
        logger.info("${Emo.GOLD_BELL}${Emo.GOLD_BELL}${Emo.GOLD_BELL}${Emo.GOLD_BELL} StellarAnchorService: " +
                 "call the Stellar Anchor server to send SupplierPayment ... ${Emo.GOLD_BELL}")
 
-        val acceptedOffer = firebaseService.getInvoiceOffer(offerId) ?: throw Exception("Offer not found")
-        if (!acceptedOffer.accepted) {
-            throw Exception("${Emo.NOT_OK}Offer not accepted")
-        }
-        logger.info("${Emo.FERNS}${Emo.FERNS} SupplierPayment to be made for offer: " +
+        val acceptedOffer = firebaseService.getAcceptedOffer(offerId) ?: throw Exception("AcceptedOffer not found")
+
+        logger.info("${Emo.FERNS}${Emo.FERNS} SupplierPayment to be made for accepted offer: " +
                 "${gson.toJson(acceptedOffer)} ${Emo.FERNS}")
         val supplierProfile = firebaseService.getSupplierProfile(
                 accountId = acceptedOffer.supplier!!.identifier)
@@ -169,7 +168,7 @@ class StellarAnchorService {
 
     }
 
-    private fun processOKPayment(acceptedOffer: InvoiceOfferDTO, url: String, proxy: CordaRPCOps): SupplierPaymentDTO {
+    private fun processOKPayment(acceptedOffer: AcceptedOfferDTO, url: String, proxy: CordaRPCOps): SupplierPaymentDTO {
         logger.info("${Emo.RED_APPLES} result status is A-OK! " +
                 "PaymentRequest has been successfully returned!" +
                 " ${Emo.GOLD_BELL}")

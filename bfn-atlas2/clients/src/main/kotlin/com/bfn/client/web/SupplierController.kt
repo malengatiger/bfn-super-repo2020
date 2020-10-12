@@ -1,9 +1,6 @@
 package com.bfn.client.web
 
-import com.bfn.client.data.InvoiceDTO
-import com.bfn.client.data.InvoiceOfferDTO
-import com.bfn.client.data.SupplierPaymentDTO
-import com.bfn.client.data.SupplierProfileStateDTO
+import com.bfn.client.data.*
 import com.bfn.client.web.services.FirebaseService
 import com.bfn.client.web.services.SupplierBeeService
 import com.bfn.client.web.services.WorkerBeeService
@@ -42,13 +39,11 @@ class SupplierController(rpc: NodeRPCConnection) {
     @GetMapping(value = ["/selectBestOffer"], produces = ["application/json"])
     @Throws(Exception::class)
     private fun selectBestOffer(@RequestParam accountId: String,
-                                @RequestParam invoiceId: String,
-                                @RequestParam acceptBestOffer:Boolean): InvoiceOfferDTO? {
+                                @RequestParam invoiceId: String): AcceptedOfferDTO? {
 
         val offer = supplierBeeService.selectBestOffer(proxy = proxy,
                 accountId = accountId,
-                invoiceId = invoiceId,
-                acceptBestOffer = acceptBestOffer)
+                invoiceId = invoiceId)
         if (offer == null) {
             logger.info("\uD83D\uDC80 \uD83D\uDC80 \uD83D\uDC80 \uD83D\uDC80  NO OFFER MADE: \uD83C\uDF0E ")
         } else {
@@ -60,7 +55,7 @@ class SupplierController(rpc: NodeRPCConnection) {
 
     @GetMapping(value = ["/acceptOffer"], produces = ["application/json"])
     @Throws(Exception::class)
-    private fun acceptOffer(@RequestParam offerId: String): InvoiceOfferDTO? {
+    private fun acceptOffer(@RequestParam offerId: String): AcceptedOfferDTO? {
 
         val tx = supplierBeeService.acceptOffer(proxy = proxy, offerId = offerId)
         logger.info("\uD83C\uDF0E \uD83C\uDF0E Offer accepted, txId: \uD83C\uDF0E $tx")

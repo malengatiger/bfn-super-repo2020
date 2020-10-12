@@ -138,7 +138,8 @@ class NetworkOperatorBeeService {
     @Throws(Exception::class)
     fun createNetworkOperator(proxy: CordaRPCOps,
                               networkOperator: NetworkOperatorDTO,
-                              investorProfile: InvestorProfileStateDTO): NetworkOperatorDTO? {
+                              investorProfile: InvestorProfileStateDTO,
+                              supplierProfile: SupplierProfileStateDTO): NetworkOperatorDTO? {
         logger.info("\n\n\n$xx Starting to create NetworkOperator: BFN Head Honcho to " +
                 "\uD83C\uDF88 Firebase auth, \uD83C\uDF88 Corda and \uD83C\uDF88 Firestore, " +
                 " ${gson.toJson(networkOperator)} \uD83C\uDF88 " +
@@ -181,9 +182,11 @@ class NetworkOperatorBeeService {
                             proxy = proxy, mAccount = xAccount!!, networkOperator = networkOperator)
 
                     val mUserTx = workerBeeService.createInvestorProfile(proxy = proxy,profile = investorProfile, account = xAccount)
+                    val mUserTx2 = workerBeeService.createSupplierProfile(proxy = proxy,profile = supplierProfile, account = xAccount)
+
                     logger.info("\n\n\uD83E\uDD6C\uD83E\uDD6C\uD83E\uDD6C\uD83E\uDD6C Yebo! \uD83D\uDD06 " +
                             "The Big Kahuna has been created! Long live the Network Operator !!! " +
-                            "\uD83D\uDD06 \uD83D\uDD06 $mUserTx")
+                            "\uD83D\uDD06 \uD83D\uDD06 $mUserTx $mUserTx2")
                     logger.info("\uD83C\uDFC0 \uD83C\uDFC0 \uD83C\uDFC0 NETWORK OPERATOR: " +
                             "\uD83C\uDFC0 ${gson.toJson(mOperatorCreated)} \uD83C\uDFC0\n\n")
                     return mOperatorCreated

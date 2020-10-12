@@ -104,6 +104,8 @@ class DemoDataService {
         firebaseService.deleteCollection(collectionName = BFN_TOKENS)
         firebaseService.deleteCollection(collectionName = BFN_CUSTOMER_PROFILES)
         firebaseService.deleteCollection(collectionName = BFN_INVESTOR_PROFILES)
+        firebaseService.deleteCollection(collectionName = BFN_ACCEPTED_OFFERS)
+
         logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E Firebase clean up completed")
     }
     var accounts: List<AccountInfoDTO> = mutableListOf()
@@ -134,6 +136,7 @@ class DemoDataService {
         firebaseService.deleteCollection(BFN_INVOICES)
         firebaseService.deleteCollection(BFN_PURCHASE_ORDERS)
         firebaseService.deleteCollection(BFN_INVOICE_OFFERS)
+        firebaseService.deleteCollection(BFN_ACCEPTED_OFFERS)
 
         createCustomers(mProxy)
         generatePurchaseOrders(mProxy, numberOfMonths)
@@ -155,111 +158,127 @@ class DemoDataService {
         logger.info(msg)
         purchaseOrderCount = 0
         accounts = workerBeeService.getAllNodeAccounts(mProxy)
+        val operator = firebaseService.getNetworkOperator() ?:
+            throw Exception("Network Operator missing ${Emo.ERRORS}")
         accounts.forEach {
             logger.info("\uD83C\uDF4E Account found on node, " +
                     "\uD83C\uDF40 ${it.name} \uD83C\uDF40 ${it.host}")
             if (it.host.contains("Customer")) {
                customers.add(it)
             } else {
-                suppliers.add(it)
+                if (!it.name.contains(operator.account.name)) {
+                    suppliers.add(it)
+                }
             }
         }
         //create a set of PO's for each customer ....
-        logger.info("\n\n\n\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E\uD83C\uDF4E" +
+        logger.info("\n\n\n${Emo.FERNS}" +
                 " Start creating PurchaseOrders for " +
-                "${customers.size} customers and ${suppliers.size} suppliers.... ")
-
+                "${customers.size} customers and ${suppliers.size} suppliers.... \n\n")
 
         for (customer in customers) {
             var mthIncrement = 0
-            val startDate = DateTime().minusMonths(numberOfMonths);
+            val startDate = DateTime().minusMonths(numberOfMonths)
+            logger.info("${Emo.FERNS} " +
+                    " Start creating PurchaseOrders for Customer: " +
+                    "${customer.name} ....${Emo.RED_APPLE} startDate: ${startDate.toDateTimeISO()} \n\n")
             while (mthIncrement < numberOfMonths) {
-                val date = startDate.plusMonths(mthIncrement)
-                        .plusDays(random.nextInt(14))
-                createCustomerPurchaseOrders(mProxy, customer, date.toDateTimeISO().toString());
+                var mDate = startDate;
+                if (mthIncrement > 0) {
+                    mDate = startDate.plusMonths(mthIncrement)
+                            .plusDays(random.nextInt(7))
+                }
+                createCustomerPurchaseOrders(mProxy, customer, mDate);
                 mthIncrement++
             }
         }
-        val msg2 = "\n\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
+        val msg2 = "\n\n${Emo.RED_APPLES} " +
                 "DemoDataService: generatePurchaseOrders COMPLETE! " +
-                " $purchaseOrderCount purchaseOrders generated \uD83E\uDD6E \uD83E\uDD6E \uD83E\uDD6E\n"
+                " $purchaseOrderCount purchaseOrders generated ${Emo.FERNS}\n\n"
+
         logger.info(msg2)
         logger.info("\n\n\n\n")
         return msg2
     }
     private fun createCustomerPurchaseOrders(mProxy: CordaRPCOps,
-                                             customer: AccountInfoDTO, date:String): String {
-
+                                             customer: AccountInfoDTO, date:DateTime): String {
 
         for (supplier in suppliers) {
             if (customer.identifier != supplier.identifier) {
-                createSmallAndLargePurchaseOrders(mProxy, customer, supplier, date)
+                val mDate = date.plusDays(random.nextInt(14))
+                createSmallAndLargePurchaseOrders(mProxy, customer, supplier, mDate)
             }
         }
-        val msg = "\n\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
-                "DemoDataService: generatePurchaseOrders COMPLETE! " +
-                "\uD83E\uDD6E \uD83E\uDD6E \uD83E\uDD6E\n"
+        val msg = "\n\n${Emo.RED_APPLES} " +
+                "DemoDataService: PurchaseOrders for Customer : ${customer.name} and ${suppliers.size} Suppliers completed  " +
+                "${Emo.RED_APPLES}\n"
         logger.info(msg)
         logger.info("\n\n")
         return msg
     }
     private fun createSmallAndLargePurchaseOrders(mProxy: CordaRPCOps,
                                                   customer: AccountInfoDTO,
-                                                  supplier: AccountInfoDTO, date: String): String {
+                                                  supplier: AccountInfoDTO,
+                                                  date: DateTime): String {
+
+        val sDate = date.plusDays(random.nextInt(14))
+        val lDate = date.plusDays(random.nextInt(14))
 
         val poSmall = PurchaseOrderDTO(
-                purchaseOrderId = "tbd",
+                purchaseOrderId = UUID.randomUUID().toString(),
                 purchaseOrderNumber = "" + System.currentTimeMillis()+ "-" + random.nextInt(100),
                 customer = customer,
                 supplier = supplier,
                 amount = getSmallPOAmount(),
-                dateRegistered = date,
+                dateRegistered = sDate.toDateTimeISO().toString(),
                 description = "\uD83C\uDF40 Demo: Small Purchase Order: ${customer.name} " +
                         "to supplier: ${supplier.name}. Used for testing and demo")
 
         val poLarge = PurchaseOrderDTO(
-                purchaseOrderId = "tbd",
+                purchaseOrderId = UUID.randomUUID().toString(),
                 purchaseOrderNumber = "" + System.currentTimeMillis() + "-" + random.nextInt(100),
                 customer = customer,
                 supplier = supplier,
                 amount = getLargePOAmount(),
-                dateRegistered = date,
+                dateRegistered = lDate.toDateTimeISO().toString(),
                 description = "\uD83C\uDF40 Demo: Large Purchase Order: ${customer.name} " +
                         "to supplier: ${supplier.name}. Used for testing and demo")
 
-        val choice = random.nextInt(10)
-        if (choice <= 5) {
+        val choice = random.nextInt(100)
+        if (choice <= 40) {
             val msg1 = workerBeeService.createPurchaseOrder(mProxy, purchaseOrder = poSmall)
             purchaseOrderCount++
-            logger.info(msg1)
-        }
-        val choice2 = random.nextInt(10)
-        if (choice2 >= 5) {
+            logger.info("$msg1 ::: ${Emo.PEAR} SMALL PO created with date: " +
+                    "${Emo.YELLOW_BIRD} ${poSmall.dateRegistered} " +
+                    "amt: ${poSmall.amount} \n\n\n")
+        } else {
             val msg2 = workerBeeService.createPurchaseOrder(mProxy, purchaseOrder = poLarge)
             purchaseOrderCount++
-            logger.info(msg2)
+            logger.info("$msg2 ::: ${Emo.PEAR} LARGE PO created with date:" +
+                    " ${Emo.YELLOW_BIRD} ${poLarge.dateRegistered} " +
+                    "amt: ${poLarge.amount} \n\n\n ")
         }
+
 
         return "createSmallAndLargePurchaseOrders: completed"
 
     }
     private fun getLargePOAmount(): String {
-        val amt = random.nextInt(100) * 100000
-        return if (amt < 1000000) {
-            "1000000.00"
+        val amt = random.nextInt(50) * 10000.00
+        return if (amt < 100000.00) {
+            "500000.00"
         } else {
-            "" + (amt * 1.00)
+            amt.toString()
         }
     }
     private fun getSmallPOAmount(): String {
-        val amt = random.nextInt(100) * 1000
-        return if (amt < 5000) {
-            "10000.00"
-        } else {
-            "" + (amt * 1.00)
+        var amt = random.nextInt(10) * 10000.00
+        if (amt < 10000.00) {
+            amt = 10000.00
         }
+        return amt.toString()
     }
-     private fun getNetworkOperatorObject(): NetworkOperatorDTO {
+    private fun getNetworkOperatorObject(): NetworkOperatorDTO {
 
         val email = "operator${System.currentTimeMillis()}@bfn.com"
 
@@ -277,72 +296,110 @@ class DemoDataService {
 
     }
 
+    private val m1List: MutableList<String> = mutableListOf()
+    private val m2List: MutableList<String> = mutableListOf()
+    private val m3List: MutableList<String> = mutableListOf()
+    private val m4List: MutableList<String> = mutableListOf()
+    private val m5List: MutableList<String> = mutableListOf()
+
     private fun getTradeMatrixItems(): MutableList<TradeMatrixItemDTO> {
+
+        if (m1List.isEmpty()) {
+            for (i in 20..25) {
+               m1List.add("${i * 1.00}")
+            }
+            for (i in 15..19) {
+                m2List.add("${i * 1.00}")
+            }
+            for (i in 12..14) {
+                m3List.add("${i * 1.00}")
+            }
+            for (i in 8..11) {
+                m4List.add("${i * 1.00}")
+            }
+            for (i in 2..7) {
+                m5List.add("${i * 1.00}")
+            }
+        }
+
+
         val date = DateTime().toDateTimeISO().toString()
-        var mDisc1 = random.nextInt(20) * 1.5
-        if (mDisc1 < 10.0) {
-            mDisc1 = 10.0
+        val mDisc1 = m1List[random.nextInt(m1List.size - 1)]
+
+        //todo - generate five ranges start and end amounts ....
+        val multiplier = 10000.00
+        var num1 = random.nextInt(10)
+        if (num1 == 0 || num1 > 8) {
+            num1 = 3
         }
+        val start1 = (num1 * multiplier).toString()
+        val end1 = (10 * multiplier).toString()
+
+        val m1 = TradeMatrixItemDTO(
+                start1,
+                end1,
+                mDisc1,
+                date
+        )
+
+        val mDisc2 = m2List[random.nextInt(m2List.size - 1)]
+        var num2 = random.nextInt(20)
+        if (num2 < 11 || num1 > 18) {
+            num2 = 11
+        }
+        val start2 = (num2 * multiplier).toString()
+        val end2 = (20 * multiplier).toString()
         val m2 = TradeMatrixItemDTO(
-                "20000.00",
-                "300000.00",
-                "$mDisc1",
+                start2,
+                end2,
+                mDisc2,
                 date
         )
 
-        var mDisc2 = random.nextInt(15) * 1.5
-        if (mDisc2 < 8.0) {
-            mDisc2 = 8.5
+        val mDisc3 = m3List[random.nextInt(m3List.size - 1)]
+        var num3 = random.nextInt(30)
+        if (num3 < 21 || num1 > 25) {
+            num3 = 21
         }
+        val start3 = (num3 * multiplier).toString()
+        val end3 = (30 * multiplier).toString()
         val m3 = TradeMatrixItemDTO(
-                "300001.00",
-                "400000.00",
-                "$mDisc2",
+                start3,
+                end3,
+                mDisc3,
                 date
         )
-
-        var mDisc3 = random.nextInt(10) * 1.5
-        if (mDisc3 < 7.0) {
-            mDisc3 = 7.0
+        val mDisc4 = m4List[random.nextInt(m4List.size - 1)]
+        var num4 = random.nextInt(40)
+        if (num4 < 31 || num1 > 37) {
+            num4 = 31
         }
+        val start4 = (num4 * multiplier).toString()
+        val end4 = (40 * multiplier).toString()
         val m4 = TradeMatrixItemDTO(
-                "400001.00",
-                "500000.00",
-                "$mDisc3",
-                date
-        )
-        var mDisc4 = random.nextInt(10) * 1.0
-        if (mDisc4 < 7.0) {
-            mDisc4 = 4.5
+                start4,
+                end4,
+                mDisc4,
+                date)
+        val mDisc5 = m5List[random.nextInt(m5List.size - 1)]
+        var num5 = random.nextInt(50)
+        if (num5 < 41 || num1 > 47) {
+            num5 = 41
         }
+        val start5 = (num5 * multiplier).toString()
+        val end5 = (50 * multiplier).toString()
         val m5 = TradeMatrixItemDTO(
-                "500001.00",
-                "1000000.00",
-                "$mDisc4",
-                date)
-        var mDisc5 = random.nextInt(5) * 1.5
-        if (mDisc5 < 3.0) {
-            mDisc5 = 5.0
-        }
-        val m6 = TradeMatrixItemDTO(
-                "1000001.00",
-                "10000000.00",
-                "$mDisc5",
-                date)
-        var mDisc6 = random.nextInt(5) * 1.1
-        if (mDisc6 < 3.0) {
-            mDisc6 = 4.5
-        }
-        val m7 = TradeMatrixItemDTO(
-                "10000001.00",
-                "100000000.00",
-                "$mDisc6",
+                start5,
+                end5,
+                mDisc5,
                 date)
 
-        logger.info("${Emo.DICE}${Emo.DICE}Discounts: ${m2.offerDiscount}%, " +
-                "${m3.offerDiscount}%, ${m4.offerDiscount}%, ${m5.offerDiscount}%, " +
-                "${m6.offerDiscount}%, ${m7.offerDiscount}%")
-        return mutableListOf(m2, m3, m4, m5, m6, m7)
+
+        logger.info("${Emo.DICE}${Emo.DICE}Discounts: ${m1.offerDiscount}%, " +
+                "${m2.offerDiscount}%, ${m3.offerDiscount}%, ${m4.offerDiscount}%, " +
+                "${m5.offerDiscount}%")
+
+        return mutableListOf(m1, m2, m3, m4, m5)
     }
 
     @Throws(Exception::class)
@@ -356,12 +413,12 @@ class DemoDataService {
                     page.states[0].state.data.account.name)
         }
         val operator = getNetworkOperatorObject()
-        val profile = InvestorProfileStateDTO(
+        val investorProfile = InvestorProfileStateDTO(
                 operator.account,
-                "60000.00",
-                "3000000.00",
+                "30000.00",
+                "30000000.00",
                 "1000000000.00",
-                "15.0",
+                "3.0",
                 "Investec Bank",
                 "67246772893",
                 "tbd",
@@ -369,8 +426,15 @@ class DemoDataService {
                 getTradeMatrixItems(),
                 DateTime().toDateTimeISO().toString()
         )
+        val supplierProfile = SupplierProfileStateDTO(
+                operator.account, "Investec Bank",
+                "67246772893","5.0",
+                "tbd", "tbd",
+                "ZAR", todaysDate()
+        )
         operator.password = "pass123"
-        val result = networkOperatorService.createNetworkOperator(mProxy, operator, profile)
+        val result = networkOperatorService.createNetworkOperator(
+                mProxy, operator, investorProfile, supplierProfile)
         logger.info("\uD83E\uDD6E \uD83E\uDD6E \uD83E\uDD6E " +
                 "DemoDataService: createNetworkOperator result: " +
                 gson.toJson(result) + " \uD83E\uDD6E \uD83E\uDD6E")
@@ -458,33 +522,32 @@ class DemoDataService {
                 "  \uD83D\uDD06 \uD83D\uDD06 found  ${accountInfos.size} ... " +
                 "adding investor and supplier profiles for all accounts ........")
         //add profiles and generate invoices
-        val operator = firebaseService.getNetworkOperator()
+        val operator = firebaseService.getNetworkOperator() ?:
+                throw Exception("Network Operator Missing")
         val page = proxy.vaultQuery(AccountInfo::class.java)
         val err = "\uD83D\uDE21\uD83D\uDE21\uD83D\uDE21\uD83D\uDE21"
         for (state in page.states) {
             val user = firebaseService.getBFNUserByAccountName(state.state.data.name)
-            if (operator != null) {
-                if (operator.account.name != state.state.data.name) {
-                    try {
-                        if (user != null) {
-                            addInvestorProfile(
-                                    account = state,
-                                    proxy = proxy,
-                                    stellarAccountId = user.stellarAccountId)
-                        }
-                    } catch (e: Exception) {
-                        logger.error("$err Unable to add InvestorProfile for account", e)
+            if (operator.account.name != state.state.data.name) {
+                try {
+                    if (user != null) {
+                        addInvestorProfile(
+                                account = state,
+                                proxy = proxy,
+                                stellarAccountId = user.stellarAccountId)
                     }
-                    try {
-                        if (user != null) {
-                            addSupplierProfile(
-                                    account = state,
-                                    proxy = proxy,
-                                    stellarAccountId = user.stellarAccountId)
-                        }
-                    } catch (e: Exception) {
-                        logger.error("$err Unable to add SupplierProfile for account", e)
+                } catch (e: Exception) {
+                    logger.error("$err Unable to add InvestorProfile for account", e)
+                }
+                try {
+                    if (user != null) {
+                        addSupplierProfile(
+                                account = state,
+                                proxy = proxy,
+                                stellarAccountId = user.stellarAccountId)
                     }
+                } catch (e: Exception) {
+                    logger.error("$err Unable to add SupplierProfile for account", e)
                 }
             }
 
@@ -538,7 +601,7 @@ class DemoDataService {
                     cntx++
                     logger.info("\uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 " +
                             "SUCCESSFULLY registered InvoiceOffer on Corda Ledger for supplier: \uD83C\uDF4F " +
-                            "${invoice.supplier.name} ${invoice.supplier.host} " +
+                            "${invoice.supplier?.name} ${invoice.supplier?.host} " +
                             "\uD83C\uDF4F \uD83D\uDCA6 investor: ${accountInfo.name} " +
                             "\uD83D\uDCA6 ${accountInfo.host} \uD83E\uDDE9 \uD83E\uDDE9 " +
                             "offerAmount: ${offer.offerAmount} < originalAmount ${offer.originalAmount}" + "\n\n\n")
@@ -606,31 +669,31 @@ class DemoDataService {
     private fun addInvestorProfile(proxy: CordaRPCOps, account: StateAndRef<AccountInfo>, stellarAccountId: String) {
         logger.info(" \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 addInvestorProfile ..." +
                 "  \uD83D\uDD06 \uD83D\uDD06 for account:  ${account.state.data.name} ... ")
-        var disc = random.nextInt(10) * 1.5
+        var disc = random.nextInt(5) * 1.0
         if (disc < 3.0) {
             disc = 3.5
         }
-        var min = random.nextInt(10) * 1000.00
-        if (min == 0.0) {
-            min = 1000.00
+        var min = random.nextInt(50) * 1000.00
+        if (min <= 3000.0) {
+            min = 10000.00
         }
-        var max = random.nextInt(200) * 1000.00
-        if (max == 0.0) {
+        var max = random.nextInt(1000) * 100000.00
+        if (max <= 500000.0) {
             max = 200000.00
         }
 
         val investorProfile = InvestorProfileStateDTO(
                 DTOUtil.getDTO(account.state.data),
-                "60000.00",
-                "3000000.00",
-                "1000000000.00",
+                "$min",
+                "$max",
+                "${max * 1000}",
                 "$disc",
                 "Investec Bank",
-                "67246772893",
+                "${System.currentTimeMillis()}-${random.nextInt(100)}",
                 stellarAccountId,
                 "tbd",
                 getTradeMatrixItems(),
-                DateTime().toDateTimeISO().toString()
+                todaysDate()
         )
 
         workerBeeService.createInvestorProfile(
@@ -646,9 +709,9 @@ class DemoDataService {
     private fun addSupplierProfile(proxy: CordaRPCOps, account: StateAndRef<AccountInfo>, stellarAccountId: String) {
         logger.info("\n\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 addSupplierProfile ..." +
                 "  \uD83D\uDD06 \uD83D\uDD06 for account:  ${account.state.data.name} ... ")
-        var disc = random.nextInt(5) * 2.5
-        if (disc < 2.0) {
-            disc = 6.5
+        var disc = random.nextInt(25) * 1.0
+        if (disc < 5.0) {
+            disc = 20.0
         }
 
         val prof = SupplierProfileStateDTO(
@@ -705,7 +768,6 @@ class DemoDataService {
         }
 
     private val random = Random(System.currentTimeMillis())
-    private val cal: Calendar = GregorianCalendar.getInstance()
     private var invoiceCnt = 0
 
     /**
@@ -727,8 +789,8 @@ class DemoDataService {
             logger.info("\uD83C\uDF4E \uD83C\uDF4E We have found ${page.states.size} purchase orders on the network: ")
         }
         invoiceCnt = 0
-        for (stateAndRef in page.states) {
-            val po = stateAndRef.state.data
+        for (poStateAndRef in page.states) {
+            val po = poStateAndRef.state.data
             val inv = InvoiceDTO(
                     purchaseOrder = DTOUtil.getDTO(po),
                     amount = po.amount,
@@ -744,7 +806,8 @@ class DemoDataService {
 
             val result = workerBeeService.startInvoiceRegistrationFlow(proxy, inv)
             invoiceCnt++
-            logger.info("\n\n\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E Invoice generated from PO on Corda ledger: ${gson.toJson(result)}")
+            logger.info("\n\n${Emo.RAIN_DROPS} Invoice generated from PO on Corda ledger: ${gson.toJson(result)} ${Emo.PRETZEL}")
+            
         }
 
         val msh = "\n\n\n\uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A :: " +
@@ -752,101 +815,6 @@ class DemoDataService {
                 "\uD83D\uDC9C $invoiceCnt \uD83D\uDC9C\n\n\n"
         logger.info(msh)
         return msh;
-    }
-
-     fun startInvoiceFlow(proxy: CordaRPCOps, customer: AccountInfoDTO,
-                                 supplier: AccountInfoDTO, date: DateTime) {
-        logger.info("\n\n...... ........... .........  \uD83D\uDD35 \uD83D\uDD35 " +
-                "startInvoiceFlow: \uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C " +
-                "account: ${supplier.name}")
-
-        val largeInvoice = buildLargeInvoice(customer, supplier, date)
-        val smallInvoice = buildSmallInvoice(customer, supplier, date)
-
-        if (largeInvoice != null) {
-            val choice = random.nextInt(100)
-            if (choice > 49) {
-                val result = workerBeeService.startInvoiceRegistrationFlow(proxy, largeInvoice)
-                logger.info("\uD83D\uDC9C LARGE startInvoiceFlow: startInvoiceRegistrationFlow " +
-                        "executed, result totalAmount: ${result.totalAmount} ")
-                logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 " +
-                        "LARGE invoice added to ledger; ${gson.toJson(result)} " +
-                        "\uD83E\uDD66 \uD83E\uDD52 \uD83E\uDD6C\n\n\n")
-                invoiceCnt++
-            }
-        } else {
-            logger.info("\uD83D\uDC9C LARGE startInvoiceFlow: " +
-                    "\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 invoice is NULL");
-        }
-        if (smallInvoice != null) {
-            val choice = random.nextInt(100)
-            if (choice > 49) {
-                val result = workerBeeService.startInvoiceRegistrationFlow(proxy, smallInvoice)
-                logger.info("\uD83D\uDC9C SMALL startInvoiceFlow: startInvoiceRegistrationFlow " +
-                        "executed, result totalAmount: ${result.totalAmount} ")
-                logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 " +
-                        " SMALL invoice added to ledger; ${gson.toJson(result)} " +
-                        "\uD83E\uDD66 \uD83E\uDD52 \uD83E\uDD6C\n\n\n")
-                invoiceCnt++
-            }
-        } else {
-            logger.info("\uD83D\uDC9C SMALL startInvoiceFlow: " +
-                    "\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 smallInvoice is NULL");
-        }
-    }
-
-    private fun buildLargeInvoice(customer: AccountInfoDTO,
-                                  supplier: AccountInfoDTO, date: DateTime): InvoiceDTO? {
-
-        var num = random.nextInt(1000)
-        if (num >= 700) num = 2000
-        if (num <= 200) num = 1000
-
-        if (supplier.name == customer.name) {
-            logger.info("Invalid invoice;  supplier: ${supplier.name} customer: ${customer.name}")
-            return null
-        }
-
-        val suffix = random.nextInt(100)
-
-        return InvoiceDTO(
-                invoiceNumber = "INV_" + System.currentTimeMillis() + "-" + suffix,
-                supplier = supplier,
-                customer = customer,
-                amount = "" + (num * 1200.0),
-                valueAddedTax = "15.0",
-                totalAmount = "" + num * (1200.0 * 1.15),
-                description = "LARGE : Demo Invoice at ${date.toDateTimeISO()}",
-                dateRegistered = date.toDateTimeISO().toString(),
-                invoiceId = UUID.randomUUID().toString(),
-                externalId = "tbd"
-        )
-    }
-
-    private fun buildSmallInvoice(customer: AccountInfoDTO,
-                                  supplier: AccountInfoDTO, date: DateTime): InvoiceDTO? {
-
-        var num = random.nextInt(200)
-        if (num <= 20) num = 100
-
-        if (supplier.name == customer.name) {
-            logger.info("Invalid invoice; supplier: ${supplier.name} customer: ${customer.name}")
-            return null
-        }
-        val suffix = random.nextInt(100)
-
-        return InvoiceDTO(
-                invoiceNumber = "INV_" + System.currentTimeMillis() + "-" + suffix,
-                supplier = supplier,
-                customer = customer,
-                amount = "" + (num * 500.0),
-                valueAddedTax = "15.0",
-                totalAmount = "" + (num * 500.0 * 1.15),
-                description = "Small Demo Invoice at ${date.toDateTimeISO()}",
-                dateRegistered = date.toDateTimeISO().toString(),
-                invoiceId = UUID.randomUUID().toString(),
-                externalId = "tbd"
-        )
     }
 
     private val nodeInvoiceOffers: MutableList<InvoiceOfferDTO> = mutableListOf()
@@ -871,9 +839,7 @@ class DemoDataService {
                 invoiceId = invoice.invoiceId,
                 supplier = invoice.supplier,
                 investor = investor,
-                offerDate = xDate.toDateTimeISO().toString(),
                 discount = discount,
-                accepted = false,
                 offerAmount = "$offer",
                 originalAmount = invoice.totalAmount,
                 externalId = invoice.externalId,
@@ -952,7 +918,7 @@ class DemoDataService {
 
     private fun doOneCustomer(proxy: CordaRPCOps,
                               customerProfile: CustomerProfileStateDTO) {
-        logger.info("\n\uD83D\uDD35 ........... Creating Customer ${customerProfile.account.name}")
+        logger.info("\n\uD83D\uDD35 ........... Creating Customer ${customerProfile.account?.name}")
         val password = "pass123"
         try {
             val resultProfile = workerBeeService.createCustomerProfile(proxy, customerProfile, password)

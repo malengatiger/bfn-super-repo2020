@@ -1,7 +1,7 @@
 package com.bfn.client.data
 
 
-data class InvoiceOfferDTO (
+data class AcceptedOfferDTO (
         var invoiceId: String = "",
         var invoiceNumber: String = "",
         var offerAmount: String = "",

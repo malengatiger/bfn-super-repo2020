@@ -1,5 +1,6 @@
-package com.bfn.contractstates.contracts
+package com.template
 
+import com.bfn.contractstates.states.AcceptedOfferState
 import com.bfn.contractstates.states.InvoiceOfferState
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.Contract
@@ -8,10 +9,10 @@ import org.slf4j.LoggerFactory
 import java.math.BigDecimal
 
 
-class InvoiceOfferContract : Contract {
+class AcceptedOfferContract : Contract {
     @Throws(IllegalArgumentException::class)
     override fun verify(tx: LedgerTransaction) {
-        logger.info("\uD83D\uDD06 InvoiceOfferContract: verify starting" +
+        logger.info("\uD83D\uDD06 AcceptedOfferContract: verify starting" +
                 " ..... \uD83E\uDD6C \uD83E\uDD6C ")
         logger.info("Number ofCommands: ${tx.commands.size}")
         if (tx.outputStates.size != 1) {
@@ -21,7 +22,7 @@ class InvoiceOfferContract : Contract {
             throw IllegalArgumentException("Only One Command required")
         }
         val invoiceOfferState = tx.outputStates.first()
-        if (invoiceOfferState is InvoiceOfferState) {
+        if (invoiceOfferState is AcceptedOfferState) {
             if (invoiceOfferState.supplier.name == invoiceOfferState.investor.name) {
                 throw IllegalArgumentException("Investor and Supplier cannot be the same entity")
             }
@@ -45,15 +46,25 @@ class InvoiceOfferContract : Contract {
                         "$tb1 \uD83C\uDF4E \uD83C\uDF4E ")
             }
 
+        } else {
+            throw IllegalArgumentException("Output state must be AcceptedOfferState ")
         }
+        //1,331,700.000000
+        //1,380,000.000
+
+
+
+
+
         logger.info("\uD83D\uDD06 InvoiceOfferContract: verification ( \uD83D\uDC7A  done OK! " +
                 ".....\uD83E\uDD1F \uD83E\uDD1F ")
     }
 
     class MakeOffer : CommandData
+    class AcceptOffer: CommandData
     companion object {
         // This is used to identify our contract when building a transaction.
-        val ID: String = InvoiceOfferContract::class.java.name
-        private val logger = LoggerFactory.getLogger(InvoiceOfferContract::class.java)
+        val ID: String = AcceptedOfferContract::class.java.name
+        private val logger = LoggerFactory.getLogger(AcceptedOfferContract::class.java)
     }
 }

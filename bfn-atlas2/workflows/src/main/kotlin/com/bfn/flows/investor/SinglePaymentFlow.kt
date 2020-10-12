@@ -2,6 +2,7 @@ package com.bfn.flows.investor
 
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.contracts.SupplierPaymentContract
+import com.bfn.contractstates.states.AcceptedOfferState
 import com.bfn.contractstates.states.InvoiceOfferState
 import com.bfn.contractstates.states.SupplierPaymentState
 import com.bfn.flows.Em
@@ -30,11 +31,9 @@ class SinglePaymentFlow(private val paymentRequestParams: PaymentRequestParams) 
         Companion.logger.info("$pp SinglePaymentFlow started ... $pp")
 
         val service = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
-        val acceptedOffer = service.findInvoiceOffer(paymentRequestParams.offerId) ?:
+        val acceptedOffer = service.findAcceptedOffer(paymentRequestParams.offerId) ?:
             throw IllegalArgumentException(Em.NOT_OK+"Accepted offer not found")
-        if (!acceptedOffer.state.data.accepted) {
-            throw IllegalArgumentException(Em.NOT_OK+"Offer not accepted yet by Supplier")
-        }
+
         //todo -  🍊 🍊 🍊 fix this query - find a way!!  🍊 🍊 🍊
         val payments = serviceHub.cordaService(PaymentFinderService::class.java)
                 .getAllPaymentStateAndRefs()
@@ -98,7 +97,7 @@ class SinglePaymentFlow(private val paymentRequestParams: PaymentRequestParams) 
                                  customer: AccountInfo,
                                  txBuilder: TransactionBuilder,
                                  command: SupplierPaymentContract.Pay,
-                                 acceptedOffer: StateAndRef<InvoiceOfferState>,
+                                 acceptedOffer: StateAndRef<AcceptedOfferState>,
                                  payment: SupplierPaymentState): SupplierPaymentState {
 
         logger.info("SinglePaymentFlow: ${Em.RED_APPLES} processOKPayment:  " +

@@ -16,7 +16,7 @@ import java.util.*
 @CordaSerializable
 class SupplierPaymentState(
         val supplierPaymentId: String,
-        val acceptedOffer: InvoiceOfferState,
+        val acceptedOffer: AcceptedOfferState,
         val supplierProfile: SupplierProfileState,
         val dateRegistered: String) : QueryableState {
 

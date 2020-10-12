@@ -51,11 +51,11 @@ class MultiInvoiceOfferFlow(
         val pair = getOfferAmountAndDiscount(invoice,investorProfile)
         return InvoiceOfferState(
                 invoiceId = invoice.invoiceId, discount = pair.second,
-                originalAmount = invoice.totalAmount, offerDate = todaysDate(),
+                originalAmount = invoice.totalAmount,
                 offerAmount = pair.first, offerId = UUID.randomUUID().toString(),
                 supplier = invoice.supplierInfo, customer = invoice.customerInfo,
                 externalId = invoice.externalId,acceptanceDate = "tbd",
-                accepted = false, invoiceNumber = invoice.invoiceNumber,
+                invoiceNumber = invoice.invoiceNumber,
                 investor = investorProfile.account,
                 dateRegistered = todaysDate()
         )

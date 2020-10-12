@@ -4,12 +4,12 @@ import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import java.util.*
 
 class PurchaseOrderDTO (
-        val purchaseOrderId: String,
-        val purchaseOrderNumber: String,
-        val customer: AccountInfoDTO,
-        val supplier: AccountInfoDTO,
-        val amount: String,
-        val dateRegistered: String,
-        val description: String
+        var purchaseOrderId: String = "",
+        var purchaseOrderNumber: String = "",
+        var customer: AccountInfoDTO? = null,
+        var supplier: AccountInfoDTO? = null,
+        var amount: String  = "",
+        var dateRegistered: String = "",
+        var description: String = ""
 ) {
 }

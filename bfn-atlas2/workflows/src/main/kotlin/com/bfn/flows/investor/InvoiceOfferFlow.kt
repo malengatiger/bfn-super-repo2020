@@ -6,7 +6,7 @@ import com.bfn.flows.Em
 import com.bfn.flows.regulator.ReportToRegulatorFlow
 import com.bfn.flows.services.InvoiceOfferFinderService
 import com.r3.corda.lib.accounts.workflows.flows.ShareStateAndSyncAccounts
-import com.template.InvoiceOfferContract
+import com.bfn.contractstates.contracts.InvoiceOfferContract
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
 import net.corda.core.transactions.SignedTransaction

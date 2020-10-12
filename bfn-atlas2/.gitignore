@@ -13,3 +13,4 @@ clients/src/main/resources/prod-nodes.json
 .gradle/
 .idea/
 logs/
+clients/src/main/resources/dev-nodes.json

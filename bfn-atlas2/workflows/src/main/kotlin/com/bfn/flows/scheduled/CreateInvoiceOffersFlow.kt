@@ -3,7 +3,6 @@ package com.bfn.flows.scheduled
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.states.InvoiceOfferState
 import com.bfn.contractstates.states.InvoiceState
-import com.bfn.contractstates.states.CustomerProfileState
 import com.bfn.contractstates.states.InvestorProfileState
 import com.bfn.flows.services.InvoiceFinderService
 import com.bfn.flows.services.ProfileFinderService
@@ -11,7 +10,7 @@ import com.bfn.flows.todaysDate
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.accounts.workflows.ourIdentity
-import com.template.InvoiceOfferContract
+import com.bfn.contractstates.contracts.InvoiceOfferContract
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
@@ -131,9 +130,7 @@ class CreateInvoiceOffersFlow(private val investorId: String) : FlowLogic<List<I
                         discount = investorProfile!!.defaultDiscount,
                         invoiceNumber = it.invoiceNumber,
                         offerAmount = getOfferAmount(it.totalAmount, investorProfile.defaultDiscount),
-                        offerDate = todaysDate(),
                         originalAmount = it.totalAmount,
-                        accepted = false,
                         externalId = it.externalId,
                         offerId = UUID.randomUUID().toString(),
                         supplier = it.supplierInfo, acceptanceDate = todaysDate(),

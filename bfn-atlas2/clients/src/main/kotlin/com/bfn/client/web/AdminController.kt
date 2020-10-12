@@ -4,12 +4,17 @@ package com.bfn.client.web
 //}
 
 //
+import com.bfn.client.Emo
 import com.bfn.client.TesterBee
 import com.bfn.client.data.*
 import com.bfn.client.web.services.*
+import com.bfn.contractstates.states.AcceptedOfferState
 import com.google.firebase.auth.UserRecord
 import com.google.gson.GsonBuilder
 import net.corda.core.messaging.CordaRPCOps
+import net.corda.core.node.services.Vault
+import net.corda.core.node.services.vault.PageSpecification
+import net.corda.core.node.services.vault.QueryCriteria
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -103,9 +108,9 @@ class AdminController(rpc: NodeRPCConnection) {
 
         val list = crossNodeService.getInvoicesAcrossNodes();
         list.forEach() {
-            logger.info("\uD83C\uDF4E \uD83C\uDF4E ${it.supplier.host} " +
-                    "\uD83C\uDF51 supplier: ${it.supplier.name} " +
-                    "\uD83E\uDD66 customer: ${it.customer.name} amount: ${it.amount}")
+            logger.info("\uD83C\uDF4E \uD83C\uDF4E ${it.supplier?.host} " +
+                    "\uD83C\uDF51 supplier: ${it.supplier?.name} " +
+                    "\uD83E\uDD66 customer: ${it.customer?.name} amount: ${it.amount}")
         }
         return list
     }
@@ -166,12 +171,18 @@ class AdminController(rpc: NodeRPCConnection) {
     @PostMapping(value = ["/createNetworkOperator"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun createNetworkOperator(@RequestBody networkOperator: NetworkOperatorDTO,
-                                      investorProfile: InvestorProfileStateDTO): NetworkOperatorDTO? {
-        logger.info("\n\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E  " +
+                                      investorProfile: InvestorProfileStateDTO,
+                                      supplierProfile: SupplierProfileStateDTO): NetworkOperatorDTO? {
+
+           logger.info("\n\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E  " +
                 "Creating Network Operator:, check fields, tradeFrequencyInMinutes, defaultOfferDiscount ...  ${GSON.toJson(networkOperator)}")
 
         val operator =  networkOperatorBeeService.createNetworkOperator(
-                networkOperator = networkOperator, proxy = proxy, investorProfile = investorProfile)
+                networkOperator = networkOperator,
+                proxy = proxy,
+                investorProfile = investorProfile,
+                supplierProfile = supplierProfile)
+
         logger.info(" \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
                 "networkOperatorBeeService.createNetworkOperator returns operator:  ${GSON.toJson(operator)}")
 
@@ -180,7 +191,8 @@ class AdminController(rpc: NodeRPCConnection) {
     @PostMapping(value = ["/updateNetworkOperator"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun updateNetworkOperator(@RequestBody networkOperator: NetworkOperatorDTO): NetworkOperatorDTO? {
-        return networkOperatorBeeService.updateNetworkOperator(networkOperator = networkOperator, proxy = proxy)
+        return networkOperatorBeeService.updateNetworkOperator(
+                networkOperator = networkOperator, proxy = proxy)
     }
 
     @PostMapping(value = ["/startAccountRegistrationFlow"], produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -242,8 +254,33 @@ class AdminController(rpc: NodeRPCConnection) {
     @Throws(Exception::class)
     fun getAcceptedInvoiceOffers(
             @RequestParam startDate: String,
-            @RequestParam endDate: String): List<InvoiceOfferDTO> {
+            @RequestParam endDate: String): List<AcceptedOfferDTO> {
         return firebaseService.getAcceptedInvoiceOffers(startDate,endDate)
+    }
+    @GetMapping(value = ["/checkAcceptedInvoiceOffers"])
+    @Throws(Exception::class)
+    fun checkAcceptedInvoiceOffers(): List<AcceptedOfferDTO> {
+
+        val criteria = QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.UNCONSUMED);
+        val page = proxy.vaultQueryByWithPagingSpec(
+                criteria = criteria,
+                contractStateType = AcceptedOfferState::class.java, paging = PageSpecification(
+                pageNumber = 1, pageSize = 500
+        ) )
+        val mList: MutableList<AcceptedOfferDTO> = mutableListOf()
+        for (m in page.states) {
+            mList.add(DTOUtil.getDTO(m.state.data))
+        }
+        logger.info("${Emo.RED_APPLES} Accepted Offers from Ledger: ${mList.size}")
+        return mList;
+
+    }
+    @GetMapping(value = ["/getSupplierPayments"])
+    @Throws(Exception::class)
+    fun getSupplierPayments(
+            @RequestParam startDate: String,
+            @RequestParam endDate: String): List<SupplierPaymentDTO> {
+        return firebaseService.getSupplierPayments(startDate,endDate)
     }
     @GetMapping(value = ["/getCustomerProfiles"])
     @Throws(Exception::class)
@@ -296,17 +333,15 @@ class AdminController(rpc: NodeRPCConnection) {
         return workerBeeService.findInvoicesForInvestor(proxy, accountId)
     }
 
-    @GetMapping(value = ["/findBestOfferForInvoice"])
+    @GetMapping(value = ["/acceptBestOfferForInvoice"])
     @Throws(Exception::class)
-    fun findBestOfferForInvoice(
+    fun acceptBestOfferForInvoice(
             supplierAccountId: String,
-            invoiceId: String,
-            acceptBestOffer: Boolean): InvoiceOfferDTO? {
+            invoiceId: String): AcceptedOfferDTO? {
 
-        return workerBeeService.findBestOfferForInvoice(proxy = proxy,
+        return workerBeeService.acceptBestOfferForInvoice(proxy = proxy,
                 supplierAccountId = supplierAccountId,
-                invoiceId = invoiceId,
-                acceptBestOffer = acceptBestOffer)
+                invoiceId = invoiceId)
     }
 
     @GetMapping(value = ["/findOffersForInvestor"])

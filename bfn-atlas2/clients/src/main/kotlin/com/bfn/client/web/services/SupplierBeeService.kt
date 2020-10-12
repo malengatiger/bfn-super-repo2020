@@ -7,10 +7,9 @@ import com.google.gson.GsonBuilder
 
 import com.bfn.contractstates.states.*
 import com.bfn.flows.investor.MultiplePaymentsFlow
-import com.bfn.flows.supplier.FindBestOfferForInvoiceFlow
+import com.bfn.flows.supplier.AcceptBestOfferForInvoiceFlow
 import com.bfn.flows.supplier.OfferAcceptanceBySupplierFlow
 import com.google.cloud.firestore.Firestore
-import net.corda.core.contracts.StateAndRef
 import net.corda.core.messaging.CordaRPCOps
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -30,25 +29,25 @@ class SupplierBeeService {
     
     @Throws(Exception::class)
     fun selectBestOffer(proxy: CordaRPCOps, accountId: String,
-                        invoiceId: String, acceptBestOffer:Boolean): InvoiceOfferDTO? {
+                        invoiceId: String): AcceptedOfferDTO? {
 
         val cordaFuture = proxy.startFlowDynamic(
-                FindBestOfferForInvoiceFlow::class.java, accountId, invoiceId, acceptBestOffer)
+                AcceptBestOfferForInvoiceFlow::class.java, accountId, invoiceId)
                 .returnValue
-        val offer: InvoiceOfferState = cordaFuture.get() ?: return null
-        val dto = DTOUtil.getDTO(offer)
-        logger.info("✅ ✅ ✅ ✅ \uD83C\uDF4E Best offer selected: " +
+        val acceptedOfferState: AcceptedOfferState = cordaFuture.get() ?: return null
+        val dto = DTOUtil.getDTO(acceptedOfferState)
+        logger.info("✅ ✅ ✅ ✅ \uD83C\uDF4E Best offer accepted: " +
                 "\uD83C\uDF88 ${GSON.toJson(dto)} \uD83C\uDF88")
         return dto
     }
     
     @Throws(Exception::class)
-    fun acceptOffer(proxy: CordaRPCOps, offerId: String): InvoiceOfferState? {
+    fun acceptOffer(proxy: CordaRPCOps, offerId: String): AcceptedOfferState? {
 
         val cordaFuture = proxy.startFlowDynamic(
                 OfferAcceptanceBySupplierFlow::class.java,  offerId)
                 .returnValue
-        val tx: InvoiceOfferState? = cordaFuture.get()
+        val tx: AcceptedOfferState? = cordaFuture.get()
         if (tx != null) {
             logger.info("\uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C Offer accepted if result == InvoiceOfferState:" +
                     " \uD83C\uDF4E supplier: \uD83E\uDD6C ${tx.supplier.name}")

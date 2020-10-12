@@ -137,18 +137,32 @@ class FirebaseService() {
         return mList;
     }
     @Throws(Exception::class)
-    fun getAcceptedInvoiceOffers(startDate:String,endDate:String): List<InvoiceOfferDTO> {
-        val mList: MutableList<InvoiceOfferDTO> = mutableListOf()
-        val querySnapshot = db.collection(BFN_INVOICE_OFFERS)
-                .whereEqualTo("accepted", true)
+    fun getAcceptedInvoiceOffers(startDate:String,endDate:String): List<AcceptedOfferDTO> {
+        val mList: MutableList<AcceptedOfferDTO> = mutableListOf()
+        val querySnapshot = db.collection(BFN_ACCEPTED_OFFERS)
                 .whereGreaterThanOrEqualTo("dateRegistered", startDate)
                 .whereLessThanOrEqualTo("dateRegistered", endDate)
                 .get().get()
         querySnapshot.documents.forEach {
-            mList.add(it.toObject(InvoiceOfferDTO::class.java))
+            mList.add(it.toObject(AcceptedOfferDTO::class.java))
         }
 
         logger.info("Accepted InvoiceOffers found: ${mList.size}")
+        return mList;
+    }
+    @Throws(Exception::class)
+    fun getSupplierPayments(startDate:String,endDate:String): List<SupplierPaymentDTO> {
+        val mList: MutableList<SupplierPaymentDTO> = mutableListOf()
+        val querySnapshot = db.collection(BFN_SUPPLIER_PAYMENTS)
+                .whereGreaterThanOrEqualTo("date", startDate)
+                .whereLessThanOrEqualTo("date", endDate)
+                .get().get()
+        querySnapshot.documents.forEach {
+            mList.add(it.toObject(SupplierPaymentDTO::class.java))
+        }
+
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                "SupplierPayments found: ${mList.size}")
         return mList;
     }
     @Throws(Exception::class)
@@ -242,6 +256,10 @@ class FirebaseService() {
     fun addInvoiceOffer(invoiceOffer: InvoiceOfferDTO) {
         val future: ApiFuture<DocumentReference> = db.collection(BFN_INVOICE_OFFERS).add(invoiceOffer);
         logger.info("\uD83D\uDE3C \uD83D\uDE3C InvoiceOffer added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+    }
+    fun addAcceptedOffer(acceptedOffer: AcceptedOfferDTO) {
+        val future: ApiFuture<DocumentReference> = db.collection(BFN_ACCEPTED_OFFERS).add(acceptedOffer);
+        logger.info("\uD83D\uDE3C \uD83D\uDE3C AcceptedOffer added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
     @Throws(ExecutionException::class, InterruptedException::class)
     fun addInvestorProfile(profile: InvestorProfileStateDTO) {
@@ -582,6 +600,29 @@ class FirebaseService() {
         }
         if (record != null) {
             logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 getInvoiceOffer Found " +
+                    "name: ${record!!.investor?.name} ")
+        }
+        return record
+    }
+
+    fun getAcceptedOffer(offerId:String): AcceptedOfferDTO? {
+        logger.info("getAcceptedOffer started .... offerId: $offerId")
+        var record: AcceptedOfferDTO? = null
+        try {
+            val page = db.collection(BFN_ACCEPTED_OFFERS)
+                    .whereEqualTo("offerId", offerId)
+                    .get()
+            val m = page.get()
+            m.documents.forEach {
+                record = it.toObject(AcceptedOfferDTO::class.java)
+            }
+
+        } catch (e: Exception) {
+            logger.info("${Emo.PIG} ${Emo.PIG} ${Emo.PIG} query is fucked!! ${e.message}")
+            logger.warn(e.message)
+        }
+        if (record != null) {
+            logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 getAcceptedOffer Found " +
                     "name: ${record!!.investor?.name} ")
         }
         return record
