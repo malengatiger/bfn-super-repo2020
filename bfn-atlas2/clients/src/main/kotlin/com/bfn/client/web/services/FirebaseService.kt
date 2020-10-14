@@ -137,7 +137,7 @@ class FirebaseService() {
         return mList;
     }
     @Throws(Exception::class)
-    fun getAcceptedInvoiceOffers(startDate:String,endDate:String): List<AcceptedOfferDTO> {
+    fun getAcceptedInvoiceOffersByPeriod(startDate:String, endDate:String): List<AcceptedOfferDTO> {
         val mList: MutableList<AcceptedOfferDTO> = mutableListOf()
         val querySnapshot = db.collection(BFN_ACCEPTED_OFFERS)
                 .whereGreaterThanOrEqualTo("dateRegistered", startDate)
@@ -558,7 +558,6 @@ class FirebaseService() {
         return record
     }
     fun getInvestorProfile(accountId:String): InvestorProfileStateDTO? {
-        logger.info("............... ${Emo.FERN} getInvestorProfile started .... accountId: $accountId")
         var record: InvestorProfileStateDTO? = null
         try {
             val page = db.collection(BFN_INVESTOR_PROFILES)
@@ -573,14 +572,10 @@ class FirebaseService() {
         } catch (e: Exception) {
             logger.error(e.message)
         }
-        if (record != null) {
-            logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 getInvestorProfile Found: " +
-                    "name: ${record!!.account.name} ")
-        }
+
         return record
     }
     fun getSupplierProfile(accountId:String): SupplierProfileStateDTO? {
-        logger.info("............... ${Emo.FERN} getSupplierProfile started .... accountId: $accountId")
         var record: SupplierProfileStateDTO? = null
         try {
             val page = db.collection(BFN_SUPPLIER_PROFILES)
@@ -594,10 +589,7 @@ class FirebaseService() {
         } catch (e: Exception) {
             logger.error(e.message)
         }
-        if (record != null) {
-            logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 getSupplierProfile Found: " +
-                    "name: ${record!!.account!!.name} ")
-        }
+
         return record
     }
     fun getInvoiceOffer(offerId:String): InvoiceOfferDTO? {
@@ -624,26 +616,48 @@ class FirebaseService() {
     }
 
     fun getAcceptedOffer(offerId:String): AcceptedOfferDTO? {
-        logger.info("getAcceptedOffer started .... offerId: $offerId")
-        var record: AcceptedOfferDTO? = null
+        var acceptedOffer: AcceptedOfferDTO? = null
         try {
             val page = db.collection(BFN_ACCEPTED_OFFERS)
                     .whereEqualTo("offerId", offerId)
+                    .limit(1)
                     .get()
             val m = page.get()
             m.documents.forEach {
-                record = it.toObject(AcceptedOfferDTO::class.java)
+                acceptedOffer = it.toObject(AcceptedOfferDTO::class.java)
             }
 
         } catch (e: Exception) {
             logger.info("${Emo.PIG} ${Emo.PIG} ${Emo.PIG} query is fucked!! ${e.message}")
             logger.warn(e.message)
         }
-        if (record != null) {
+        if (acceptedOffer != null) {
             logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 getAcceptedOffer Found " +
-                    "name: ${record!!.investor?.name} ")
+                    "name: ${acceptedOffer!!.investor?.name} ")
+        } else {
+            logger.info("${Emo.ERRORS} getAcceptedOffer did not find nuthin for $offerId ")
         }
-        return record
+        return acceptedOffer
+    }
+
+    fun getAcceptedOffersByInvestor(investorId:String): List<AcceptedOfferDTO> {
+        val acceptedOffers: MutableList<AcceptedOfferDTO> = mutableListOf()
+        try {
+            val page = db.collection(BFN_ACCEPTED_OFFERS)
+                    .whereEqualTo("investor.identifier", investorId)
+                    .limit(1)
+                    .get()
+            val m = page.get()
+            m.documents.forEach {
+                acceptedOffers.add(it.toObject(AcceptedOfferDTO::class.java))
+            }
+
+        } catch (e: Exception) {
+            logger.info("${Emo.PIG} ${Emo.PIG} ${Emo.PIG} query is fucked!! ${e.message}")
+            logger.warn(e.message)
+        }
+
+        return acceptedOffers
     }
 
 

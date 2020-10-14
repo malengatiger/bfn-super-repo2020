@@ -4,7 +4,6 @@ package com.bfn.client.web.services
 import com.bfn.client.Emo
 import com.bfn.client.data.*
 import com.bfn.client.web.DTOUtil
-import com.bfn.flows.PaymentRequestParams
 import com.bfn.flows.StellarPaymentDTO
 import com.bfn.flows.investor.SinglePaymentFlow
 import com.bfn.flows.todaysDate
@@ -40,23 +39,21 @@ class StellarAnchorService {
     @Autowired
     private lateinit var firebaseService: FirebaseService
 
-    fun sendPayment(stellarPaymentRequest: StellarPaymentRequest): Response {
+    fun sendPayment(stellarPayment: StellarPaymentDTO): Int {
         val suffix = "sendPayment"
-
-        logx.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
-                "... Request(POST) for Stellar payment to be sent over the wire: sent to " +
+        logx.info("${Emo.SOCCER_BALL}${Emo.SOCCER_BALL}" +
+                "Request(POST) for Stellar payment to be sent over the wire: sent to " +
                 "\uD83C\uDF4E $stellarAnchorUrl$suffix \uD83C\uDF4E")
 
-        var stellarResponse: StellarResponse? = null
         val headers = mapOf("Content-Type" to MediaType.APPLICATION_JSON_VALUE)
         val result = post(url = "$stellarAnchorUrl$suffix",
-                data = gson.toJson(stellarPaymentRequest),
+                data = gson.toJson(stellarPayment),
                 timeout = 990000000.0, headers = headers)
 
-
-        logx.info("$good sendPayment RESPONSE: statusCode: ${result.statusCode}  ")
-        logx.info("$good sendPayment RESPONSE: result text: ${result.text}  ")
-        return result
+        logx.info("$good sendPayment RESPONSE: returning statusCode: " +
+                "${Emo.YELLOW_BIRD}${result.statusCode}  ${Emo.YELLOW_BIRD} " +
+                "result text: ${Emo.BLUE_BIRD}${result.text}${Emo.BLUE_BIRD}  ")
+        return result.statusCode
     }
     fun createStellarAccount(proxy: CordaRPCOps): StellarResponse? {
         val suffix = "createStellarAccount"
@@ -117,10 +114,12 @@ class StellarAnchorService {
 
     fun makePaymentForOffer(proxy: CordaRPCOps, offerId: String): SupplierPaymentDTO? {
 
-       logger.info("${Emo.GOLD_BELL}${Emo.GOLD_BELL}${Emo.GOLD_BELL}${Emo.GOLD_BELL} StellarAnchorService: " +
-                "call the Stellar Anchor server to send SupplierPayment ... ${Emo.GOLD_BELL}")
+       logger.info("${Emo.GOLD_BELL}${Emo.GOLD_BELL}${Emo.GOLD_BELL}${Emo.GOLD_BELL} " +
+                "calling the Stellar Anchor server to send SupplierPayment ... " +
+               " offerId: ${Emo.RED_APPLE} $offerId  ${Emo.RED_APPLE}")
 
-        val acceptedOffer = firebaseService.getAcceptedOffer(offerId) ?: throw Exception("AcceptedOffer not found")
+        val acceptedOffer = firebaseService.getAcceptedOffer(offerId) ?:
+                throw Exception("${Emo.NOT_OK} AcceptedOffer not found ${Emo.ERROR}")
 
         logger.info("${Emo.FERNS}${Emo.FERNS} SupplierPayment to be made for accepted offer: " +
                 "${gson.toJson(acceptedOffer)} ${Emo.FERNS}")
@@ -135,11 +134,6 @@ class StellarAnchorService {
         }
         var result: Response? = null
 
-        /*
-         @PostMapping(value = "/sendPayment", produces = MediaType.APPLICATION_JSON_VALUE)
-    public PaymentRequest sendPayment(PaymentRequest paymentRequest) throws Exception {
-
-         */
         if (supplierProfile != null && investorProfile != null) {
             val stellarPayment = StellarPaymentDTO(
                     paymentRequestId = UUID.randomUUID().toString(),
@@ -154,9 +148,6 @@ class StellarAnchorService {
             val headers = mapOf("Content-Type" to "application/json")
             val suffix = "sendPayment"
             val url = "$stellarAnchorUrl$suffix"
-            logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
-                    "StellarAnchorService:sendPayment: POST Request for payment to be sent over the wire: sent to " +
-                    "\uD83C\uDF4E $url \uD83C\uDF4E")
 
             result = post(
                     url = url,
@@ -164,11 +155,11 @@ class StellarAnchorService {
                     headers = headers)
 
            logger.info("${Emo.GOLD_BELL}${Emo.GOLD_BELL}${Emo.GOLD_BELL}${Emo.GOLD_BELL}" +
-                   " $url RESPONSE: " +
-                    "statusCode: ${result.statusCode} text: ${result.text}   ")
+                   " $url ${Emo.LEAF}RESPONSE: " +
+                    "statusCode: ${result.statusCode} ${Emo.GOLD_BELL} text: ${result.text}   ")
 
             if (result.statusCode == 200) {
-                return processOKPayment(acceptedOffer, url, proxy)
+                return startSinglePaymentFlow(acceptedOffer, proxy)
             } else {
                logger.info("${Emo.ERRORS} " +
                         "StellarAnchorService:sendPayment fucked up! : " +
@@ -183,27 +174,30 @@ class StellarAnchorService {
 
     }
 
-    private fun processOKPayment(acceptedOffer: AcceptedOfferDTO, url: String, proxy: CordaRPCOps): SupplierPaymentDTO {
-        logger.info("${Emo.RED_APPLES} result status is A-OK! " +
+    private fun startSinglePaymentFlow(acceptedOffer: AcceptedOfferDTO, proxy: CordaRPCOps): SupplierPaymentDTO {
+        logger.info("${Emo.LEAF}${Emo.LEAF} result status is A-OK! ${Emo.LEAF}" +
                 "PaymentRequest has been successfully returned!" +
                 " ${Emo.GOLD_BELL}")
 
         logger.info("${Emo.GLOBE}${Emo.GLOBE}${Emo.GLOBE} makePaymentForOffer: " +
-                "Talking to corda SinglePaymentFlow ...")
-        val delay: Long = 360
-        val paymentRequestParams = PaymentRequestParams(
-                offerId = acceptedOffer.offerId,
-                investorId = acceptedOffer.investor!!.identifier,
-                stellarAnchorUrl = url,
-                delayMinutesUntilNextPaymentFlow = delay)
-        val future = proxy.startFlowDynamic(SinglePaymentFlow::class.java,
-                paymentRequestParams).returnValue
-        val supplierPaymentState = future.get()
-        firebaseService.addSupplierPayment(DTOUtil.getDTO(supplierPaymentState))
+                "... Talking to Corda SinglePaymentFlow ... ${Emo.GLOBE} ")
 
-        logger.info("${Emo.GLOBE}${Emo.GLOBE}${Emo.GLOBE} SupplierPayment made on ledger: " +
-                "${gson.toJson(supplierPaymentState)} ${Emo.SOCCER_BALL} \n\n\n")
-        return DTOUtil.getDTO(supplierPaymentState)
+        val future = proxy.startFlowDynamic(SinglePaymentFlow::class.java,
+                acceptedOffer.offerId, acceptedOffer.investor!!.identifier).returnValue
+
+        val supplierPaymentState = future.get()
+
+        if (supplierPaymentState != null) {
+            logger.info("${Emo.GLOBE}${Emo.GLOBE}${Emo.GLOBE}  " +
+                    "${Emo.LEAF} supplierPayment recorded on Corda Ledger ${Emo.LEAF}")
+            val dto = DTOUtil.getDTO(supplierPaymentState)
+            firebaseService.addSupplierPayment(dto)
+            logger.info("${Emo.GLOBE}${Emo.GLOBE}${Emo.GLOBE} SupplierPayment made on ledger: " +
+                    "${gson.toJson(dto)} ${Emo.SOCCER_BALL}${Emo.SOCCER_BALL}${Emo.SOCCER_BALL} \n\n\n")
+            return dto
+        } else {
+            throw Exception("Unable to save successful supplierPayment on Corda Ledger ${Emo.NOT_OK}")
+        }
     }
 
     private val good = "\uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C"

@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.states.InvestorProfileState
 import com.bfn.contractstates.states.InvoiceOfferState
 import com.bfn.contractstates.states.InvoiceState
+import com.bfn.flows.invoices.InvoiceOfferFlow
 import com.bfn.flows.services.InvoiceFinderService
 import com.bfn.flows.services.ProfileFinderService
 import com.bfn.flows.todaysDate

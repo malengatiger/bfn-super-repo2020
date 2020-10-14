@@ -24,14 +24,16 @@ import java.util.*
  */
 @InitiatingFlow
 @StartableByRPC
-class SinglePaymentFlow(private val paymentRequestParams: PaymentRequestParams) : FlowLogic<SupplierPaymentState>() {
+class SinglePaymentFlow(
+        private val offerId: String,
+        private val investorId: String) : FlowLogic<SupplierPaymentState>() {
 
     @Suspendable
     override fun call(): SupplierPaymentState {
         Companion.logger.info("$pp SinglePaymentFlow started ... $pp")
 
         val service = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
-        val acceptedOffer = service.findAcceptedOffer(paymentRequestParams.offerId) ?:
+        val acceptedOffer = service.findAcceptedOffer(offerId) ?:
             throw IllegalArgumentException(Em.NOT_OK+"Accepted offer not found")
 
         //todo -  🍊 🍊 🍊 fix this query - find a way!!  🍊 🍊 🍊
@@ -39,9 +41,9 @@ class SinglePaymentFlow(private val paymentRequestParams: PaymentRequestParams) 
                 .getAllPaymentStateAndRefs()
 
         payments.forEach() {
-            if (it.state.data.acceptedOffer.offerId == paymentRequestParams.offerId) {
+            if (it.state.data.acceptedOffer.offerId == offerId) {
                 throw IllegalArgumentException(Em.NOT_OK + "Payment already exists for this offer: " +
-                        paymentRequestParams.offerId)
+                        offerId)
             }
         }
         val command = SupplierPaymentContract.Pay()
@@ -52,9 +54,9 @@ class SinglePaymentFlow(private val paymentRequestParams: PaymentRequestParams) 
         val investorParty =  acceptedOffer.state.data.investor
 
         val investorProfile = serviceHub.cordaService(ProfileFinderService::class.java)
-                .findInvestorProfile(paymentRequestParams.investorId)
+                .findInvestorProfile(investorId)
                 ?: throw IllegalArgumentException(Em.NOT_OK + "InvestorProfile not found for: " +
-                        "${paymentRequestParams.investorId} ")
+                        "$investorId ")
 
         val supplierProfile = serviceHub.cordaService(ProfileFinderService::class.java)
                 .findSupplierProfile(acceptedOffer.state.data.supplier.identifier.id.toString())
@@ -109,13 +111,14 @@ class SinglePaymentFlow(private val paymentRequestParams: PaymentRequestParams) 
                 customer.host.owningKey
         )
 
-        //todo - 🌸 🌸 🌸 check that any offers for this invoice are consumed 🌸
-
+        logger.info("$pp adding command and states to txBuilder ...")
         txBuilder.addCommand(command, keys)
         txBuilder.addInputState(acceptedOffer)
         txBuilder.addOutputState(payment)
 
         val tx = serviceHub.signInitialTransaction(txBuilder)
+        logger.info("$pp serviceHub.signInitialTransaction executed OK")
+
         val sessions: MutableList<FlowSession> = mutableListOf()
         val thisParty = serviceHub.myInfo.legalIdentities[0]
         if (acceptedOffer.state.data.supplier.host.name.organisation !=
@@ -133,7 +136,9 @@ class SinglePaymentFlow(private val paymentRequestParams: PaymentRequestParams) 
             val session = initiateFlow(acceptedOffer.state.data.customer.host)
             sessions.add(session)
         }
+        logger.info("$pp FlowSessions ready to go: ${sessions.size} sessions")
         if (sessions.isNotEmpty()) {
+            logger.info("$pp about to CollectSignaturesFlow ....")
             val signedTransaction = subFlow(CollectSignaturesFlow(
                     partiallySignedTx = tx, sessionsToCollectFrom = sessions))
             subFlow(FinalityFlow(signedTransaction, sessions))
@@ -147,6 +152,7 @@ class SinglePaymentFlow(private val paymentRequestParams: PaymentRequestParams) 
         shareState(acceptedOffer.state.data.supplier.host, payment.supplierPaymentId)
         shareState(acceptedOffer.state.data.customer.host, payment.supplierPaymentId)
         shareState(acceptedOffer.state.data.investor.host, payment.supplierPaymentId)
+        logger.info("$pp Returning supplierPayment after processing .....")
         return payment
     }
 

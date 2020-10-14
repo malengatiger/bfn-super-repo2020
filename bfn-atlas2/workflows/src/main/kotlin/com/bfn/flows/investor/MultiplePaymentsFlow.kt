@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory
 @StartableByRPC
 @SchedulableFlow
 class MultiplePaymentsFlow(
-        private val paymentRequestParams: PaymentRequestParams) : FlowLogic<List<SupplierPaymentState>>() {
+        private val investorId: String) : FlowLogic<List<SupplierPaymentState>>() {
 
     @Suspendable
     override fun call(): List<SupplierPaymentState> {
@@ -27,24 +27,17 @@ class MultiplePaymentsFlow(
 
         val offerFinderService = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
         val acceptedOffers = offerFinderService.getInvestorOffersAccepted(
-                investorId = paymentRequestParams.investorId)
+                investorId = investorId)
         val paymentList: MutableList<SupplierPaymentState> = mutableListOf()
         if (acceptedOffers.isEmpty()) {
             logger.warn("⚠️ ⚠️ ⚠️  No accepted offers found for anchor")
             return paymentList
         }
-        logger.info("⚱️ ⚱️ ⚱️  ${acceptedOffers.size} accepted offers found for investor, " +
-                "start payments using: ${paymentRequestParams.stellarAnchorUrl}")
+        logger.info("⚱️ ⚱️ ⚱️  ${acceptedOffers.size} accepted offers found for investor")
         for (offer in acceptedOffers) {
             try {
-                val mParams = PaymentRequestParams(
-                        offerId = offer.state.data.offerId,
-                        investorId = paymentRequestParams.investorId,
-                        stellarAnchorUrl = paymentRequestParams.stellarAnchorUrl,
-                        delayMinutesUntilNextPaymentFlow = paymentRequestParams.delayMinutesUntilNextPaymentFlow
-                )
                 val response = subFlow(SinglePaymentFlow(
-                        paymentRequestParams = mParams))
+                        offerId = offer.state.data.offerId, investorId = investorId))
                 paymentList.add(response)
             } catch (e:Exception) {
                 logger.error("SinglePaymentFlow failed", e)

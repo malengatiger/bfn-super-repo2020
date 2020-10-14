@@ -6,11 +6,10 @@ import com.bfn.client.web.DTOUtil
 import com.bfn.contractstates.states.*
 import com.bfn.flows.CreateAccountFlow
 import com.bfn.flows.CreateUserFlow
-import com.bfn.flows.PaymentRequestParams
 import com.bfn.flows.customer.CustomerProfileFlow
 import com.bfn.flows.customer.PurchaseOrderFlow
 import com.bfn.flows.investor.InvestorProfileFlow
-import com.bfn.flows.investor.InvoiceOfferFlow
+import com.bfn.flows.invoices.InvoiceOfferFlow
 import com.bfn.flows.investor.MultiInvoiceOfferFlow
 import com.bfn.flows.investor.SinglePaymentFlow
 import com.bfn.flows.invoices.InvoiceRegistrationFlow
@@ -204,12 +203,7 @@ class WorkerBeeService {
                 break
             }
         }
-        val msg = if (dto == null) {
-            "\uD83C\uDF3A \uD83C\uDF3A SupplierProfile not found:  \uD83C\uDF3A "
-        } else {
-            "\uD83C\uDF3A \uD83C\uDF3A found profile:  \uD83C\uDF3A " + gson.toJson(dto)
-        }
-        logger.info(msg)
+
         return dto
     }
 
@@ -227,12 +221,7 @@ class WorkerBeeService {
                 break
             }
         }
-        val msg = if (dto == null) {
-            "${Emo.NOT_OK}\"${Emo.NOT_OK} InvestorProfile not found on ledger"
-        } else {
-            "\uD83C\uDF3A \uD83C\uDF3A found investorProfile:  \uD83C\uDF3A " + gson.toJson(dto)
-        }
-        logger.info(msg)
+
         return dto
     }
 
@@ -471,6 +460,20 @@ class WorkerBeeService {
         return offers
     }
 
+    @Throws(Exception::class)
+    fun findAcceptedOffersForInvestor(proxy: CordaRPCOps, accountId: String): List<InvoiceOfferDTO> {
+        val fut = proxy.startTrackedFlowDynamic(
+                InvoiceOfferQueryFlow::class.java, accountId,
+                InvoiceOfferQueryFlow.FIND_FOR_INVESTOR).returnValue
+        val offers = fut.get()
+        val dtos: MutableList<InvoiceOfferDTO> = mutableListOf()
+        offers.forEach() {
+            dtos.add(DTOUtil.getDTO(it))
+        }
+        val m = "\uD83D\uDCA6  done listing InvoiceOfferStates:  \uD83C\uDF3A " + offers.size
+        logger.info(m)
+        return dtos
+    }
     @Throws(Exception::class)
     fun findOffersForInvestor(proxy: CordaRPCOps, accountId: String): List<InvoiceOfferDTO> {
         val fut = proxy.startTrackedFlowDynamic(
@@ -1215,16 +1218,11 @@ class WorkerBeeService {
         val suffix = "bfn/admin/makePaymentForOffer"
         val url = "$stellarAnchorUrl$suffix"
         logger.info("${Emo.RAIN_DROPS} Stellar Anchor URL for processing this payment: ${Emo.RED_APPLE} $url")
-        val delay: Long = 360
-        val paymentRequestParams = PaymentRequestParams(
-                offerId = offerId,
-                investorId = investorId,
-                stellarAnchorUrl = url,
-                delayMinutesUntilNextPaymentFlow = delay)
+
         logger.info("${Emo.PEAR} ${Emo.PEAR} starting corda flow with params: " +
-                "${gson.toJson(paymentRequestParams)} ${Emo.PEAR}")
+                "offerId: $offerId investorId: $investorId ${Emo.PEAR}")
         val cordaFuture = proxy.startTrackedFlowDynamic(
-                SinglePaymentFlow::class.java, paymentRequestParams)
+                SinglePaymentFlow::class.java, offerId, investorId)
                 .returnValue
         val supplierPaymentState = cordaFuture.get()
         val supplierPayment = DTOUtil.getDTO(supplierPaymentState)

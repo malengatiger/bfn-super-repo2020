@@ -105,6 +105,7 @@ class DemoDataService {
         firebaseService.deleteCollection(collectionName = BFN_CUSTOMER_PROFILES)
         firebaseService.deleteCollection(collectionName = BFN_INVESTOR_PROFILES)
         firebaseService.deleteCollection(collectionName = BFN_ACCEPTED_OFFERS)
+        firebaseService.deleteCollection(collectionName = BFN_SUPPLIER_PAYMENTS)
 
         logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E Firebase clean up completed")
     }
@@ -251,7 +252,7 @@ class DemoDataService {
                         "to supplier: ${supplier.name}. Used for testing and demo")
 
         val choice = random.nextInt(100)
-        if (choice <= 40) {
+        if (choice <= 50) {
             workerBeeService.createPurchaseOrder(mProxy, purchaseOrder = poSmall)
             logger.info("${Emo.PEAR} SMALL PO created: " +
                     "${Emo.YELLOW_BIRD}dateRegistered: ${poSmall.dateRegistered} ${Emo.YELLOW_BIRD} " +
@@ -270,7 +271,7 @@ class DemoDataService {
     }
 
     private fun getLargePOAmount(): String {
-        val amt = random.nextInt(50) * 10000.00
+        val amt = random.nextInt(50) * 10850.00
         return if (amt < 100000.00) {
             "500000.00"
         } else {
@@ -279,9 +280,9 @@ class DemoDataService {
     }
 
     private fun getSmallPOAmount(): String {
-        var amt = random.nextInt(10) * 10000.00
-        if (amt < 10000.00) {
-            amt = 10000.00
+        var amt = random.nextInt(10) * 10520.00
+        if (amt == 0.0) {
+            amt = 5600.00
         }
         return amt.toString()
     }
@@ -403,7 +404,7 @@ class DemoDataService {
                 date)
 
 
-        logger.info("${Emo.DICE}${Emo.DICE}Discounts: ${m1.offerDiscount}%, " +
+        logger.info("${Emo.DICE}${Emo.DICE} Discounts: ${m1.offerDiscount}%, " +
                 "${m2.offerDiscount}%, ${m3.offerDiscount}%, ${m4.offerDiscount}%, " +
                 "${m5.offerDiscount}%")
 
@@ -423,7 +424,7 @@ class DemoDataService {
         val operator = getNetworkOperatorObject()
         val investorProfile = InvestorProfileStateDTO(
                 operator.account,
-                "30000.00",
+                "60000.00",
                 "30000000.00",
                 "1000000000.00",
                 "3.0",
@@ -440,6 +441,7 @@ class DemoDataService {
                 "tbd", "tbd",
                 "ZAR", todaysDate()
         )
+
         operator.password = "pass123"
         val result = networkOperatorService.createNetworkOperator(
                 mProxy, operator, investorProfile, supplierProfile)
@@ -499,11 +501,19 @@ class DemoDataService {
         logger.info("\n\n$em1 ..... generateAccounts started ...  " +
                 "\uD83D\uDD06 \uD83D\uDD06 ................. generating numberOfAccounts: $numberOfAccounts")
 
+        val mMap: MutableMap<String,String> = mutableMapOf()
+        while (mMap.keys.size < numberOfAccounts) {
+            val name = getRandomName()
+            mMap[name] = name
+        }
+
+        val mNames = mMap.values.toList()
+
         var cnt = 0
         for (x in 0..numberOfAccounts) {
             val prefix = "account" + System.currentTimeMillis()
             try {
-                val mName = getRandomName()
+                val mName = mNames[x]
                 logger.info("\n\n\n$em1 ..... Starting AccountRegistrationFlow for $mName ...........\n")
                 workerBeeService.startAccountRegistrationFlow(proxy,
                         accountName = mName,

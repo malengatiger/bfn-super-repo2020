@@ -4,6 +4,6 @@ data class SupplierPaymentDTO(
         var supplierPaymentId: String = "",
         var acceptedOffer: AcceptedOfferDTO? = null,
         var supplierProfile: SupplierProfileStateDTO? = null,
-        var date: String = ""
+        var dateRegistered: String = ""
 ) {
 }

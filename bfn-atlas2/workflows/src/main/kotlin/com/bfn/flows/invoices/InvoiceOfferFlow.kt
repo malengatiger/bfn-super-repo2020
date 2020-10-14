@@ -1,4 +1,4 @@
-package com.bfn.flows.investor
+package com.bfn.flows.invoices
 
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.states.InvoiceOfferState

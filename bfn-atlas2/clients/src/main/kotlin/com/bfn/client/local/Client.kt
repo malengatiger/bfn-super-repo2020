@@ -5,6 +5,8 @@ import com.bfn.client.Emo
 import com.bfn.client.data.*
 import com.bfn.client.web.DTOUtil.getDTO
 import com.bfn.contractstates.states.*
+import com.bfn.flows.StellarPaymentDTO
+import com.bfn.flows.todaysDate
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
@@ -17,7 +19,6 @@ import net.corda.core.node.services.vault.PageSpecification
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.utilities.NetworkHostAndPort
 import net.corda.core.utilities.loggerFor
-import org.json.JSONObject
 import org.springframework.http.MediaType
 import java.io.StringReader
 import java.lang.Exception
@@ -79,7 +80,7 @@ public class Client {
 
         generateOfferAcceptances(networkOperatorUrl)
 
-        generatePayments(networkOperatorUrl)
+        generateSupplierPayments(networkOperatorUrl)
 
         logger.info("\n\n${Emo.ANGRIES}${Emo.ANGRIES}${Emo.ANGRIES} " +
                 "Check results of demo data generation ...........\n\n")
@@ -129,7 +130,7 @@ public class Client {
         }
 
         logger.info("\n\n\n${Emo.RAIN_DROPS} fundCustomersWithZAR completed " +
-                " ${Emo.RAIN_DROPS}")
+                " ${Emo.RAIN_DROPS}\n\n\n")
     }
     private fun fundInvestorsWithZAR( networkOperatorUrl: String, anchor:Anchor) {
         logger.info("\n\n\n${Emo.RAIN_DROPS} fundInvestorsWithZAR started .... at " +
@@ -152,7 +153,7 @@ public class Client {
             fundInvestor(networkOperatorUrl,anchor, it)
         }
         logger.info("\n\n\n${Emo.RAIN_DROPS} fundInvestorsWithZAR completed " +
-                " ${Emo.RAIN_DROPS}")
+                " ${Emo.RAIN_DROPS}\n\n\n")
 
     }
 
@@ -166,7 +167,6 @@ public class Client {
         val resp1 = httpGet(url = url,
                 timeout = 900000000.0, headers = headers)
         logger.info("${Emo.RAIN_DROPS} RESPONSE: \uD83C\uDF4E statusCode: ${resp1.statusCode}  \uD83C\uDF4E ${resp1.text}")
-//        val json = JSONObject(resp1.text)
         val anchor = gson.fromJson(resp1.text, Anchor::class.java)
 
         logger.info("${Emo.ANGRIES} getAnchor: " + gson.toJson(anchor) + Emo.RED_APPLE)
@@ -178,12 +178,14 @@ public class Client {
     private fun fundCustomer(networkOperatorUrl: String, anchor:Anchor,
                              customerProfile: CustomerProfileStateDTO) {
 
-        val request = StellarPaymentRequest( )
-        request.sourceAccount = anchor.distributionAccount!!.accountId
-        request.destinationAccount = customerProfile.stellarAccountId
-        request.paymentRequestId = UUID.randomUUID().toString()
-        request.assetCode = "ZAR"
-        request.amount = "100000000"
+        val request = StellarPaymentDTO(
+                sourceAccount = anchor.distributionAccount!!.accountId,
+                destinationAccount = customerProfile.stellarAccountId,
+                paymentRequestId = UUID.randomUUID().toString(),
+                assetCode = "ZAR",
+                amount =  "100000000",
+                date = todaysDate()
+        )
 
         logger.info("\n\n\n${Emo.RAIN_DROPS} fundCustomer started .... at " +
                 "$networkOperatorUrl ${Emo.RAIN_DROPS}")
@@ -199,12 +201,14 @@ public class Client {
     }
     private fun fundInvestor(networkOperatorUrl: String, anchor:Anchor,
                              investorProfile: InvestorProfileStateDTO) {
-        val request = StellarPaymentRequest( )
-        request.sourceAccount = anchor.distributionAccount!!.accountId
-        request.destinationAccount = investorProfile.stellarAccountId
-        request.paymentRequestId = UUID.randomUUID().toString()
-        request.assetCode = "ZAR"
-        request.amount = "100000000"
+        val request = StellarPaymentDTO(
+                sourceAccount = anchor.distributionAccount!!.accountId,
+                destinationAccount = investorProfile.stellarAccountId,
+                paymentRequestId = UUID.randomUUID().toString(),
+                assetCode = "ZAR",
+                amount =  "100000000",
+                date = todaysDate()
+        )
 
         logger.info("\n\n\n${Emo.RAIN_DROPS} fundInvestor started .... at " +
                 "$networkOperatorUrl ${Emo.RAIN_DROPS}")
@@ -324,22 +328,22 @@ public class Client {
 
     }
 
-    fun findOffersForInvestor(networkOperatorUrl: String,
-                              investorId: String): List<InvoiceOfferDTO> {
+    private fun findAcceptedOffersForInvestor(networkOperatorUrl: String,
+                                              investorId: String): List<AcceptedOfferDTO> {
         val headers = mapOf("Content-Type" to MediaType.APPLICATION_JSON_VALUE)
-        val suffix = "/bfn/admin/findOffersForInvestor?investorId=$investorId"
+        val suffix = "/bfn/admin/findAcceptedOffersForInvestor?investorId=$investorId"
         val url = "$networkOperatorUrl$suffix"
-        logger.info("${Emo.FROG}${Emo.FROG}${Emo.FROG}Searching for investor offers using $url")
+        logger.info("${Emo.FROG}${Emo.FROG}${Emo.FROG}Searching for investor accepted offers using $url")
         val resp1 = httpGet(url = url,
                 timeout = 900000000.0, headers = headers)
         logger.info("${Emo.RAIN_DROPS} RESPONSE: \uD83C\uDF4E statusCode: ${resp1.statusCode}  \uD83C\uDF4E")
-        logger.info("${Emo.RAIN_DROPS} ...... Turn response into list of offers ........")
+        logger.info("${Emo.RAIN_DROPS} ...... Turn response into list of accepted offers ........")
 
         val stringReader = StringReader(resp1.text)
-        val mList: MutableList<InvoiceOfferDTO> = gson.fromJson(
-                stringReader, Array<InvoiceOfferDTO>::class.java).toMutableList()
+        val mList: MutableList<AcceptedOfferDTO> = gson.fromJson(
+                stringReader, Array<AcceptedOfferDTO>::class.java).toMutableList()
 
-        logger.info("${Emo.PEACH}${Emo.PEACH}${Emo.PEACH} findOffersForInvestor: " +
+        logger.info("${Emo.PEACH}${Emo.PEACH}${Emo.PEACH} findAcceptedOffersForInvestor: " +
                 "Result list from JSON string has ${Emo.PEACH}${mList.size} offers")
         return mList
     }
@@ -363,13 +367,23 @@ public class Client {
         return mList
     }
 
-    private fun generatePayments(networkOperatorUrl: String) {
-        logger.info("${Emo.DICE} ${Emo.DICE} ...... generatePayments starting ....: " +
+    private fun generateSupplierPayments(networkOperatorUrl: String) {
+        logger.info("\n\n\n${Emo.DICE} ${Emo.DICE} ...... generatePayments starting ....: " +
                 "${Emo.YELLOW_BIRD} ${Emo.YELLOW_BIRD} ${Emo.YELLOW_BIRD} ")
+        var totalPayments = 0
         val investors = findInvestors(networkOperatorUrl)
+        logger.info("${Emo.DICE} ${Emo.DICE} ......about to make supplier payments " +
+                "for ${investors.size} investors")
         for (investor in investors) {
-            makePaymentForInvestorOffers(networkOperatorUrl, investor.identifier)
+            logger.info("${Emo.DICE} ${Emo.DICE} ......about to make supplier payments " +
+                    "for investor: ${Emo.YELLOW_BIRD} ${investor.name} ")
+            val cnt = makePaymentForInvestorOffers(networkOperatorUrl, investor.identifier)
+            totalPayments += cnt
         }
+
+        logger.info("\n\n\n${Emo.PEACH}${Emo.PEACH}${Emo.PEACH} " +
+                "generateSupplierPayments completed: TOTAL PAYMENTS: $totalPayments" +
+                " ${Emo.PEACH} \n\n")
     }
 
     private fun getSupplierProfile(networkOperatorUrl: String, accountId: String): SupplierProfileStateDTO? {
@@ -380,7 +394,7 @@ public class Client {
         logger.info("${Emo.FROG} ${Emo.FROG}Searching for SupplierProfile using $url")
         val resp1 = httpGet(url = url,
                 timeout = 900000000.0, headers = headers)
-        logger.info("${Emo.RAIN_DROPS} RESPONSE: \uD83C\uDF4E statusCode: ${resp1.statusCode}  \uD83C\uDF4E ${resp1.text}")
+        logger.info("${Emo.RAIN_DROPS} RESPONSE: \uD83C\uDF4E statusCode: ${resp1.statusCode}  \uD83C\uDF4E")
 
         return if (resp1.statusCode == 200) {
             logger.info(" \uD83D\uDD35 getSupplierProfile: query OK")
@@ -415,16 +429,16 @@ public class Client {
     }
 
     private fun makePaymentForInvestorOffers(networkOperatorUrl: String,
-                                             investorId: String) {
-
-        val offers = findOffersForInvestor(networkOperatorUrl, investorId)
+                                             investorId: String) : Int {
+        logger.info("\n\n${Emo.DICE} ${Emo.DICE} ......about to make supplier payments " +
+                "for investorId: $investorId ${Emo.RED_APPLE}")
+        val offers = findAcceptedOffersForInvestor(networkOperatorUrl, investorId)
         logger.info(
                 "${Emo.YELLOW_BIRD} ${Emo.YELLOW_BIRD} ${Emo.YELLOW_BIRD} ${Emo.YELLOW_BIRD}" +
-                        "${offers.size} InvoiceOffers found for investor: $investorId")
-//        val investorProfile = getInvestorProfile(networkOperatorUrl, investorId)
-//                ?: throw Exception("${Emo.ERRORS}InvestorProfile not found")
+                        "${offers.size} AcceptedOffers found for investor: $investorId")
+        var count = 0
         for (offer in offers) {
-            logger.info("${Emo.RAIN_DROPS}${Emo.PEACH}${Emo.PEACH} Calling makePaymentForOffer for " +
+            logger.info("${Emo.RAIN_DROPS}${Emo.PEACH}${Emo.PEACH} .... Calling makePaymentForOffer for " +
                     "${offer.investor?.name} : ${offer.offerAmount}")
             //call to get supplier profile
             val supplierProfile = getSupplierProfile(networkOperatorUrl, offer.supplier!!.identifier)
@@ -433,25 +447,28 @@ public class Client {
                 val resp1 = httpGet(url = "$networkOperatorUrl/bfn/admin/makePaymentForOffer?" +
                         "offerId=${offer.offerId}",
                         timeout = 900000000.0, headers = headers)
-
                 if (resp1.statusCode == 200) {
                     logger.info("makePaymentForInvestorOffers: ${Emo.YELLOW_BIRD} ${Emo.YELLOW_BIRD} ${Emo.YELLOW_BIRD}" +
                             " RESPONSE: \uD83C\uDF4E statusCode: ${resp1.statusCode} ${Emo.PRETZEL}${Emo.PRETZEL}")
-
                     val payment = gson.fromJson(resp1.text, SupplierPaymentDTO::class.java)
-
                     logger.info("${Emo.RED_APPLES} makePaymentForOffer: " +
                             "SupplierPayment is ${gson.toJson(payment)} ${Emo.RED_APPLE} \n\n\n")
+                    count++
                 } else {
                     logger.warn("${Emo.NOT_OK}${Emo.NOT_OK} We have fucked up, Jack! ${Emo.ERROR} " +
                             "statusCode: ${resp1.statusCode} - ${resp1.text}")
                 }
             } else {
-                logger.warn("${Emo.FOX}${Emo.FOX}SupplierProfile fucked! No payment possible")
+                logger.warn("${Emo.FOX}${Emo.FOX} SupplierProfile fucked! No payment possible ${Emo.NOT_OK}")
             }
 
         }
 
+        logger.info(
+                "\n\n${Emo.YELLOW_BIRD} ${Emo.YELLOW_BIRD} ${Emo.YELLOW_BIRD} ${Emo.YELLOW_BIRD} " +
+                        "Completed payments for investor: $investorId : ${Emo.RED_APPLE} " +
+                        "$count  supplierPayments ${Emo.RED_APPLE}\n\n")
+        return count
     }
 
     private fun getUnconsumedInvoices(networkOperatorUrl: String, headers: Map<String, String>) {
@@ -502,7 +519,7 @@ public class Client {
 
 
     private fun generateAnchorNodeData(networkOperatorUrl: String, headers: Map<String, String>) {
-        val resp1 = httpGet(url = "$networkOperatorUrl/bfn/demo/generateAnchorNodeData?numberOfAccounts=4",
+        val resp1 = httpGet(url = "$networkOperatorUrl/bfn/demo/generateAnchorNodeData?numberOfAccounts=6",
                 timeout = 900000000.0, headers = headers)
         logger.info("RESPONSE: \uD83C\uDF4E statusCode: ${resp1.statusCode}  \uD83C\uDF4E ${resp1.text}")
     }

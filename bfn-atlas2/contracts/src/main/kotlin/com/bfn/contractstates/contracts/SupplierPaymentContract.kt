@@ -10,7 +10,7 @@ class SupplierPaymentContract : Contract {
     @Throws(IllegalArgumentException::class)
     override fun verify(tx: LedgerTransaction) {
         logger.info(
-                "\uD83D\uDD06 SupplierPaymentContract: verify starting ..... \uD83E\uDD6C \uD83E\uDD6C ")
+                "\uD83D\uDD06 \uD83E\uDD6C \uD83E\uDD6C SupplierPaymentContract: verify starting ..... \uD83E\uDD6C \uD83E\uDD6C ")
 
 //        val cmd = tx.commands.first()
 //        if (cmd.value is Register) {

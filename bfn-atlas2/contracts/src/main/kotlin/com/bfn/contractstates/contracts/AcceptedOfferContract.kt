@@ -46,8 +46,6 @@ class AcceptedOfferContract : Contract {
                         "$tb1 \uD83C\uDF4E \uD83C\uDF4E ")
             }
 
-        } else {
-            throw IllegalArgumentException("Output state must be AcceptedOfferState ")
         }
         //1,331,700.000000
         //1,380,000.000

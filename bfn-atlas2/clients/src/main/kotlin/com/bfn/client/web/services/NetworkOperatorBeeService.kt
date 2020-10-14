@@ -1,5 +1,6 @@
 package com.bfn.client.web.services
 
+import com.bfn.client.Emo
 import com.bfn.client.data.*
 import com.bfn.client.web.DTOUtil
 import com.bfn.contractstates.states.NetworkOperatorState
@@ -55,11 +56,11 @@ class NetworkOperatorBeeService {
     }
 
     @Throws(Exception::class)
-    fun makeSinglePayment(proxy: CordaRPCOps, invoiceId: String): SupplierPaymentDTO {
+    fun makeSinglePayment(proxy: CordaRPCOps, offerId: String, investorId: String): SupplierPaymentDTO {
         logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to makeSinglePayment ... ")
 
         val cordaFuture = proxy.startFlowDynamic(
-                SinglePaymentFlow::class.java, invoiceId).returnValue
+                SinglePaymentFlow::class.java, offerId, investorId).returnValue
         val result = cordaFuture.get()
         logger.info("\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C " +
                 "Bank: ${result.supplierProfile.bank} \uD83D\uDC4C amount: ${result.acceptedOffer.offerAmount} payment state made")
@@ -165,8 +166,8 @@ class NetworkOperatorBeeService {
 
         try {
             if (stellarAccount == null) {
-                logger.info("\n\n$xx1 ..... " +
-                        "Creating BRAND NEW NetworkOperator BFN Corda account ................ ")
+                logger.info("\n\n\n$xx1 ..... " +
+                        "Creating BRAND NEW NetworkOperator BFN Corda account ................ ${Emo.RED_APPLE}")
                 val user = workerBeeService.startAccountRegistrationFlow(
                         proxy,
                         networkOperator.account.name,
@@ -175,7 +176,8 @@ class NetworkOperatorBeeService {
                         networkOperator.password)
 
                 if (user != null) {
-                    investorProfile.stellarAccountId = user.accountInfo.identifier.toString()
+                    investorProfile.stellarAccountId = user.stellarAccountId
+                    supplierProfile.stellarAccountId = user.stellarAccountId
                     // ## startNetworkOperatorCreationFlow
                     val xAccount = workerBeeService.getNodeAccount(proxy, user.accountInfo.identifier.toString())
                     val mOperatorCreated = startNetworkOperatorCreationFlow(

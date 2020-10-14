@@ -18,18 +18,10 @@ class SupplierPaymentState(
         val supplierPaymentId: String,
         val acceptedOffer: AcceptedOfferState,
         val supplierProfile: SupplierProfileState,
-        val dateRegistered: String) : QueryableState {
+        val dateRegistered: String) : ContractState {
 
     override val participants: List<AbstractParty>
         get() = listOf(acceptedOffer.supplier.host,
                 acceptedOffer.customer.host, acceptedOffer.investor.host)
-
-    override fun generateMappedObject(schema: MappedSchema): PersistentState {
-        TODO("Not yet implemented")
-    }
-
-    override fun supportedSchemas(): Iterable<MappedSchema> {
-        TODO("Not yet implemented")
-    }
 
 }

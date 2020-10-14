@@ -2,7 +2,6 @@ package com.bfn.flows.invoices
 
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.states.InvoiceOfferState
-import com.bfn.flows.investor.InvoiceOfferFlow
 import com.r3.corda.lib.accounts.workflows.ourIdentity
 import net.corda.core.flows.*
 import net.corda.core.transactions.SignedTransaction

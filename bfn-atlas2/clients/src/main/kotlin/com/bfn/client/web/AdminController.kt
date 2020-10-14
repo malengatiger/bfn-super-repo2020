@@ -9,9 +9,9 @@ import com.bfn.client.TesterBee
 import com.bfn.client.data.*
 import com.bfn.client.web.services.*
 import com.bfn.contractstates.states.AcceptedOfferState
+import com.bfn.flows.StellarPaymentDTO
 import com.google.firebase.auth.UserRecord
 import com.google.gson.GsonBuilder
-import khttp.responses.Response
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.node.services.Vault
 import net.corda.core.node.services.vault.PageSpecification
@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
-import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.util.*
 
@@ -204,12 +203,11 @@ class AdminController(rpc: NodeRPCConnection) {
             consumes = [MediaType.APPLICATION_JSON_VALUE],
             produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
-    private fun sendPayment(@RequestBody paymentRequest: StellarPaymentRequest): ResponseEntity<Response> {
+    private fun sendPayment(@RequestBody paymentRequest: StellarPaymentDTO): Int {
         logger.info(" \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40" +
                 " sendPayment using stellarAnchorService... sourceAccount: ${paymentRequest.sourceAccount} " +
                 "destinationAccount: ${paymentRequest.destinationAccount}")
-        val response =  stellarAnchorService.sendPayment(paymentRequest)
-        return ResponseEntity.ok(response)
+        return stellarAnchorService.sendPayment(paymentRequest)
     }
     @PostMapping(value = ["/startAccountRegistrationFlow"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
@@ -285,7 +283,7 @@ class AdminController(rpc: NodeRPCConnection) {
     fun getAcceptedInvoiceOffers(
             @RequestParam startDate: String,
             @RequestParam endDate: String): List<AcceptedOfferDTO> {
-        return firebaseService.getAcceptedInvoiceOffers(startDate, endDate)
+        return firebaseService.getAcceptedInvoiceOffersByPeriod(startDate, endDate)
     }
 
     @GetMapping(value = ["/checkAcceptedInvoiceOffers"])
@@ -383,6 +381,13 @@ class AdminController(rpc: NodeRPCConnection) {
                 invoiceId = invoiceId)
     }
 
+    @GetMapping(value = ["/findAcceptedOffersForInvestor"])
+    @Throws(Exception::class)
+    fun findAcceptedOffersForInvestor(
+            investorId: String): List<AcceptedOfferDTO> {
+        return firebaseService.getAcceptedOffersByInvestor(investorId)
+    }
+
     @GetMapping(value = ["/findOffersForInvestor"])
     @Throws(Exception::class)
     fun findOffersForInvestor(
@@ -390,7 +395,7 @@ class AdminController(rpc: NodeRPCConnection) {
         return workerBeeService.findOffersForInvestor(proxy, investorId)
     }
 
-    @GetMapping(value = ["/makePaymentForOffer"])
+    @GetMapping(value = ["/makePaymentForOffer"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     fun makePaymentForOffer(offerId: String): SupplierPaymentDTO? {
         return stellarAnchorService.makePaymentForOffer(proxy, offerId = offerId)
