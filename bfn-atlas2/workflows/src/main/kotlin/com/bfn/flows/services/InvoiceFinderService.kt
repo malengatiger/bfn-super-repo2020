@@ -1,6 +1,7 @@
 package com.bfn.flows.services
 
 import co.paralleluniverse.fibers.Suspendable
+import com.bfn.contractstates.states.InvoiceOfferState
 import com.bfn.contractstates.states.InvoiceState
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.contracts.StateAndRef
@@ -192,28 +193,20 @@ class InvoiceFinderService(private val serviceHub: AppServiceHub) : SingletonSer
     }
     @Suspendable
     fun getAllInvoiceStateAndRefs(): List<StateAndRef<InvoiceState>> {
-        val list: MutableList<StateAndRef<InvoiceState>> = mutableListOf()
-        //get first page
-        var pageNumber = 1
-        val pair = queryInvoiceStateAndRef(pageNumber)
-        pair.first.forEach() {
-            list.add(it)
-        }
 
-        val remainder: Int = (pair.second % pageSize).toInt()
-        var pageCnt: Int = (pair.second/ pageSize).toInt()
-        if (remainder > 0) pageCnt++
+        var pageNumber = DEFAULT_PAGE_NUM
+        val states = mutableListOf<StateAndRef<InvoiceState>>()
+        do {
+            val pageSpec = PageSpecification(pageNumber = pageNumber, pageSize = pageSize)
+            val results = serviceHub.vaultService
+                    .queryBy<InvoiceState>(QueryCriteria.VaultQueryCriteria(
+                            status = Vault.StateStatus.UNCONSUMED
+                    ), pageSpec)
+            states.addAll(results.states)
+            pageNumber++
+        } while ((pageSpec.pageSize * (pageNumber - 1)) <= results.totalStatesAvailable)
 
-        if (pageCnt > 1)  {
-            while (pageNumber < pageCnt) {
-                pageNumber++
-                val pageX = queryInvoiceStateAndRef(pageNumber)
-                pageX.first.forEach() {
-                    list.add(it)
-                }
-            }
-        }
-        val sorted = list.sortedBy { it.state.data.dateRegistered }
+        val sorted = states.sortedBy { it.state.data.dateRegistered }
         logger.info("\uD83E\uDDE9 Invoices found on node:  \uD83C\uDF00 ${sorted.size} " )
         return sorted
     }

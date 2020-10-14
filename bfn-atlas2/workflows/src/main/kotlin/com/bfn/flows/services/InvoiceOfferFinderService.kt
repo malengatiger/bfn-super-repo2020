@@ -251,26 +251,21 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
     }
     @Suspendable
     private fun getAllOffers(): List<StateAndRef<InvoiceOfferState>> {
-        val list: MutableList<StateAndRef<InvoiceOfferState>> = ArrayList()
-        //get first page
-        var pageNumber = 1
-        val page: Vault.Page<InvoiceOfferState> = queryOffers(pageNumber)
-        addToList(page = page, list = list)
 
-        val remainder: Int = (page.totalStatesAvailable % pageSize).toInt()
-        var pageCnt: Int = (page.totalStatesAvailable / pageSize).toInt()
-        if (remainder > 0) pageCnt++
+        var pageNumber = DEFAULT_PAGE_NUM
+        val states = mutableListOf<StateAndRef<InvoiceOfferState>>()
+        do {
+            val pageSpec = PageSpecification(pageNumber = pageNumber, pageSize = pageSize)
+            val results = serviceHub.vaultService
+                    .queryBy<InvoiceOfferState>(QueryCriteria.VaultQueryCriteria(
+                            status = Vault.StateStatus.UNCONSUMED
+                    ), pageSpec)
+            states.addAll(results.states)
+            pageNumber++
+        } while ((pageSpec.pageSize * (pageNumber - 1)) <= results.totalStatesAvailable)
 
-        if (pageCnt > 1)  {
-            while (pageNumber < pageCnt) {
-                pageNumber++
-                val pageX = queryOffers(pageNumber)
-                addToList(pageX, list)
-            }
-        }
-        val sorted = list.sortedBy { it.state.data.offerAmount }
+        val sorted = states.sortedBy { it.state.data.offerAmount }
         logger.info("\uD83E\uDDE9 InvoiceOffers found:  \uD83C\uDF00 ${sorted.size} " )
-
         return sorted
     }
 

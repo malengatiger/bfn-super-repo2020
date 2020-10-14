@@ -14,10 +14,7 @@ import com.bfn.flows.investor.InvoiceOfferFlow
 import com.bfn.flows.investor.MultiInvoiceOfferFlow
 import com.bfn.flows.investor.SinglePaymentFlow
 import com.bfn.flows.invoices.InvoiceRegistrationFlow
-import com.bfn.flows.queries.AccountInfoQueryFlow
-import com.bfn.flows.queries.FindInvoiceFlow
-import com.bfn.flows.queries.InvoiceOfferQueryFlow
-import com.bfn.flows.queries.InvoiceQueryFlow
+import com.bfn.flows.queries.*
 import com.bfn.flows.scheduled.CreateInvoiceOffersFlow
 import com.bfn.flows.supplier.AcceptBestOfferForInvoiceFlow
 import com.bfn.flows.supplier.SupplierProfileFlow
@@ -54,6 +51,7 @@ class WorkerBeeService {
 
     @Value("\${stellarAnchorUrl}")
     private lateinit var stellarAnchorUrl: String
+
     @PostConstruct
     fun init() {
         logger.info("\uD83C\uDF3C \uD83C\uDF3C  WorkerBee service has been constructed")
@@ -191,6 +189,7 @@ class WorkerBeeService {
         logger.info(msg)
         return supplierProfileState
     }
+
     @Throws(Exception::class)
     fun getSupplierProfile(proxy: CordaRPCOps, accountId: String?): SupplierProfileStateDTO? {
         val list: List<StateAndRef<SupplierProfileState>> = proxy.vaultQueryByWithPagingSpec(
@@ -328,23 +327,20 @@ class WorkerBeeService {
         logger.info(m)
         return dtos
     }
-//    @Throws(Exception::class)
-//    fun findPurchaseOrdersForNode(proxy: CordaRPCOps): List<PurchaseOrderDTO> {
-//        val fut = proxy.startTrackedFlowDynamic(
-//                InvoiceQueryFlow::class.java, null,
-//                InvoiceQueryFlow.FIND_FOR_NODE).returnValue
-//        val invoices = fut.get()
-//        val dtos: MutableList<PurchaseOrderDTO> = mutableListOf()
-//        invoices.forEach() {
-//            if (it.supplierInfo.host.toString() ==
-//                    proxy.nodeInfo().legalIdentities.first().toString()) {
-//                dtos.add(DTOUtil.getDTO(it))
-//            }
-//        }
-//        val m = "\uD83C\uDF3A done listing InvoiceStates:  \uD83C\uDF3A " + invoices.size
-//        logger.info(m)
-//        return dtos
-//    }
+    @Throws(Exception::class)
+    fun findPurchaseOrdersForNode(proxy: CordaRPCOps): List<PurchaseOrderDTO> {
+        val fut = proxy.startTrackedFlowDynamic(
+                PurchaseOrderQueryFlow::class.java, null,
+                PurchaseOrderQueryFlow.FIND_FOR_NODE).returnValue
+        val purchaseOrders = fut.get()
+        val dtos: MutableList<PurchaseOrderDTO> = mutableListOf()
+        purchaseOrders.forEach() {
+                dtos.add(DTOUtil.getDTO(it))
+        }
+        val m = "\uD83C\uDF3A done listing PurchaseOrders:  \uD83C\uDF3A " + purchaseOrders.size
+        logger.info(m)
+        return dtos
+    }
 
 
     @Throws(Exception::class)
@@ -440,6 +436,7 @@ class WorkerBeeService {
             throw Exception("Customer creation failed")
         }
     }
+
     fun createPurchaseOrder(proxy: CordaRPCOps,
                             purchaseOrder: PurchaseOrderDTO): String {
         try {
@@ -451,6 +448,7 @@ class WorkerBeeService {
             throw Exception("createPurchaseOrder failed")
         }
     }
+
     @Throws(Exception::class)
     fun makeOffersOnInvoicesForInvestor(proxy: CordaRPCOps, investorId: String): List<InvoiceOfferDTO> {
         val fut = proxy.startTrackedFlowDynamic(
@@ -657,7 +655,7 @@ class WorkerBeeService {
     }
 
     @Throws(Exception::class)
-    fun validateInvoiceAgainstProfile( invoice: InvoiceDTO,
+    fun validateInvoiceAgainstProfile(invoice: InvoiceDTO,
                                       investorProfile: InvestorProfileStateDTO): Boolean {
 
         if (invoice.supplier!!.identifier == investorProfile.account.identifier) {
@@ -690,15 +688,27 @@ class WorkerBeeService {
             }
         }
         //todo - 🍎 🍎 🍎 🍎  add validation against industry, specific blackList, whiteList etc. 🍎 🍎 🍎 🍎
-        logger.info("${Emo.NOT_OK} invoice amount failed trade matrix check ${Emo.ERROR}")
+        logger.info("${Emo.NOT_OK} invoice failed trade matrix check ${Emo.ERROR}")
         return false
+    }
+
+    fun getDiscountForAmount(investorProfile: InvestorProfileStateDTO, amount: String): String {
+        val invoiceAmount = BigDecimal(amount)
+        for (item in investorProfile.tradeMatrixItems) {
+            val startInvoiceAmount = BigDecimal(item.startInvoiceAmount)
+            val endInvoiceAmount = BigDecimal(item.endInvoiceAmount)
+            if (invoiceAmount in startInvoiceAmount..endInvoiceAmount) {
+                return item.offerDiscount
+            }
+        }
+        return investorProfile.defaultDiscount
     }
 
     @Throws(Exception::class)
     fun startInvoiceRegistrationFlow(proxy: CordaRPCOps, invoice: InvoiceDTO): InvoiceDTO {
-        logger.info("\uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 " +
-                ".... starting startInvoiceRegistrationFlow ........ \uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C " +
-                " \n\n")
+//        logger.info("\uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 " +
+//                ".... starting startInvoiceRegistrationFlow ........ \uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C " +
+//                " \n\n")
         if (invoice.customer!!.host == null) {
             throw Exception("\uD83D\uDE21 Customer object is missing data; invalid")
         }
@@ -707,8 +717,8 @@ class WorkerBeeService {
         }
         return try {
             val accounts = proxy.vaultQuery(AccountInfo::class.java).states
-            logger.info("\uD83D\uDD35 \uD83D\uDD35 Vault Query for Accounts returned " +
-                    "${accounts.size} from the Corda ledger")
+//            logger.info("\uD83D\uDD35 \uD83D\uDD35 Vault Query for Accounts returned " +
+//                    "${accounts.size} from the Corda ledger")
             var supplierInfo: AccountInfo? = null
             var customerInfo: AccountInfo? = null
             for ((state) in accounts) {
@@ -726,14 +736,14 @@ class WorkerBeeService {
                 throw Exception("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 Customer is bloody missing")
             }
             val tax = BigDecimal(invoice.valueAddedTax)
-            val taxPercentage = tax.divide(BigDecimal("100.00") )
+            val taxPercentage = tax.divide(BigDecimal("100.00"))
             val totalTaxAmt = BigDecimal(invoice.amount).multiply(taxPercentage)
             val totalAmount = BigDecimal(invoice.amount).add(totalTaxAmt)
             invoice.totalAmount = "$totalAmount"
             //
-            logger.info("\uD83C\uDF51 \uD83C\uDF51 startInvoiceRegistrationFlow: " +
-                    "\uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C " +
-                    "about to add InvoiceState to the Corda ledger .......profile: $profile")
+//            logger.info("\uD83C\uDF51 \uD83C\uDF51 startInvoiceRegistrationFlow: " +
+//                    "\uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C " +
+//                    "about to add InvoiceState to the Corda ledger .......profile: $profile")
 
             var mDate = invoice.dateRegistered
             if (profile == "prod") {
@@ -765,11 +775,11 @@ class WorkerBeeService {
                     invoiceId = UUID.randomUUID()
             )
 
-            val issueTx = proxy.startTrackedFlowDynamic(
+            proxy.startTrackedFlowDynamic(
                     InvoiceRegistrationFlow::class.java, invoiceState).returnValue.getOrThrow()
 
             logger.info("\uD83C\uDF4F \uD83D\uDCA6 \uD83D\uDCA6 \uD83D\uDCA6 " +
-                    "InvoiceRegistrationFlow flow completed \uD83C\uDF51 ... txId: $issueTx")
+                    "InvoiceRegistrationFlow flow completed \uD83C\uDF51 ...")
 
             val dto = invoiceState.let { DTOUtil.getDTO(it) }
             try {
@@ -921,16 +931,16 @@ class WorkerBeeService {
 
     @Throws(Exception::class)
     fun startPurchaseOrderFlow(proxy: CordaRPCOps,
-                                 purchaseOrder: PurchaseOrderDTO): String {
-        var tranxId: String
+                               purchaseOrder: PurchaseOrderDTO): String {
+        val tranxId: String
         try {
 
-            logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
-                    "Starting the PurchaseOrderFlow ...................... " +
-                    "customer: ${purchaseOrder.customer?.name} " +
-                    "supplier: ${purchaseOrder.supplier?.name} " +
-                    "amount: ${purchaseOrder.amount}" +
-                    "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35\n\n")
+//            logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+//                    "Starting the PurchaseOrderFlow ...................... " +
+//                    "customer: ${purchaseOrder.customer?.name} " +
+//                    "supplier: ${purchaseOrder.supplier?.name} " +
+//                    "amount: ${purchaseOrder.amount}" +
+//                    "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35\n\n")
 
             val customerAccount = getNodeAccount(proxy, purchaseOrder.customer!!.identifier)
             val supplierAccount = getNodeAccount(proxy, purchaseOrder.supplier!!.identifier)
@@ -953,14 +963,13 @@ class WorkerBeeService {
 
                 tranxId = profileCordaFuture.get().toString()
                 firebaseService.addPurchaseOrder(purchaseOrder)
-                logger.info("\uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F \uD83C\uDF4F " +
+                logger.info("${Emo.FLOWER_RED} " +
                         " PurchaseOrderFlow completed ... " +
-                        "\uD83D\uDC4C signedTx: " + tranxId +
-                        "; \n\uD83D\uDD35 \uD83D\uDD35 PurchaseOrder now created for " +
-                        "customer: ${purchaseOrder.customer!!.name} supplier: ${purchaseOrder.supplier!!.name}\n\n")
+                        "; ${Emo.FERNS} PurchaseOrder created for " +
+                        "customer: ${purchaseOrder.customer!!.name} supplier: ${purchaseOrder.supplier!!.name}  ${Emo.FERNS}")
                 return tranxId
             } else {
-                throw Exception("\uD83D\uDE21 \uD83D\uDE21 startPurchaseOrderFlow failed; customer or supplier not found")
+                throw Exception("${Emo.ERROR} startPurchaseOrderFlow failed; customer or supplier not found")
             }
 
         } catch (e: Exception) {
@@ -973,28 +982,34 @@ class WorkerBeeService {
         }
 
     }
+
     @Throws(Exception::class)
     fun acceptBestOfferForInvoice(proxy: CordaRPCOps,
-                                  invoiceId:String,
-                                  supplierAccountId:String) : AcceptedOfferDTO? {
+                                  invoiceId: String,
+                                  supplierAccountId: String): AcceptedOfferDTO? {
         val offerCordaFuture = proxy.startFlowDynamic(
                 AcceptBestOfferForInvoiceFlow::class.java,
                 supplierAccountId, invoiceId).returnValue
         val acceptedOffer = offerCordaFuture.get()
         if (acceptedOffer != null) {
             val mOffer = DTOUtil.getDTO(acceptedOffer)
-            logger.info("\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
-                    "Accepted Offer is : ${gson.toJson(mOffer)}  \uD83C\uDF40 \n\n")
+            logger.info("${Emo.DICE} ${Emo.DICE} ${Emo.DICE} ${Emo.DICE} " +
+                    "Accepted Offer is : Investor: ${mOffer.investor?.name} " +
+                    "Supplier:  ${mOffer.supplier?.name} " +
+                    "${Emo.DICE}Discount: ${mOffer.discount}% " +
+                    "OfferAmount: ${mOffer.offerAmount} ${Emo.DICE}" +
+                    "Original Amount: ${mOffer.originalAmount}  \uD83C\uDF40 \n\n")
             firebaseService.addAcceptedOffer(mOffer)
             return mOffer
         }
 
         return null
     }
+
     @Throws(Exception::class)
     fun findOffersForInvoice(
             proxy: CordaRPCOps,
-            invoiceId:String) : List<InvoiceOfferDTO> {
+            invoiceId: String): List<InvoiceOfferDTO> {
         val offerCordaFuture = proxy.startFlowDynamic(
                 InvoiceOfferQueryFlow::class.java,
                 invoiceId, InvoiceOfferQueryFlow.FIND_FOR_INVOICE).returnValue
@@ -1006,6 +1021,7 @@ class WorkerBeeService {
         }
         return mList
     }
+
     @Throws(Exception::class)
     fun startCustomerProfileFlow(proxy: CordaRPCOps,
                                  profile: CustomerProfileStateDTO): String {
@@ -1085,7 +1101,9 @@ class WorkerBeeService {
     }
 
     @Throws(Exception::class)
-    fun startInvoiceOfferFlow(proxy: CordaRPCOps, invoiceOffer: InvoiceOfferDTO): InvoiceOfferDTO {
+    fun startInvoiceOfferFlow(proxy: CordaRPCOps,
+                              invoiceOffer: InvoiceOfferDTO,
+                              invoice:InvoiceDTO): InvoiceOfferDTO? {
         return try {
             val future = proxy.startFlowDynamic(FindInvoiceFlow::class.java,
                     invoiceOffer.invoiceId).returnValue
@@ -1095,13 +1113,25 @@ class WorkerBeeService {
                 logger.warn("Corda InvoiceState for offer not found, \uD83D\uDC7F  probably, maybe, who knows? ")
                 throw Exception("Invoice not found")
             }
+            val investorProfile = firebaseService.getInvestorProfile(invoiceOffer.investor!!.identifier)
+                    ?: throw Exception("Missing InvestorProfile, offers cannot be generated")
+            val ok = validateInvoiceAgainstProfile(
+                    investorProfile = investorProfile, invoice = invoice)
+            if (!ok) {
+                logger.info("Offer does not fit profile ${Emo.NOT_OK}")
+                return null
+            }
+            invoiceOffer.discount = getDiscountForAmount(investorProfile, invoiceOffer.originalAmount)
+
             val future2 = proxy.startFlowDynamic(AccountInfoQueryFlow::class.java,
                     invoiceOffer.investor?.identifier)
                     .returnValue
             val investorInfo = future2.get() ?: throw Exception("Investor not found")
 
-            val nPercentage = BigDecimal("100.00").minus( BigDecimal(invoiceOffer.discount)).divide(BigDecimal("100"))
-            invoiceOffer.offerAmount = (BigDecimal(invoiceOffer.originalAmount).multiply(nPercentage)).toString()
+            val nPercentage = BigDecimal("100.00").minus(BigDecimal(invoiceOffer.discount))
+                    .divide(BigDecimal("100"))
+            invoiceOffer.offerAmount = (BigDecimal(invoiceOffer.originalAmount)
+                    .multiply(nPercentage)).toString()
             processInvoiceOffer(proxy, invoiceOffer, invoiceState, investorInfo)
         } catch (e: Exception) {
             if (e.message != null) {
@@ -1138,7 +1168,7 @@ class WorkerBeeService {
         val offer = DTOUtil.getDTO(invoiceOfferState)
         try {
             firebaseService.addInvoiceOffer(offer)
-            firebaseService.sendInvoiceOfferMessage(offer)
+//            firebaseService.sendInvoiceOfferMessage(offer)
         } catch (e: Exception) {
             logger.error("\uD83D\uDC7F \uD83D\uDC7F \uD83D\uDC7F\uD83D\uDC7F " +
                     "Failed to add invoiceOffer to Firestore", e)
@@ -1178,7 +1208,7 @@ class WorkerBeeService {
     @Throws(Exception::class)
     fun makePaymentForOffer(proxy: CordaRPCOps,
                             investorId: String,
-                            offerId:String): SupplierPaymentDTO {
+                            offerId: String): SupplierPaymentDTO {
 
         logger.info("\n\n\n${Emo.RAIN_DROPS} starting makePaymentForOffer, " +
                 "${Emo.RED_DOT} investor: $investorId offer: $offerId")

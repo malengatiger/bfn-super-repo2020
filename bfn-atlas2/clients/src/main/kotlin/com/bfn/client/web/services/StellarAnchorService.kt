@@ -2,10 +2,7 @@ package com.bfn.client.web.services
 
 
 import com.bfn.client.Emo
-import com.bfn.client.data.AcceptedOfferDTO
-import com.bfn.client.data.InvoiceOfferDTO
-import com.bfn.client.data.StellarResponse
-import com.bfn.client.data.SupplierPaymentDTO
+import com.bfn.client.data.*
 import com.bfn.client.web.DTOUtil
 import com.bfn.flows.PaymentRequestParams
 import com.bfn.flows.StellarPaymentDTO
@@ -43,6 +40,24 @@ class StellarAnchorService {
     @Autowired
     private lateinit var firebaseService: FirebaseService
 
+    fun sendPayment(stellarPaymentRequest: StellarPaymentRequest): Response {
+        val suffix = "sendPayment"
+
+        logx.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
+                "... Request(POST) for Stellar payment to be sent over the wire: sent to " +
+                "\uD83C\uDF4E $stellarAnchorUrl$suffix \uD83C\uDF4E")
+
+        var stellarResponse: StellarResponse? = null
+        val headers = mapOf("Content-Type" to MediaType.APPLICATION_JSON_VALUE)
+        val result = post(url = "$stellarAnchorUrl$suffix",
+                data = gson.toJson(stellarPaymentRequest),
+                timeout = 990000000.0, headers = headers)
+
+
+        logx.info("$good sendPayment RESPONSE: statusCode: ${result.statusCode}  ")
+        logx.info("$good sendPayment RESPONSE: result text: ${result.text}  ")
+        return result
+    }
     fun createStellarAccount(proxy: CordaRPCOps): StellarResponse? {
         val suffix = "createStellarAccount"
         logx.info("\n\uD83C\uDF30 Sending HTTP call to the BFN network to create a brand new Stellar ACCOUNT" +

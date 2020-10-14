@@ -166,30 +166,21 @@ class PaymentFinderService(private val serviceHub: AppServiceHub) : SingletonSer
 
     @Suspendable
     fun getAllPaymentStateAndRefs(): List<StateAndRef<SupplierPaymentState>> {
-        val list: MutableList<StateAndRef<SupplierPaymentState>> = mutableListOf()
-        //get first page
-        var pageNumber = 1
-        val pair = queryPaymentStateAndRef(pageNumber)
-        pair.first.forEach() {
-            list.add(it)
-        }
 
-        val remainder: Int = (pair.second % pageSize).toInt()
-        var pageCnt: Int = (pair.second/ pageSize).toInt()
-        if (remainder > 0) pageCnt++
+        var pageNumber = DEFAULT_PAGE_NUM
+        val states = mutableListOf<StateAndRef<SupplierPaymentState>>()
+        do {
+            val pageSpec = PageSpecification(pageNumber = pageNumber, pageSize = pageSize)
+            val results = serviceHub.vaultService
+                    .queryBy<SupplierPaymentState>(QueryCriteria.VaultQueryCriteria(
+                            status = Vault.StateStatus.UNCONSUMED
+                    ), pageSpec)
+            states.addAll(results.states)
+            pageNumber++
+        } while ((pageSpec.pageSize * (pageNumber - 1)) <= results.totalStatesAvailable)
 
-        if (pageCnt > 1)  {
-            while (pageNumber < pageCnt) {
-                pageNumber++
-                val pageX = queryPaymentStateAndRef(pageNumber)
-                pageX.first.forEach() {
-                    list.add(it)
-                }
-            }
-        }
-
-        logger.info("\uD83E\uDDE9 SupplierPayments found on node: \uD83C\uDF00 ${list.size} " )
-        return list
+        logger.info("\uD83E\uDDE9 SupplierPayments found on node: \uD83C\uDF00 ${states.size} " )
+        return states
     }
     @Suspendable
     fun getAnchorPaymentStateAndRefs(): List<StateAndRef<SupplierPaymentState>> {

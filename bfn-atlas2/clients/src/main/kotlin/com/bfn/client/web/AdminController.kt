@@ -11,6 +11,7 @@ import com.bfn.client.web.services.*
 import com.bfn.contractstates.states.AcceptedOfferState
 import com.google.firebase.auth.UserRecord
 import com.google.gson.GsonBuilder
+import khttp.responses.Response
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.node.services.Vault
 import net.corda.core.node.services.vault.PageSpecification
@@ -19,6 +20,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.util.*
 
@@ -30,44 +32,45 @@ import java.util.*
 @RequestMapping("/admin") // The paths for HTTP requests are relative to this base path.
 class AdminController(rpc: NodeRPCConnection) {
     private val proxy: CordaRPCOps = rpc.proxy
+
     @Value("\${spring.profiles.active}")
     private lateinit var profile: String
 
     @Value("\${stellarAnchorUrl}")
     private lateinit var stellarAnchorUrl: String
-    
-    @Autowired
-    private lateinit var  workerBeeService: WorkerBeeService
 
     @Autowired
-    private  lateinit var  demoDataService: DemoDataService
+    private lateinit var workerBeeService: WorkerBeeService
 
     @Autowired
-    private lateinit var  networkOperatorBeeService: NetworkOperatorBeeService
-    
-    @Autowired
-    private lateinit var  firebaseService: FirebaseService
+    private lateinit var demoDataService: DemoDataService
 
     @Autowired
-    private lateinit var  crossNodeService: CrossNodeService
+    private lateinit var networkOperatorBeeService: NetworkOperatorBeeService
 
     @Autowired
-    private lateinit var  stellarAnchorService: StellarAnchorService
+    private lateinit var firebaseService: FirebaseService
+
+    @Autowired
+    private lateinit var crossNodeService: CrossNodeService
+
+    @Autowired
+    private lateinit var stellarAnchorService: StellarAnchorService
 
 
     @GetMapping(value = ["/test"], produces = [MediaType.TEXT_PLAIN_VALUE])
     @Throws(Exception::class)
     private fun testerRun(): String {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting DemoUtil: buildDemo ... \uD83C\uDF4F ")
-       val msg = TesterBee.runMe();
+        val msg = TesterBee.runMe();
         logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 TesterBee completed " +
-                 "    \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
+                "    \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
         return "Tester Done: $msg"
     }
 
     @GetMapping(value = ["/demo"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
-    private fun buildDemo(@RequestParam numberOfAccounts:String): DemoSummary? {
+    private fun buildDemo(@RequestParam numberOfAccounts: String): DemoSummary? {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting DemoDataService: buildDemo ... \uD83C\uDF4F number accts: $numberOfAccounts")
 
         val num = numberOfAccounts.toInt()
@@ -86,6 +89,7 @@ class AdminController(rpc: NodeRPCConnection) {
         firebaseService.deleteCollections()
         return "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 deleteFirebase completed. \uD83C\uDF4F "
     }
+
     @GetMapping(value = ["/makeAnchorOffers"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun makeAnchorOffers(): List<InvoiceOfferDTO>? {
@@ -130,12 +134,14 @@ class AdminController(rpc: NodeRPCConnection) {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting getAnchor signIn ... \uD83C\uDF4F ")
         return networkOperatorBeeService.getNetworkOperator(proxy);
     }
+
     @GetMapping(value = ["/getAccounts"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun getAccounts(): List<AccountInfoDTO> {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting getAccounts ... \uD83C\uDF4F ")
         return workerBeeService.getNodeAccounts(proxy)
     }
+
     @GetMapping(value = ["/getNetworkAccounts"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun getNetworkAccounts(): List<AccountInfoDTO> {
@@ -159,8 +165,7 @@ class AdminController(rpc: NodeRPCConnection) {
     private fun createStellarAccount(): StellarResponse? {
         logger.info("\n\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E  " +
                 "Creating Stellar Account by calling Stellar anchor server $stellarAnchorUrl ")
-        val stellarResponse
-                = stellarAnchorService.createStellarAccount(proxy = proxy)
+        val stellarResponse = stellarAnchorService.createStellarAccount(proxy = proxy)
 
         logger.info(" \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
                 "AdminController.createStellarAccount returns responseBag:  ${GSON.toJson(stellarResponse)}")
@@ -174,10 +179,10 @@ class AdminController(rpc: NodeRPCConnection) {
                                       investorProfile: InvestorProfileStateDTO,
                                       supplierProfile: SupplierProfileStateDTO): NetworkOperatorDTO? {
 
-           logger.info("\n\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E  " +
+        logger.info("\n\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E  " +
                 "Creating Network Operator:, check fields, tradeFrequencyInMinutes, defaultOfferDiscount ...  ${GSON.toJson(networkOperator)}")
 
-        val operator =  networkOperatorBeeService.createNetworkOperator(
+        val operator = networkOperatorBeeService.createNetworkOperator(
                 networkOperator = networkOperator,
                 proxy = proxy,
                 investorProfile = investorProfile,
@@ -188,13 +193,24 @@ class AdminController(rpc: NodeRPCConnection) {
 
         return operator;
     }
+
     @PostMapping(value = ["/updateNetworkOperator"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun updateNetworkOperator(@RequestBody networkOperator: NetworkOperatorDTO): NetworkOperatorDTO? {
         return networkOperatorBeeService.updateNetworkOperator(
                 networkOperator = networkOperator, proxy = proxy)
     }
-
+    @PostMapping(value = ["/sendPayment"],
+            consumes = [MediaType.APPLICATION_JSON_VALUE],
+            produces = [MediaType.APPLICATION_JSON_VALUE])
+    @Throws(Exception::class)
+    private fun sendPayment(@RequestBody paymentRequest: StellarPaymentRequest): ResponseEntity<Response> {
+        logger.info(" \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40" +
+                " sendPayment using stellarAnchorService... sourceAccount: ${paymentRequest.sourceAccount} " +
+                "destinationAccount: ${paymentRequest.destinationAccount}")
+        val response =  stellarAnchorService.sendPayment(paymentRequest)
+        return ResponseEntity.ok(response)
+    }
     @PostMapping(value = ["/startAccountRegistrationFlow"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun startAccountRegistrationFlow(@RequestBody user: UserDTO): UserDTO? {
@@ -203,6 +219,16 @@ class AdminController(rpc: NodeRPCConnection) {
         return workerBeeService.startAccountRegistrationFlow(proxy, user.accountInfo.name,
                 user.email, user.cellphone, user.password)
     }
+
+    @PostMapping(value = ["/startInvoiceOfferFlow"], produces = [MediaType.APPLICATION_JSON_VALUE])
+    @Throws(Exception::class)
+    private fun startInvoiceOfferFlow(@RequestBody invoice: InvoiceDTO,
+                                      offer: InvoiceOfferDTO): InvoiceOfferDTO? {
+        logger.info(" \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40" +
+                " startInvoiceOfferFlow ... ${offer.investor?.name}")
+        return workerBeeService.startInvoiceOfferFlow(proxy = proxy, invoice = invoice, invoiceOffer = offer)
+    }
+
     @PostMapping(value = ["/startAccountInfoQueryFlow"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun startAccountInfoQuery(@RequestParam identifier: String): AccountInfoDTO {
@@ -213,8 +239,9 @@ class AdminController(rpc: NodeRPCConnection) {
     @Throws(Exception::class)
     private fun addSupplierProfile(@RequestBody profile: SupplierProfileStateDTO): String? {
         val acct = workerBeeService.getNodeAccount(proxy, identifier = profile.account!!.identifier)
-       return acct.let { workerBeeService.createSupplierProfile(proxy, profile, it!!) }
+        return acct.let { workerBeeService.createSupplierProfile(proxy, profile, it!!) }
     }
+
     @PostMapping(value = ["/addInvestorProfile"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
     private fun addInvestorProfile(@RequestBody profile: InvestorProfileStateDTO): String? {
@@ -234,29 +261,33 @@ class AdminController(rpc: NodeRPCConnection) {
     fun getPurchaseOrders(
             @RequestParam startDate: String,
             @RequestParam endDate: String): List<PurchaseOrderDTO> {
-        return firebaseService.getPurchaseOrders(startDate,endDate)
+        return firebaseService.getPurchaseOrders(startDate, endDate)
     }
+
     @GetMapping(value = ["/getInvoices"])
     @Throws(Exception::class)
     fun getInvoices(
             @RequestParam startDate: String,
             @RequestParam endDate: String): List<InvoiceDTO> {
-        return firebaseService.getInvoices(startDate,endDate)
+        return firebaseService.getInvoices(startDate, endDate)
     }
+
     @GetMapping(value = ["/getInvoiceOffers"])
     @Throws(Exception::class)
     fun getInvoiceOffers(
             @RequestParam startDate: String,
             @RequestParam endDate: String): List<InvoiceOfferDTO> {
-        return firebaseService.getInvoiceOffers(startDate,endDate)
+        return firebaseService.getInvoiceOffers(startDate, endDate)
     }
+
     @GetMapping(value = ["/getAcceptedInvoiceOffers"])
     @Throws(Exception::class)
     fun getAcceptedInvoiceOffers(
             @RequestParam startDate: String,
             @RequestParam endDate: String): List<AcceptedOfferDTO> {
-        return firebaseService.getAcceptedInvoiceOffers(startDate,endDate)
+        return firebaseService.getAcceptedInvoiceOffers(startDate, endDate)
     }
+
     @GetMapping(value = ["/checkAcceptedInvoiceOffers"])
     @Throws(Exception::class)
     fun checkAcceptedInvoiceOffers(): List<AcceptedOfferDTO> {
@@ -266,7 +297,7 @@ class AdminController(rpc: NodeRPCConnection) {
                 criteria = criteria,
                 contractStateType = AcceptedOfferState::class.java, paging = PageSpecification(
                 pageNumber = 1, pageSize = 500
-        ) )
+        ))
         val mList: MutableList<AcceptedOfferDTO> = mutableListOf()
         for (m in page.states) {
             mList.add(DTOUtil.getDTO(m.state.data))
@@ -275,28 +306,33 @@ class AdminController(rpc: NodeRPCConnection) {
         return mList;
 
     }
+
     @GetMapping(value = ["/getSupplierPayments"])
     @Throws(Exception::class)
     fun getSupplierPayments(
             @RequestParam startDate: String,
             @RequestParam endDate: String): List<SupplierPaymentDTO> {
-        return firebaseService.getSupplierPayments(startDate,endDate)
+        return firebaseService.getSupplierPayments(startDate, endDate)
     }
+
     @GetMapping(value = ["/getCustomerProfiles"])
     @Throws(Exception::class)
     fun getCustomerProfiles(): List<CustomerProfileStateDTO> {
         return firebaseService.getCustomerProfiles()
     }
+
     @GetMapping(value = ["/getInvestorProfiles"])
     @Throws(Exception::class)
     fun getInvestorProfiles(): List<InvestorProfileStateDTO> {
         return firebaseService.getInvestorProfiles()
     }
+
     @GetMapping(value = ["/getSupplierProfiles"])
     @Throws(Exception::class)
     fun getSupplierProfiles(): List<SupplierProfileStateDTO> {
         return firebaseService.getSupplierProfiles()
     }
+
     @GetMapping(value = ["/getNetworkNodes"])
     @Throws(Exception::class)
     fun getNetworkNodes(): List<NodeInfoDTO> {
@@ -307,24 +343,27 @@ class AdminController(rpc: NodeRPCConnection) {
     @GetMapping(value = ["/findInvoicesForCustomer"])
     @Throws(Exception::class)
     fun findInvoicesForCustomer(
-                         @RequestParam(value = "accountId", required = true) accountId: String): List<InvoiceDTO> {
+            @RequestParam(value = "accountId", required = true) accountId: String): List<InvoiceDTO> {
         return workerBeeService.findInvoicesForCustomer(proxy, accountId)
     }
+
     @GetMapping(value = ["/findInvoicesForSupplier"])
     @Throws(Exception::class)
     fun findInvoicesForSupplier(
             @RequestParam(value = "accountId", required = true) accountId: String): List<InvoiceDTO> {
         return workerBeeService.findInvoicesForSupplier(proxy, accountId)
     }
+
     @GetMapping(value = ["/findInvoicesForNode"])
     @Throws(Exception::class)
     fun findInvoicesForNode(): List<InvoiceDTO> {
         return workerBeeService.findInvoicesForNode(proxy)
     }
+
     @GetMapping(value = ["/findPurchaseOrdersForNode"])
     @Throws(Exception::class)
-    fun findPurchaseOrdersForNode(): List<InvoiceDTO> {
-        return workerBeeService.findInvoicesForNode(proxy)
+    fun findPurchaseOrdersForNode(): List<PurchaseOrderDTO> {
+        return workerBeeService.findPurchaseOrdersForNode(proxy)
     }
 
     @GetMapping(value = ["/findInvoicesForInvestor"])
@@ -353,7 +392,7 @@ class AdminController(rpc: NodeRPCConnection) {
 
     @GetMapping(value = ["/makePaymentForOffer"])
     @Throws(Exception::class)
-    fun makePaymentForOffer( offerId: String): SupplierPaymentDTO? {
+    fun makePaymentForOffer(offerId: String): SupplierPaymentDTO? {
         return stellarAnchorService.makePaymentForOffer(proxy, offerId = offerId)
     }
 
@@ -362,6 +401,7 @@ class AdminController(rpc: NodeRPCConnection) {
     fun findOffersForSupplier(@RequestParam(value = "accountId", required = true) accountId: String): List<InvoiceOfferDTO> {
         return workerBeeService.findOffersForSupplier(proxy, accountId)
     }
+
     @GetMapping(value = ["/findOffersForNode"])
     @Throws(Exception::class)
     fun findOffersForNode(): List<InvoiceOfferDTO> {
@@ -373,27 +413,32 @@ class AdminController(rpc: NodeRPCConnection) {
     fun getProxy(): CordaRPCOps {
         return proxy
     }
+
     @GetMapping(value = ["/makeInvoiceOffers"])
     @Throws(Exception::class)
     fun makeInvoiceOffers(@RequestParam investorId: String): List<InvoiceOfferDTO> {
         return workerBeeService.makeOffersOnInvoicesForInvestor(proxy, investorId)
     }
+
     @PostMapping(value = ["/createInvestorProfile"])
     @Throws(Exception::class)
     fun createInvestorProfile(@RequestBody profile: InvestorProfileStateDTO): String? {
         val acct = workerBeeService.getNodeAccount(proxy, identifier = profile.account.identifier)
         return acct.let { workerBeeService.createInvestorProfile(proxy, profile, it!!) }
     }
+
     @GetMapping(value = ["/getSupplierProfile"])
     @Throws(Exception::class)
     fun getSupplierProfile(@RequestParam(value = "accountId") accountId: String): SupplierProfileStateDTO? {
         return workerBeeService.getSupplierProfile(proxy, accountId)
     }
+
     @GetMapping(value = ["/getInvestorProfile"])
     @Throws(Exception::class)
     fun getInvestorProfile(@RequestParam(value = "accountId") accountId: String): InvestorProfileStateDTO? {
         return firebaseService.getInvestorProfile(accountId)
     }
+
     @PostMapping(value = ["/createSupplierProfile"])
     @Throws(Exception::class)
     fun createSupplierProfile(@RequestBody profile: SupplierProfileStateDTO): String? {
@@ -407,14 +452,20 @@ class AdminController(rpc: NodeRPCConnection) {
         return firebaseService.getUser(email)
     }
 
+    @GetMapping(value = ["/getAnchor"])
+    @Throws(Exception::class)
+    fun getAnchor(): Anchor? {
+        return firebaseService.getAnchor()
+    }
+
 
     @GetMapping(value = ["/getUsers"])
-    fun getUsersFromFirestore() : MutableList<UserDTO> {
+    fun getUsersFromFirestore(): MutableList<UserDTO> {
         val start = Date()
 
-            val users = firebaseService.getBFNUsers()
-            ResponseTimer.writeResponse(start = start,
-                    callName = "getUsersFromFirestore", profile = profile)
+        val users = firebaseService.getBFNUsers()
+        ResponseTimer.writeResponse(start = start,
+                callName = "getUsersFromFirestore", profile = profile)
 
         return users
     }
@@ -426,15 +477,14 @@ class AdminController(rpc: NodeRPCConnection) {
     }
 
 
-
     @GetMapping(value = ["/hello"], produces = ["text/plain"])
-     fun hello(): String {
+    fun hello(): String {
         logger.info("/ requested. will say hello  \uD83D\uDC9A  \uD83D\uDC9A  \uD83D\uDC9A")
         return "\uD83D\uDC9A  BFNWebApi: AdminController says  \uD83E\uDD6C HELLO WORLD!  \uD83D\uDC9A  \uD83D\uDC9A"
     }
 
     @GetMapping(value = ["/ping"], produces = [MediaType.APPLICATION_JSON_VALUE])
-     fun ping(): String {
+    fun ping(): String {
         val msg = ("\uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A AdminController:BFN Web API pinged: " + Date().toString()
                 + " \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A")
         val start = Date()
@@ -454,7 +504,7 @@ class AdminController(rpc: NodeRPCConnection) {
 
         ResponseTimer.writeResponse(start = start,
                 callName = "ping", profile = profile)
-        return  mm
+        return mm
     }
 
     @get:GetMapping(value = ["/getDashboardData"], produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -498,6 +548,6 @@ class AdminController(rpc: NodeRPCConnection) {
     init {
         logger.info("\uD83C\uDF3A \uD83C\uDF3A \uD83C\uDF3A AdminController:" +
                 " NodeRPCConnection proxy has been injected: \uD83C\uDF3A "
-                + proxy.nodeInfo().toString() +  " \uD83C\uDF3A ")
+                + proxy.nodeInfo().toString() + " \uD83C\uDF3A ")
     }
 }

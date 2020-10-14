@@ -76,12 +76,12 @@ class DemoDataController(rpc: NodeRPCConnection) {
     }
     @GetMapping(value = ["/generatePurchaseOrders"], produces = [MediaType.TEXT_PLAIN_VALUE])
     @Throws(Exception::class)
-    private fun generatePurchaseOrders(): String? {
+    private fun generatePurchaseOrders( numberOfMonths: Int): String? {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
                 "starting DemoDataController: generatePurchaseOrders " +
                 "... \uD83C\uDF4F ")
 
-        val result = demoDataService.generatePurchaseOrders(proxy)
+        val result = demoDataService.generatePurchaseOrders(proxy, numberOfMonths)
         logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
                 "DemoDataController:generatePurchaseOrders result: $result " +
                 "  \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
@@ -134,7 +134,7 @@ class DemoDataController(rpc: NodeRPCConnection) {
                 "... \uD83C\uDF4F ")
 
         val acct = workerBeeService.getAccount(proxy = proxy, accountId = accountId)
-        val result = demoDataService.generateOffersFromAccount(proxy,acct)
+        val result = demoDataService.generateOffersFromInvestor(proxy,acct)
         logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
                 "DemoDataController:generateOffersFromAccount result: " +
                 " $result   \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")

@@ -224,52 +224,52 @@ class FirebaseService() {
     @Throws(ExecutionException::class, InterruptedException::class)
     fun addNetworkOperator(operator: NetworkOperatorDTO) {
         val future: ApiFuture<DocumentReference> = db.collection(NETWORK_OPERATOR).add(operator);
-        logger.info("\uD83D\uDE3C \uD83D\uDE3C NetworkOperator added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+        logger.info("\uD83D\uDE3C  NetworkOperator added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
 
     @Throws(ExecutionException::class, InterruptedException::class)
     fun addPurchaseOrder(purchaseOrder: PurchaseOrderDTO) {
         val future: ApiFuture<DocumentReference> = db.collection(BFN_PURCHASE_ORDERS).add(purchaseOrder);
-        logger.info("\uD83D\uDE3C \uD83D\uDE3C purchaseOrder added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+        logger.info("\uD83D\uDE3C purchaseOrder added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
     @Throws(ExecutionException::class, InterruptedException::class)
     fun addPaymentRequest(paymentRequest: PaymentRequestDTO) {
         val future: ApiFuture<DocumentReference> = db.collection(PAYMENT_REQUESTS).add(paymentRequest);
-        logger.info("\uD83D\uDE3C \uD83D\uDE3C purchaseOrder added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+        logger.info("\uD83D\uDE3C payment request added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
     @Throws(ExecutionException::class, InterruptedException::class)
     fun addCustomerProfile(profile: CustomerProfileStateDTO) {
         val future: ApiFuture<DocumentReference> = db.collection(BFN_CUSTOMER_PROFILES).add(profile);
-        logger.info("\uD83D\uDE3C \uD83D\uDE3C CustomerProfileState added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+        logger.info("\uD83D\uDE3C CustomerProfileState added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
     @Throws(ExecutionException::class, InterruptedException::class)
     fun addInvoice(invoice: InvoiceDTO) {
         val future: ApiFuture<DocumentReference> = db.collection(BFN_INVOICES).add(invoice);
-        logger.info("\uD83D\uDE3C \uD83D\uDE3C Invoice added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+        logger.info("\uD83D\uDE3C Invoice added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
     @Throws(ExecutionException::class, InterruptedException::class)
     fun addSupplierPayment(supplierPayment: SupplierPaymentDTO) {
         val future: ApiFuture<DocumentReference> = db.collection(BFN_SUPPLIER_PAYMENTS).add(supplierPayment);
-        logger.info("\uD83D\uDE3C \uD83D\uDE3C SupplierPayment added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+        logger.info("\uD83D\uDE3C SupplierPayment added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
     @Throws(ExecutionException::class, InterruptedException::class)
     fun addInvoiceOffer(invoiceOffer: InvoiceOfferDTO) {
         val future: ApiFuture<DocumentReference> = db.collection(BFN_INVOICE_OFFERS).add(invoiceOffer);
-        logger.info("\uD83D\uDE3C \uD83D\uDE3C InvoiceOffer added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+        logger.info("\uD83D\uDE3C InvoiceOffer added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
     fun addAcceptedOffer(acceptedOffer: AcceptedOfferDTO) {
         val future: ApiFuture<DocumentReference> = db.collection(BFN_ACCEPTED_OFFERS).add(acceptedOffer);
-        logger.info("\uD83D\uDE3C \uD83D\uDE3C AcceptedOffer added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+        logger.info("\uD83D\uDE3C AcceptedOffer added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
     @Throws(ExecutionException::class, InterruptedException::class)
     fun addInvestorProfile(profile: InvestorProfileStateDTO) {
         val future: ApiFuture<DocumentReference> = db.collection(BFN_INVESTOR_PROFILES).add(profile);
-        logger.info("\uD83D\uDE3C \uD83D\uDE3C InvestorProfileState added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+        logger.info("\uD83D\uDE3C InvestorProfileState added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
     @Throws(ExecutionException::class, InterruptedException::class)
     fun addSupplierProfile(profile: SupplierProfileStateDTO) {
         val future: ApiFuture<DocumentReference> = db.collection(BFN_SUPPLIER_PROFILES).add(profile);
-        logger.info("\uD83D\uDE3C \uD83D\uDE3C SupplierProfileState added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+        logger.info("\uD83D\uDE3C SupplierProfileState added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
 
     @Throws(Exception::class)
@@ -467,7 +467,25 @@ class FirebaseService() {
         }
         return record
     }
+    @Throws(Exception::class)
+    fun getAnchor(): Anchor? {
+        logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 Getting Stellar Anchor, look out for data parsing error ...")
+        var anchor: Anchor? =null
+        try {
+            val page = db.collection("anchors").get()
+            val m = page.get()
+            if (m.documents.isNotEmpty()) {
+                anchor = m.documents[0].toObject(Anchor::class.java)
+            }
 
+        } catch (e: Exception) {
+            logger.error(e.message)
+        }
+        if (anchor != null) {
+            logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 Found ${anchor.name} ")
+        }
+        return anchor
+    }
 
     @Throws(FirebaseAuthException::class)
     fun getBFNUsers(): MutableList<UserDTO> {

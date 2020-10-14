@@ -108,11 +108,13 @@ class DemoDataService {
 
         logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E Firebase clean up completed")
     }
+
     var accounts: List<AccountInfoDTO> = mutableListOf()
+
     /**
      * Generate data for the customer node : Accounts are created for several customers
      */
-    fun generateCustomerNodeData(mProxy: CordaRPCOps, numberOfMonths:Int): String {
+    fun generateCustomerNodeData(mProxy: CordaRPCOps, numberOfMonths: Int): String {
         logger.info("\n\n\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
                 "Generating data for the Customer Node: Customers only, Boss!")
 
@@ -149,22 +151,22 @@ class DemoDataService {
         logger.info("\n\n\n\n")
         return msg
     }
+
     var purchaseOrderCount = 0
 
-    fun generatePurchaseOrders(mProxy: CordaRPCOps, numberOfMonths:Int = 3): String {
+    fun generatePurchaseOrders(mProxy: CordaRPCOps, numberOfMonths: Int): String {
         val msg = "\n\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
                 "DemoDataService: generatePurchaseOrders starting ........! " +
                 "\uD83E\uDD6E \uD83E\uDD6E \uD83E\uDD6E\n"
         logger.info(msg)
         purchaseOrderCount = 0
         accounts = workerBeeService.getAllNodeAccounts(mProxy)
-        val operator = firebaseService.getNetworkOperator() ?:
-            throw Exception("Network Operator missing ${Emo.ERRORS}")
+        val operator = firebaseService.getNetworkOperator() ?: throw Exception("Network Operator missing ${Emo.ERRORS}")
         accounts.forEach {
             logger.info("\uD83C\uDF4E Account found on node, " +
                     "\uD83C\uDF40 ${it.name} \uD83C\uDF40 ${it.host}")
             if (it.host.contains("Customer")) {
-               customers.add(it)
+                customers.add(it)
             } else {
                 if (!it.name.contains(operator.account.name)) {
                     suppliers.add(it)
@@ -176,22 +178,10 @@ class DemoDataService {
                 " Start creating PurchaseOrders for " +
                 "${customers.size} customers and ${suppliers.size} suppliers.... \n\n")
 
-        for (customer in customers) {
-            var mthIncrement = 0
-            val startDate = DateTime().minusMonths(numberOfMonths)
-            logger.info("${Emo.FERNS} " +
-                    " Start creating PurchaseOrders for Customer: " +
-                    "${customer.name} ....${Emo.RED_APPLE} startDate: ${startDate.toDateTimeISO()} \n\n")
-            while (mthIncrement < numberOfMonths) {
-                var mDate = startDate;
-                if (mthIncrement > 0) {
-                    mDate = startDate.plusMonths(mthIncrement)
-                            .plusDays(random.nextInt(7))
-                }
-                createCustomerPurchaseOrders(mProxy, customer, mDate);
-                mthIncrement++
-            }
+        customers.forEach() {
+            createCustomerPurchaseOrders(mProxy, customer = it, numberOfMonths = numberOfMonths);
         }
+
         val msg2 = "\n\n${Emo.RED_APPLES} " +
                 "DemoDataService: generatePurchaseOrders COMPLETE! " +
                 " $purchaseOrderCount purchaseOrders generated ${Emo.FERNS}\n\n"
@@ -200,33 +190,49 @@ class DemoDataService {
         logger.info("\n\n\n\n")
         return msg2
     }
+
     private fun createCustomerPurchaseOrders(mProxy: CordaRPCOps,
-                                             customer: AccountInfoDTO, date:DateTime): String {
+                                             customer: AccountInfoDTO,
+                                             numberOfMonths: Int): String {
+
+        val startDate = DateTime().minusMonths(numberOfMonths)
+        logger.info("\n\n\n${Emo.FERNS}${Emo.FERNS}${Emo.FERNS} " +
+                " Start creating PurchaseOrders for Customer: " +
+                "${customer.name} ....${Emo.RED_APPLE} startDate: ${startDate.toDateTimeISO()} \n\n")
 
         for (supplier in suppliers) {
-            if (customer.identifier != supplier.identifier) {
-                val mDate = date.plusDays(random.nextInt(14))
-                createSmallAndLargePurchaseOrders(mProxy, customer, supplier, mDate)
+            var supplierPOs = 0
+            for(num in 0..numberOfMonths) {
+                val mDate = startDate.plusMonths(num);
+                createPurchaseOrder(mProxy = mProxy,
+                        customer = customer,
+                        supplier = supplier,
+                        date = mDate)
+                supplierPOs++
             }
+            logger.info("${Emo.ANGRIES}${Emo.ANGRIES} $supplierPOs " +
+                    "PurchaseOrders created for supplier: ${supplier.name} from customer: ${customer.name}\n\n")
         }
-        val msg = "\n\n${Emo.RED_APPLES} " +
-                "DemoDataService: PurchaseOrders for Customer : ${customer.name} and ${suppliers.size} Suppliers completed  " +
+        val msg = "${Emo.RED_APPLES} " +
+                "DemoDataService: PurchaseOrders for Customer : ${customer.name} " +
+                "and ${suppliers.size} Suppliers completed  " +
                 "${Emo.RED_APPLES}\n"
         logger.info(msg)
         logger.info("\n\n")
         return msg
     }
-    private fun createSmallAndLargePurchaseOrders(mProxy: CordaRPCOps,
-                                                  customer: AccountInfoDTO,
-                                                  supplier: AccountInfoDTO,
-                                                  date: DateTime): String {
 
-        val sDate = date.plusDays(random.nextInt(14))
-        val lDate = date.plusDays(random.nextInt(14))
+    private fun createPurchaseOrder(mProxy: CordaRPCOps,
+                                    customer: AccountInfoDTO,
+                                    supplier: AccountInfoDTO,
+                                    date: DateTime): String {
+
+        val sDate = date.plusDays(random.nextInt(5))
+        val lDate = date.plusDays(random.nextInt(5))
 
         val poSmall = PurchaseOrderDTO(
                 purchaseOrderId = UUID.randomUUID().toString(),
-                purchaseOrderNumber = "" + System.currentTimeMillis()+ "-" + random.nextInt(100),
+                purchaseOrderNumber = "" + System.currentTimeMillis() + "-" + random.nextInt(100),
                 customer = customer,
                 supplier = supplier,
                 amount = getSmallPOAmount(),
@@ -246,23 +252,23 @@ class DemoDataService {
 
         val choice = random.nextInt(100)
         if (choice <= 40) {
-            val msg1 = workerBeeService.createPurchaseOrder(mProxy, purchaseOrder = poSmall)
-            purchaseOrderCount++
-            logger.info("$msg1 ::: ${Emo.PEAR} SMALL PO created with date: " +
-                    "${Emo.YELLOW_BIRD} ${poSmall.dateRegistered} " +
-                    "amt: ${poSmall.amount} \n\n\n")
+            workerBeeService.createPurchaseOrder(mProxy, purchaseOrder = poSmall)
+            logger.info("${Emo.PEAR} SMALL PO created: " +
+                    "${Emo.YELLOW_BIRD}dateRegistered: ${poSmall.dateRegistered} ${Emo.YELLOW_BIRD} " +
+                    "amt: ${poSmall.amount} customer:  ${customer.name} supplier: ${supplier.name}")
         } else {
-            val msg2 = workerBeeService.createPurchaseOrder(mProxy, purchaseOrder = poLarge)
-            purchaseOrderCount++
-            logger.info("$msg2 ::: ${Emo.PEAR} LARGE PO created with date:" +
-                    " ${Emo.YELLOW_BIRD} ${poLarge.dateRegistered} " +
-                    "amt: ${poLarge.amount} \n\n\n ")
+            workerBeeService.createPurchaseOrder(mProxy, purchaseOrder = poLarge)
+            logger.info("${Emo.PEAR} LARGE PO created:" +
+                    " ${Emo.YELLOW_BIRD} dateRegistered: ${poLarge.dateRegistered} ${Emo.YELLOW_BIRD} " +
+                    "amt: ${poLarge.amount}  customer:  ${customer.name} supplier: ${supplier.name}")
         }
+        purchaseOrderCount++
 
 
-        return "createSmallAndLargePurchaseOrders: completed"
+        return "createPurchaseOrder: completed"
 
     }
+
     private fun getLargePOAmount(): String {
         val amt = random.nextInt(50) * 10000.00
         return if (amt < 100000.00) {
@@ -271,6 +277,7 @@ class DemoDataService {
             amt.toString()
         }
     }
+
     private fun getSmallPOAmount(): String {
         var amt = random.nextInt(10) * 10000.00
         if (amt < 10000.00) {
@@ -278,6 +285,7 @@ class DemoDataService {
         }
         return amt.toString()
     }
+
     private fun getNetworkOperatorObject(): NetworkOperatorDTO {
 
         val email = "operator${System.currentTimeMillis()}@bfn.com"
@@ -306,7 +314,7 @@ class DemoDataService {
 
         if (m1List.isEmpty()) {
             for (i in 20..25) {
-               m1List.add("${i * 1.00}")
+                m1List.add("${i * 1.00}")
             }
             for (i in 15..19) {
                 m2List.add("${i * 1.00}")
@@ -428,7 +436,7 @@ class DemoDataService {
         )
         val supplierProfile = SupplierProfileStateDTO(
                 operator.account, "Investec Bank",
-                "67246772893","5.0",
+                "67246772893", "5.0",
                 "tbd", "tbd",
                 "ZAR", todaysDate()
         )
@@ -487,7 +495,7 @@ class DemoDataService {
     }
 
     @Throws(Exception::class)
-    fun generateAccounts(proxy: CordaRPCOps, numberOfAccounts: Int = 20): String {
+    fun generateAccounts(proxy: CordaRPCOps, numberOfAccounts: Int = 4): String {
         logger.info("\n\n$em1 ..... generateAccounts started ...  " +
                 "\uD83D\uDD06 \uD83D\uDD06 ................. generating numberOfAccounts: $numberOfAccounts")
 
@@ -498,10 +506,10 @@ class DemoDataService {
                 val mName = getRandomName()
                 logger.info("\n\n\n$em1 ..... Starting AccountRegistrationFlow for $mName ...........\n")
                 workerBeeService.startAccountRegistrationFlow(proxy,
-                        mName,
-                        "$prefix@gmail.com",
-                        "099 999 9003",
-                        "pass123")
+                        accountName = mName,
+                        email = "$prefix@bfn.com",
+                        cellphone = phone,
+                        password = "pass123")
 
                 cnt++
             } catch (e1: Exception) {
@@ -522,8 +530,7 @@ class DemoDataService {
                 "  \uD83D\uDD06 \uD83D\uDD06 found  ${accountInfos.size} ... " +
                 "adding investor and supplier profiles for all accounts ........")
         //add profiles and generate invoices
-        val operator = firebaseService.getNetworkOperator() ?:
-                throw Exception("Network Operator Missing")
+        val operator = firebaseService.getNetworkOperator() ?: throw Exception("Network Operator Missing")
         val page = proxy.vaultQuery(AccountInfo::class.java)
         val err = "\uD83D\uDE21\uD83D\uDE21\uD83D\uDE21\uD83D\uDE21"
         for (state in page.states) {
@@ -568,70 +575,79 @@ class DemoDataService {
             logger.info("\uD83D\uDD35 generateOffersFromAccount starting ..... " +
                     "account: ${operator.account.name}: \uD83D\uDCA6 \uD83D\uDCA6")
             nodeInvoices = workerBeeService.findInvoicesForNode(proxy)
-            generateOffersFromAccount(proxy,operator.account)
+            generateOffersFromInvestor(proxy, operator.account)
         }
         val msg = "\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
                 "Total InvoiceOffers made by Account ${operator?.account?.name}"
         logger.info(msg)
         return msg
     }
-    fun generateOffersFromAccount(proxy: CordaRPCOps, accountInfo: AccountInfoDTO): String {
-        logger.info("\n\n\n${Emo.RED_APPLES} generateOffersFromAccount starting ..... " +
-                "account: ${accountInfo.name}: \uD83D\uDCA6 \uD83D\uDCA6")
+
+    fun generateOffersFromInvestor(proxy: CordaRPCOps, investor: AccountInfoDTO): String {
+        logger.info("\n\n\n${Emo.RED_APPLES} generateOffersFromInvestor starting ..... " +
+                "${Emo.YELLOW_BIRD} INVESTOR: ${investor.name}: ${Emo.YELLOW_BIRD} from ${investor.host}")
         if (nodeInvoices.isEmpty()) {
             nodeInvoices = workerBeeService.findInvoicesForNode(proxy)
         }
-        logger.info("workerBeeService.findInvoicesForNode found Invoices on Node:" +
-                "  \uD83D\uDE21 \uD83D\uDE21 ️ ${nodeInvoices.size} ♻️")
+        logger.info("${Emo.RAIN_DROPS} Will attempt to generate offers " +
+                "for ${nodeInvoices.size} Invoices" +
+                " for INVESTOR: ${investor.name} ${Emo.YELLOW_BIRD}️")
 
-        val profile = firebaseService.getInvestorProfile(accountInfo.identifier)
+        val investorProfile = firebaseService.getInvestorProfile(investor.identifier)
                 ?: throw Exception("Missing InvestorProfile, offers cannot be generated")
         var cntx = 0
-        for (invoice in nodeInvoices) {
-            val ok = workerBeeService.validateInvoiceAgainstProfile(
-                    investorProfile = profile, invoice = invoice)
-            if (ok) {
-                val offer = registerInvoiceOffer(
-                        proxy = proxy,
-                        investor = accountInfo,
-                        invoice = invoice,
-                        discount = profile.defaultDiscount)
-                if (offer != null) {
-                    cnt++
-                    cntx++
-                    logger.info("\uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 " +
-                            "SUCCESSFULLY registered InvoiceOffer on Corda Ledger for supplier: \uD83C\uDF4F " +
-                            "${invoice.supplier?.name} ${invoice.supplier?.host} " +
-                            "\uD83C\uDF4F \uD83D\uDCA6 investor: ${accountInfo.name} " +
-                            "\uD83D\uDCA6 ${accountInfo.host} \uD83E\uDDE9 \uD83E\uDDE9 " +
-                            "offerAmount: ${offer.offerAmount} < originalAmount ${offer.originalAmount}" + "\n\n\n")
-                }
-            } else {
-                logger.info("\uD83D\uDD35 ...... ignoring this baby. did not meet compliance!! Boss!\n\n\n")
+        nodeInvoices.forEach() {
+            if (investor.identifier == it.customer!!.identifier) {
+                logger.info("${Emo.ANGRY} Customer cannot make offer on own invoice " +
+                        "(at least for now!): " +
+                        "${Emo.ANGRY} ${investor.name} ${Emo.ANGRY}");
+            }
+            val offer = registerInvoiceOffer(
+                    proxy = proxy,
+                    investor = investor,
+                    invoice = it,
+                    discount = investorProfile.defaultDiscount)
+
+            if (offer != null) {
+                cnt++
+                cntx++
+                logger.info("\uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 " +
+                        "SUCCESSFULLY registered InvoiceOffer on Corda Ledger for supplier: \uD83C\uDF4F " +
+                        "${it.supplier?.name} ${it.supplier?.host} " +
+                        "\uD83C\uDF4F \uD83D\uDCA6 investor: ${investor.name} " +
+                        "\uD83D\uDCA6 ${investor.host} \uD83E\uDDE9 \uD83E\uDDE9 " +
+                        "offerAmount: ${offer.offerAmount} < originalAmount ${offer.originalAmount} INVOICE OFFER #$cnt added")
             }
         }
-        val msg = "\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
-                "Total InvoiceOffers made by Account ${accountInfo.name} : $cntx offers \n\n\n"
+
+        val msg = "${Emo.COFFEE}${Emo.COFFEE}${Emo.COFFEE} " +
+                "Total InvoiceOffers made by INVESTOR ${investor.name} " +
+                ":${Emo.YELLOW_BIRD} $cntx offers ${Emo.YELLOW_BIRD} \n\n\n\n"
         logger.info(msg)
         return msg
     }
+
     var cnt = 0
+
     fun generateInvoiceOffers(proxy: CordaRPCOps): String {
 
-        logger.info("\n\n\n\uD83D\uDD35 start generateOffers .......... \uD83D\uDCA6 \uD83D\uDCA6\n\n");
+        logger.info("\n\n\n${Emo.RAIN_DROPS} start generateInvoiceOffers " +
+                ".......... ${Emo.RAIN_DROPS}\n\n");
         val acctList = workerBeeService.getNodeAccounts(proxy)
         //todo - find invoices on ALL nodes ... eh?
         nodeInvoices = workerBeeService.findInvoicesForNode(proxy)
 
-        logger.info("\uD83D\uDE21 \uD83D\uDE21 Accounts on Node:  \uD83D\uDE21 \uD83D\uDE21 ️ ${acctList.size} ♻️")
-        logger.info("\uD83D\uDE21 \uD83D\uDE21 Invoices on Node:  \uD83D\uDE21 \uD83D\uDE21 ️ ${nodeInvoices.size} ♻\n\n️")
+        logger.info("${Emo.RED_APPLES}  Accounts on Node:  \uD83D\uDE21 \uD83D\uDE21 ️ ${acctList.size} ♻️")
+        logger.info("${Emo.RED_APPLES}  Invoices on Node:  \uD83D\uDE21 \uD83D\uDE21 ️ ${nodeInvoices.size} \n\n️")
+        cnt = 0
 
+        // 🔵 🔵 For each account, generate offer for each invoice on the node  🔵 🔵
         acctList.forEach() {
-            generateOffersFromAccount(proxy = proxy, accountInfo = it)
+            generateOffersFromInvestor(proxy = proxy, investor = it)
         }
 
-        val msg = "\uD83E\uDDE1 \uD83D\uDC9B generateInvoiceOffers complete: " +
-                "Offers generated: \uD83E\uDD4F  $cnt \uD83E\uDD4F "
+        val msg = "${Emo.RED_APPLES} generateInvoiceOffers complete: " +
+                "Total InvoiceOffers generated: \uD83E\uDD4F  $cnt \uD83E\uDD4F \n\n\n"
         logger.info(msg)
         return msg;
     }
@@ -798,7 +814,7 @@ class DemoDataService {
                     supplier = DTOUtil.getDTO(po.supplier),
                     description = po.description,
                     invoiceId = UUID.randomUUID().toString(),
-                    dateRegistered = po.dateRegistered,
+                    dateRegistered = DateTime.parse(po.dateRegistered).plusDays(random.nextInt(10)).toDateTimeISO().toString(),
                     valueAddedTax = "15.0",
                     totalAmount = "tbd",
                     externalId = "tbd",
@@ -806,8 +822,9 @@ class DemoDataService {
 
             val result = workerBeeService.startInvoiceRegistrationFlow(proxy, inv)
             invoiceCnt++
-            logger.info("\n\n${Emo.RAIN_DROPS} Invoice generated from PO on Corda ledger: ${gson.toJson(result)} ${Emo.PRETZEL}")
-            
+            logger.info("\n\n${Emo.RAIN_DROPS} Invoice generated from PO on Corda ledger: " +
+                    "supplier: ${Emo.FLOWER_RED} ${result.supplier?.name} ${Emo.PRETZEL}")
+
         }
 
         val msh = "\n\n\n\uD83D\uDC9A \uD83D\uDC9A \uD83D\uDC9A :: " +
@@ -828,6 +845,7 @@ class DemoDataService {
         val nTotalAmount = BigDecimal(invoice.totalAmount)
         val hundred = BigDecimal("100")
         val offer = (hundred - nDisc).divide(hundred).multiply(nTotalAmount)
+
         val mDate = DateTime.parse(invoice.dateRegistered);
         var plus = random.nextInt(7)
         if (plus == 0) {
@@ -850,15 +868,15 @@ class DemoDataService {
                 dateRegistered = xDate.toDateTimeISO().toString()
         )
 
-
         return try {
-            val resultOffer = workerBeeService.startInvoiceOfferFlow(proxy, invoiceOffer)
+            val resultOffer = workerBeeService.startInvoiceOfferFlow(proxy, invoiceOffer, invoice) ?: return null
             nodeInvoiceOffers.add(resultOffer)
-            logger.info("\uD83C\uDFB2 \uD83C\uDFB2 Number of invoice offers made so far: ${nodeInvoiceOffers.size}")
             resultOffer
         } catch (e: Exception) {
-            logger.warn("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
-                    "Failed to add offer on ledger; \uD83C\uDF4E we are fucked! Returning null \uD83C\uDF4E ", e)
+            logger.warn("${Emo.ERRORS} " +
+                    "Failed to add offer on ledger; \uD83C\uDF4E " +
+                    "we may be fucked or the investor profile validation failed! " +
+                    "${Emo.ERROR}Returning null \uD83C\uDF4E ", e)
             null
         }
 
@@ -871,17 +889,17 @@ class DemoDataService {
         logger.info(concat
                 + "Start createCustomers .... createCustomers  \uD83D\uDECE  ")
 
-        doOneCustomer(proxy, buildCustomerProfile(
-                "Pick & Pay Supermarkets",
-                minimumInvoiceAmount = "5000.00",
-                maximumInvoiceAmount = "100000.00"))
-        logger.info("\n\n\n\n")
-
-        doOneCustomer(proxy, buildCustomerProfile(
-                "Department of Public Works",
-                minimumInvoiceAmount = "50000.00",
-                maximumInvoiceAmount = "100000000.00"))
-        logger.info("\n\n\n\n")
+//        doOneCustomer(proxy, buildCustomerProfile(
+//                "Pick & Pay Supermarkets",
+//                minimumInvoiceAmount = "5000.00",
+//                maximumInvoiceAmount = "100000.00"))
+//        logger.info("\n\n\n\n")
+//
+//        doOneCustomer(proxy, buildCustomerProfile(
+//                "Department of Public Works",
+//                minimumInvoiceAmount = "50000.00",
+//                maximumInvoiceAmount = "100000000.00"))
+//        logger.info("\n\n\n\n")
 
         doOneCustomer(proxy, buildCustomerProfile(
                 "Department of Health",
@@ -891,8 +909,8 @@ class DemoDataService {
 
         doOneCustomer(proxy, buildCustomerProfile(
                 "BMW South Africa Limited",
-                minimumInvoiceAmount =  "5000.00",
-                maximumInvoiceAmount =  "40000000.00"))
+                minimumInvoiceAmount = "5000.00",
+                maximumInvoiceAmount = "40000000.00"))
         logger.info("\n\n\n\n")
 
 
@@ -935,111 +953,111 @@ class DemoDataService {
     var uniqueNamesMap = HashMap<String, String?>()
 
 
-    private fun  getRandomName(): String {
+    private fun getRandomName(): String {
 
-            names.add("Jones Pty Ltd")
-            names.add("Nkosi Associates")
-            names.add("Maddow Enterprises")
-            names.add("Xavier Inc.")
-            names.add("House Inc.")
-            names.add("Washington Brookes LLC")
-            names.add("Johnson Associates Pty Ltd")
-            names.add("Khulula Ltd")
-            names.add("Innovation Partners")
-            names.add("Peach Enterprises")
-            names.add("Petersen Ventures Inc")
-            names.add("Nixon Associates LLC")
-            names.add("NamibianCool Inc.")
-            names.add("BrothersFX Inc")
-            names.add("Jabula Associates Pty Ltd")
-            names.add("Graystone Khambule Ltd")
-            names.add("Craighall Investments Ltd")
-            names.add("Robert Grayson Associates")
-            names.add("KZN Wildlife Pty Ltd")
-            names.add("Bafana Spaza Pty Ltd")
-            names.add("Kumar Enterprises Ltd")
-            names.add("KrugerX Steel")
-            names.add("TrainServices Pros Ltd")
-            names.add("Topper PanelBeaters Ltd")
-            names.add("Pelosi PAC LLC")
-            names.add("Blackridge Inc.")
-            names.add("BlackOx Inc.")
-            names.add("Soweto Engineering Works Pty Ltd")
-            names.add("Soweto Bakeries Ltd")
-            names.add("BlackStone Partners Ltd")
-            names.add("Constitution Associates LLC")
-            names.add("Gauteng Manufacturers Ltd")
-            names.add("Bidenstock Pty Ltd")
-            names.add("Innovation Solutions Pty Ltd")
-            names.add("Schiff Ventures Ltd")
-            names.add("JohnnyUnitas Inc.")
-            names.add("Process Innovation Partners")
-            names.add("TrendSpotter Inc.")
-            names.add("Naidoo Electronics Pty Ltd.")
-            names.add("BlackOx Electronics Pty Ltd.")
-            names.add("Baker-Smith Electronics Pty Ltd.")
-            names.add("KnightRider Inc.")
-            names.add("Fantastica Technology Inc.")
-            names.add("Flickenburg Associates Pty Ltd")
-            names.add("Cyber Operations Ltd")
-            names.add("WorkerBees Inc.")
-            names.add("FrickerRoad LLC.")
-            names.add("Mamelodi Hustlers Pty Ltd")
-            names.add("Wallace Incorporated")
-            names.add("Peachtree Solutions Ltd")
-            names.add("InnovateSpecialists Inc")
-            names.add("DealMakers Pty Ltd")
-            names.add("InvoiceHunters Pty Ltd")
-            names.add("Clarity Solutions Inc")
-            names.add("UK Holdings Ltd")
-            names.add("Lauraine Pty Ltd")
-            names.add("Paradigm Partners Inc")
-            names.add("Washington Partners LLC")
-            names.add("Motion Specialists Inc")
-            names.add("OpenFlights Pty Ltd")
-            names.add("ProServices Pty Ltd")
-            names.add("TechnoServices Inc.")
-            names.add("BrokerBoy Inc.")
-            names.add("GermanTree Services Ltd")
-            names.add("ShiftyRules Inc")
-            names.add("BrookesBrothers Inc")
-            names.add("PresidentialServices Pty Ltd")
-            names.add("LawBook LLC")
-            names.add("CampaignTech LLC")
-            names.add("Tutankhamen Ventures Ltd")
-            names.add("CrookesAndTugs Inc.")
-            names.add("Coolidge Enterprises Inc")
-            names.add("ProGuards Pty Ltd")
-            names.add("BullFinch Ventures Ltd")
-            names.add("ProGears Pty Ltd")
-            names.add("HoverClint Ltd")
-            names.add("KrugerBuild Pty Ltd")
-            names.add("Treasure Hunters Inc")
-            names.add("Kilimanjaro Consultants Ltd")
-            names.add("Communications Brokers Ltd")
-            names.add("VisualArts Inc")
-            names.add("TownshipBusiness Ltd")
-            names.add("HealthServices Pty Ltd")
-            names.add("Macoute Professionals Ltd")
-            names.add("Melber Pro Brokers Inc")
-            names.add("Bronkies Park Pty Ltd")
-            names.add("WhistleBlowers Inc.")
-            names.add("Charles Mignon Pty Ltd")
-            names.add("IntelligenceMaker Inc.")
-            names.add("CroMagnon Industries")
-            names.add("Status Enterprises LLC")
-            names.add("Things Inc.")
-            names.add("Rainmakers Ltd")
-            names.add("Forensic Labs Ltd")
-            names.add("DLT TechStars Inc")
-            names.add("CordaBrokers Pty Ltd")
-            val name = names[random.nextInt(names.size - 1)]
-            if (uniqueNamesMap.containsKey(name)) {
-                getRandomName();
-            } else {
-                uniqueNamesMap[name] = name
-            }
-            return name
+        names.add("Jones Pty Ltd")
+        names.add("Nkosi Associates")
+        names.add("Maddow Enterprises")
+        names.add("Xavier Inc.")
+        names.add("House Inc.")
+        names.add("Washington Brookes LLC")
+        names.add("Johnson Associates Pty Ltd")
+        names.add("Khulula Ltd")
+        names.add("Innovation Partners")
+        names.add("Peach Enterprises")
+        names.add("Petersen Ventures Inc")
+        names.add("Nixon Associates LLC")
+        names.add("NamibianCool Inc.")
+        names.add("BrothersFX Inc")
+        names.add("Jabula Associates Pty Ltd")
+        names.add("Graystone Khambule Ltd")
+        names.add("Craighall Investments Ltd")
+        names.add("Robert Grayson Associates")
+        names.add("KZN Wildlife Pty Ltd")
+        names.add("Bafana Spaza Pty Ltd")
+        names.add("Kumar Enterprises Ltd")
+        names.add("KrugerX Steel")
+        names.add("TrainServices Pros Ltd")
+        names.add("Topper PanelBeaters Ltd")
+        names.add("Pelosi PAC LLC")
+        names.add("Blackridge Inc.")
+        names.add("BlackOx Inc.")
+        names.add("Soweto Engineering Works Pty Ltd")
+        names.add("Soweto Bakeries Ltd")
+        names.add("BlackStone Partners Ltd")
+        names.add("Constitution Associates LLC")
+        names.add("Gauteng Manufacturers Ltd")
+        names.add("Bidenstock Pty Ltd")
+        names.add("Innovation Solutions Pty Ltd")
+        names.add("Schiff Ventures Ltd")
+        names.add("JohnnyUnitas Inc.")
+        names.add("Process Innovation Partners")
+        names.add("TrendSpotter Inc.")
+        names.add("Naidoo Electronics Pty Ltd.")
+        names.add("BlackOx Electronics Pty Ltd.")
+        names.add("Baker-Smith Electronics Pty Ltd.")
+        names.add("KnightRider Inc.")
+        names.add("Fantastica Technology Inc.")
+        names.add("Flickenburg Associates Pty Ltd")
+        names.add("Cyber Operations Ltd")
+        names.add("WorkerBees Inc.")
+        names.add("FrickerRoad LLC.")
+        names.add("Mamelodi Hustlers Pty Ltd")
+        names.add("Wallace Incorporated")
+        names.add("Peachtree Solutions Ltd")
+        names.add("InnovateSpecialists Inc")
+        names.add("DealMakers Pty Ltd")
+        names.add("InvoiceHunters Pty Ltd")
+        names.add("Clarity Solutions Inc")
+        names.add("UK Holdings Ltd")
+        names.add("Lauraine Pty Ltd")
+        names.add("Paradigm Partners Inc")
+        names.add("Washington Partners LLC")
+        names.add("Motion Specialists Inc")
+        names.add("OpenFlights Pty Ltd")
+        names.add("ProServices Pty Ltd")
+        names.add("TechnoServices Inc.")
+        names.add("BrokerBoy Inc.")
+        names.add("GermanTree Services Ltd")
+        names.add("ShiftyRules Inc")
+        names.add("BrookesBrothers Inc")
+        names.add("PresidentialServices Pty Ltd")
+        names.add("LawBook LLC")
+        names.add("CampaignTech LLC")
+        names.add("Tutankhamen Ventures Ltd")
+        names.add("CrookesAndTugs Inc.")
+        names.add("Coolidge Enterprises Inc")
+        names.add("ProGuards Pty Ltd")
+        names.add("BullFinch Ventures Ltd")
+        names.add("ProGears Pty Ltd")
+        names.add("HoverClint Ltd")
+        names.add("KrugerBuild Pty Ltd")
+        names.add("Treasure Hunters Inc")
+        names.add("Kilimanjaro Consultants Ltd")
+        names.add("Communications Brokers Ltd")
+        names.add("VisualArts Inc")
+        names.add("TownshipBusiness Ltd")
+        names.add("HealthServices Pty Ltd")
+        names.add("Macoute Professionals Ltd")
+        names.add("Melber Pro Brokers Inc")
+        names.add("Bronkies Park Pty Ltd")
+        names.add("WhistleBlowers Inc.")
+        names.add("Charles Mignon Pty Ltd")
+        names.add("IntelligenceMaker Inc.")
+        names.add("CroMagnon Industries")
+        names.add("Status Enterprises LLC")
+        names.add("Things Inc.")
+        names.add("Rainmakers Ltd")
+        names.add("Forensic Labs Ltd")
+        names.add("DLT TechStars Inc")
+        names.add("CordaBrokers Pty Ltd")
+        val name = names[random.nextInt(names.size - 1)]
+        if (uniqueNamesMap.containsKey(name)) {
+            getRandomName();
+        } else {
+            uniqueNamesMap[name] = name
         }
+        return name
+    }
 
 }

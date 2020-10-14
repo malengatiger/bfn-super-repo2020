@@ -58,6 +58,22 @@ class PurchaseOrderFinderService(private val serviceHub: AppServiceHub) : Single
         logger.info("Searched ${states.size} purchaseOrders and did not find supplierId: $supplierId")
         return states
     }
+    @Suspendable
+    fun findAllPurchaseOrders(): List<StateAndRef<PurchaseOrderState>> {
+
+        var pageNumber = 1
+        val states = mutableListOf<StateAndRef<PurchaseOrderState>>()
+        do {
+            val pageSpec = PageSpecification(pageSize = pageSize, pageNumber = pageNumber)
+            val page = serviceHub.vaultService.queryBy<PurchaseOrderState>(QueryCriteria.VaultQueryCriteria(), pageSpec)
+            for (po in page.states) {
+                    states.add(po)
+            }
+            pageNumber++
+        } while ((pageSpec.pageSize * (pageNumber)) <= page.totalStatesAvailable)
+
+        return states
+    }
 
     @Suspendable
     fun getAllNodes(): List<Party> {
