@@ -251,7 +251,7 @@ class DemoDataService {
                 description = "\uD83C\uDF40 Demo: Large Purchase Order: ${customer.name} " +
                         "to supplier: ${supplier.name}. Used for testing and demo")
 
-        val choice = random.nextInt(100)
+        val choice = random.nextInt(120)
         if (choice <= 50) {
             workerBeeService.createPurchaseOrder(mProxy, purchaseOrder = poSmall)
             logger.info("${Emo.PEAR} SMALL PO created: " +
@@ -271,18 +271,19 @@ class DemoDataService {
     }
 
     private fun getLargePOAmount(): String {
-        val amt = random.nextInt(50) * 10850.00
+        val amt = random.nextInt(100) * 10850.00
         return if (amt < 100000.00) {
-            "500000.00"
+            val m = 500000.00  + ( 25000 * random.nextInt(5))
+            m.toString()
         } else {
             amt.toString()
         }
     }
 
     private fun getSmallPOAmount(): String {
-        var amt = random.nextInt(10) * 10520.00
-        if (amt == 0.0) {
-            amt = 5600.00
+        var amt = random.nextInt(30) * 5000.00
+        if (amt <= 5000.0) {
+            amt = 4300.00
         }
         return amt.toString()
     }
@@ -305,104 +306,39 @@ class DemoDataService {
 
     }
 
-    private val m1List: MutableList<String> = mutableListOf()
-    private val m2List: MutableList<String> = mutableListOf()
-    private val m3List: MutableList<String> = mutableListOf()
-    private val m4List: MutableList<String> = mutableListOf()
-    private val m5List: MutableList<String> = mutableListOf()
-
-    private fun getTradeMatrixItems(): MutableList<TradeMatrixItemDTO> {
-
-        if (m1List.isEmpty()) {
-            for (i in 20..25) {
-                m1List.add("${i * 1.00}")
-            }
-            for (i in 15..19) {
-                m2List.add("${i * 1.00}")
-            }
-            for (i in 12..14) {
-                m3List.add("${i * 1.00}")
-            }
-            for (i in 8..11) {
-                m4List.add("${i * 1.00}")
-            }
-            for (i in 2..7) {
-                m5List.add("${i * 1.00}")
-            }
-        }
-
-
-        val date = DateTime().toDateTimeISO().toString()
-        val mDisc1 = m1List[random.nextInt(m1List.size - 1)]
-
-        //todo - generate five ranges start and end amounts ....
-        val multiplier = 10000.00
-        var num1 = random.nextInt(10)
-        if (num1 == 0 || num1 > 8) {
-            num1 = 3
-        }
-        val start1 = (num1 * multiplier).toString()
-        val end1 = (10 * multiplier).toString()
+    private fun getTradeMatrixItemsForOperator(): MutableList<TradeMatrixItemDTO> {
 
         val m1 = TradeMatrixItemDTO(
-                start1,
-                end1,
-                mDisc1,
-                date
+                "60000.00",
+                "100000.00",
+                "4.5",
+                todaysDate()
         )
 
-        val mDisc2 = m2List[random.nextInt(m2List.size - 1)]
-        var num2 = random.nextInt(20)
-        if (num2 < 11 || num1 > 18) {
-            num2 = 11
-        }
-        val start2 = (num2 * multiplier).toString()
-        val end2 = (20 * multiplier).toString()
         val m2 = TradeMatrixItemDTO(
-                start2,
-                end2,
-                mDisc2,
-                date
+                "100001.00",
+                "200000.00",
+                "4.0",
+                todaysDate()
         )
-
-        val mDisc3 = m3List[random.nextInt(m3List.size - 1)]
-        var num3 = random.nextInt(30)
-        if (num3 < 21 || num1 > 25) {
-            num3 = 21
-        }
-        val start3 = (num3 * multiplier).toString()
-        val end3 = (30 * multiplier).toString()
         val m3 = TradeMatrixItemDTO(
-                start3,
-                end3,
-                mDisc3,
-                date
+                "200001.00",
+                "300000.00",
+                "3.5",
+                todaysDate()
         )
-        val mDisc4 = m4List[random.nextInt(m4List.size - 1)]
-        var num4 = random.nextInt(40)
-        if (num4 < 31 || num1 > 37) {
-            num4 = 31
-        }
-        val start4 = (num4 * multiplier).toString()
-        val end4 = (40 * multiplier).toString()
         val m4 = TradeMatrixItemDTO(
-                start4,
-                end4,
-                mDisc4,
-                date)
-        val mDisc5 = m5List[random.nextInt(m5List.size - 1)]
-        var num5 = random.nextInt(50)
-        if (num5 < 41 || num1 > 47) {
-            num5 = 41
-        }
-        val start5 = (num5 * multiplier).toString()
-        val end5 = (50 * multiplier).toString()
+                "300001.00",
+                "500000.00",
+                "3.5",
+                todaysDate()
+        )
         val m5 = TradeMatrixItemDTO(
-                start5,
-                end5,
-                mDisc5,
-                date)
-
+                "500001.00",
+                "50000000.00",
+                "3.0",
+                todaysDate()
+        )
 
         logger.info("${Emo.DICE}${Emo.DICE} Discounts: ${m1.offerDiscount}%, " +
                 "${m2.offerDiscount}%, ${m3.offerDiscount}%, ${m4.offerDiscount}%, " +
@@ -410,7 +346,75 @@ class DemoDataService {
 
         return mutableListOf(m1, m2, m3, m4, m5)
     }
+    private fun getTradeMatrixItemsForInvestor(): MutableList<TradeMatrixItemDTO> {
 
+        var disc1 = random.nextInt(15) * 1.0
+        if (disc1 == 0.0) {
+            disc1 = 4.5
+        }
+        var disc2 = random.nextInt(10) * 1.0
+        if (disc2 == 0.0 || disc2 >= disc1) {
+            disc2 = 3.5
+        }
+        var disc3 = random.nextInt(8) * 1.0
+        if (disc3 == 0.0 || disc3 >= disc2) {
+            disc3 = 3.0
+        }
+        var disc4 = random.nextInt(6) * 1.0
+        if (disc4 == 0.0 || disc4 >= disc3) {
+            disc4 = 2.6
+        }
+        var disc5 = random.nextInt(4) * 1.0
+        if (disc5 == 0.0 || disc5 >= disc4) {
+            disc5 = 2.0
+        }
+        // disc1 minimum = 4.5% maximum = 15%
+        // disc2 minimum = 3.5% maximum = 10%
+        // disc3 minimum = 3.0% maximum = 8%
+        // disc4 minimum = 2.6% maximum = 6%
+        // disc1 minimum = 2.0% maximum = 4%
+
+        val m1 = TradeMatrixItemDTO(
+                "5000.00",
+                "100000.00",
+                disc1.toString(),
+                todaysDate()
+        )
+
+        val m2 = TradeMatrixItemDTO(
+                "100001.00",
+                "200000.00",
+                disc2.toString(),
+                todaysDate()
+        )
+
+        val m3 = TradeMatrixItemDTO(
+                "200001.00",
+                "300000.00",
+                disc3.toString(),
+                todaysDate()
+        )
+
+        val m4 = TradeMatrixItemDTO(
+                "300001.00",
+                "500000.00",
+                disc4.toString(),
+                todaysDate()
+        )
+
+        val m5 = TradeMatrixItemDTO(
+                "500001.00",
+                "500000000.00",
+                disc5.toString(),
+                todaysDate()
+        )
+
+        logger.info("${Emo.DICE}${Emo.DICE} Discounts: ${m1.offerDiscount}%, " +
+                "${m2.offerDiscount}%, ${m3.offerDiscount}%, ${m4.offerDiscount}%, " +
+                "${m5.offerDiscount}%")
+
+        return mutableListOf(m1, m2, m3, m4, m5)
+    }
     @Throws(Exception::class)
     private fun createNetworkOperator(mProxy: CordaRPCOps): NetworkOperatorDTO? {
         logger.info("\n\n\uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0 " +
@@ -427,12 +431,12 @@ class DemoDataService {
                 "60000.00",
                 "30000000.00",
                 "1000000000.00",
-                "3.0",
+                "6.0",
                 "Investec Bank",
                 "67246772893",
                 "tbd",
                 "tbd",
-                getTradeMatrixItems(),
+                getTradeMatrixItemsForOperator(),
                 DateTime().toDateTimeISO().toString()
         )
         val supplierProfile = SupplierProfileStateDTO(
@@ -701,11 +705,11 @@ class DemoDataService {
         }
         var min = random.nextInt(50) * 1000.00
         if (min <= 3000.0) {
-            min = 10000.00
+            min = 5000.00
         }
         var max = random.nextInt(1000) * 100000.00
         if (max <= 500000.0) {
-            max = 200000.00
+            max = 2000000.00
         }
 
         val investorProfile = InvestorProfileStateDTO(
@@ -718,7 +722,7 @@ class DemoDataService {
                 "${System.currentTimeMillis()}-${random.nextInt(100)}",
                 stellarAccountId,
                 "tbd",
-                getTradeMatrixItems(),
+                getTradeMatrixItemsForInvestor(),
                 todaysDate()
         )
 
@@ -914,7 +918,7 @@ class DemoDataService {
         doOneCustomer(proxy, buildCustomerProfile(
                 "Department of Health",
                 minimumInvoiceAmount = "10000.00",
-                maximumInvoiceAmount = "1000000.00"))
+                maximumInvoiceAmount = "10000000.00"))
         logger.info("\n\n\n\n")
 
         doOneCustomer(proxy, buildCustomerProfile(

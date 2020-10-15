@@ -34,7 +34,8 @@ class AcceptBestOfferForInvoiceFlow(private val supplierAccountId: String,
 
         val pair = filterOffersByProfile()
         if (pair == null) {
-            val msg = "\uD83D\uDC80 \uD83D\uDC80 \uD83D\uDC80 Unable to find acceptable offer. \uD83D\uDC80 "
+            val msg = "\uD83D\uDC80 \uD83D\uDC80 \uD83D\uDC80 " +
+                    "Unable to find offer that meets supplierProfile requirements. \uD83D\uDC80 "
             logger.info(msg)
             throw IllegalArgumentException(msg)
         }
@@ -59,7 +60,8 @@ class AcceptBestOfferForInvoiceFlow(private val supplierAccountId: String,
     }
 
     @Suspendable
-    private fun filterOffersByProfile(): Pair<MutableList<StateAndRef<InvoiceOfferState>>, StateAndRef<InvoiceOfferState>>? {
+    private fun filterOffersByProfile():
+            Pair<MutableList<StateAndRef<InvoiceOfferState>>, StateAndRef<InvoiceOfferState>>? {
 
         val offerFinder = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
         val offers = offerFinder.findOffersByInvoice(invoiceId = invoiceId)

@@ -300,7 +300,7 @@ class AdminController(rpc: NodeRPCConnection) {
         for (m in page.states) {
             mList.add(DTOUtil.getDTO(m.state.data))
         }
-        logger.info("${Emo.RED_APPLES} Accepted Offers from Ledger: ${mList.size}")
+        logger.info("${Emo.RED_APPLES} UNCONSUMED Accepted Offers from Ledger: ${mList.size}")
         return mList;
 
     }
@@ -385,7 +385,7 @@ class AdminController(rpc: NodeRPCConnection) {
     @Throws(Exception::class)
     fun findAcceptedOffersForInvestor(
             investorId: String): List<AcceptedOfferDTO> {
-        return firebaseService.getAcceptedOffersByInvestor(investorId)
+        return workerBeeService.findAcceptedOffersForInvestor(proxy,investorId)
     }
 
     @GetMapping(value = ["/findOffersForInvestor"])

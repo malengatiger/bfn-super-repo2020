@@ -461,16 +461,16 @@ class WorkerBeeService {
     }
 
     @Throws(Exception::class)
-    fun findAcceptedOffersForInvestor(proxy: CordaRPCOps, accountId: String): List<InvoiceOfferDTO> {
-        val fut = proxy.startTrackedFlowDynamic(
-                InvoiceOfferQueryFlow::class.java, accountId,
-                InvoiceOfferQueryFlow.FIND_FOR_INVESTOR).returnValue
+    fun findAcceptedOffersForInvestor(proxy: CordaRPCOps, investorId: String): List<AcceptedOfferDTO> {
+        val fut = proxy.startFlowDynamic(
+                AcceptedOfferQueryFlow::class.java, investorId,
+                AcceptedOfferQueryFlow.FIND_FOR_INVESTOR).returnValue
         val offers = fut.get()
-        val dtos: MutableList<InvoiceOfferDTO> = mutableListOf()
+        val dtos: MutableList<AcceptedOfferDTO> = mutableListOf()
         offers.forEach() {
             dtos.add(DTOUtil.getDTO(it))
         }
-        val m = "\uD83D\uDCA6  done listing InvoiceOfferStates:  \uD83C\uDF3A " + offers.size
+        val m = "\uD83D\uDCA6 done listing AcceptedOffers:  \uD83C\uDF3A " + offers.size
         logger.info(m)
         return dtos
     }
@@ -1238,5 +1238,6 @@ class WorkerBeeService {
             throw e
         }
     }
+
 }
 

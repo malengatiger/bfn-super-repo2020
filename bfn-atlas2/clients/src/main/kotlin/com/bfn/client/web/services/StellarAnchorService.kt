@@ -6,6 +6,7 @@ import com.bfn.client.data.*
 import com.bfn.client.web.DTOUtil
 import com.bfn.flows.StellarPaymentDTO
 import com.bfn.flows.investor.SinglePaymentFlow
+import com.bfn.flows.queries.AcceptedOfferQueryFlow
 import com.bfn.flows.todaysDate
 import com.google.gson.GsonBuilder
 import khttp.post
@@ -118,8 +119,14 @@ class StellarAnchorService {
                 "calling the Stellar Anchor server to send SupplierPayment ... " +
                " offerId: ${Emo.RED_APPLE} $offerId  ${Emo.RED_APPLE}")
 
-        val acceptedOffer = firebaseService.getAcceptedOffer(offerId) ?:
-                throw Exception("${Emo.NOT_OK} AcceptedOffer not found ${Emo.ERROR}")
+        //todo - get acceptedOffer from ledger
+        val future = proxy.startFlowDynamic(AcceptedOfferQueryFlow::class.java, offerId,
+                AcceptedOfferQueryFlow.FIND_FOR_OFFER ).returnValue
+        val mList = future.get()
+        if (mList.isEmpty()) {
+            throw Exception("${Emo.ERRORS} AcceptedOffer not found on ledger")
+        }
+        val acceptedOffer = DTOUtil.getDTO(mList.first())
 
         logger.info("${Emo.FERNS}${Emo.FERNS} SupplierPayment to be made for accepted offer: " +
                 "${gson.toJson(acceptedOffer)} ${Emo.FERNS}")
@@ -133,6 +140,7 @@ class StellarAnchorService {
             assetCode = supplierProfile.assetCode
         }
         var result: Response? = null
+
 
         if (supplierProfile != null && investorProfile != null) {
             val stellarPayment = StellarPaymentDTO(

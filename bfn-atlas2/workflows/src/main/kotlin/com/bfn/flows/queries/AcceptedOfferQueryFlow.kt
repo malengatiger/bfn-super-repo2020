@@ -20,6 +20,15 @@ class AcceptedOfferQueryFlow(
             FIND_FOR_NODE -> return getOffers()
             FIND_FOR_INVESTOR -> return service.getOffersForInvestor(id!!)
             FIND_FOR_SUPPLIER -> return service.getOffersForSupplier(id!!)
+            FIND_FOR_OFFER ->  {
+                val mList: MutableList<AcceptedOfferState> = mutableListOf()
+                val state = service.findAcceptedOffer(offerId = id!!)
+                if (state != null) {
+                    mList.add(state.state.data)
+                }
+
+                return mList
+            }
             FIND_FOR_INVOICE -> {
                 val mList: MutableList<AcceptedOfferState> = mutableListOf()
                 val states = service.findOffersByInvoice(id!!)
@@ -47,6 +56,7 @@ class AcceptedOfferQueryFlow(
         const val FIND_FOR_SUPPLIER = 2
         const val FIND_FOR_INVESTOR = 3
         const val FIND_FOR_INVOICE = 4
+        const val FIND_FOR_OFFER = 5
     }
 
 
