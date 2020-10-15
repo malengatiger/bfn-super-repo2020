@@ -19,6 +19,7 @@ import net.corda.core.node.services.vault.PageSpecification
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.utilities.NetworkHostAndPort
 import net.corda.core.utilities.loggerFor
+import org.joda.time.DateTime
 import org.springframework.http.MediaType
 import java.io.StringReader
 import java.lang.Exception
@@ -66,35 +67,41 @@ public class Client {
                 " \uD83D\uDE21\uD83D\uDE21\uD83D\uDE21 \n\n\n")
         logger.info("  🍎   🍎   🍎  START DANCING! ...............  🍎  🍎  🍎 ")
 
+        val start = DateTime()
+
 //        generateStellarAnchor(anchorName = "BFN Network Operator Ltd", fundingSeed = fundingSeed);
 
-//        generateAnchorNodeData(networkOperatorUrl, headers)
-//
-//        generateCustomerNodeData(customerUrl, headers = headers, numberOfMonths = 4)
-//
-//        fundPlayers(networkOperatorUrl)
-//
-//        //generateOffersForNetworkOperator(networkOperatorUrl, headers)
-//
-//        generateInvoiceOffers(networkOperatorUrl, headers) //investors make offers
-//
-//        generateOfferAcceptances(networkOperatorUrl) //suppliers accept, or do not accept offers
+        generateAnchorNodeData(networkOperatorUrl, 5, headers)
+
+        generateCustomerNodeData(customerUrl, headers = headers, numberOfMonths = 3)
+
+        fundPlayers(networkOperatorUrl)
+
+        //generateOffersForNetworkOperator(networkOperatorUrl, headers)
+
+        generateInvoiceOffers(networkOperatorUrl, headers) //investors make offers
+
+        generateOfferAcceptances(networkOperatorUrl) //suppliers accept, or do not accept offers
 //
         generateSupplierPayments(networkOperatorUrl) //investors pay for their accepted offers
 
         logger.info("\n\n${Emo.ANGRIES}${Emo.ANGRIES}${Emo.ANGRIES} " +
                 "Check results of demo data generation ...........\n\n")
 
-//        getUnconsumedPurchaseOrders(customerUrl, headers)
-//
-//        getUnconsumedInvoices(networkOperatorUrl, headers)
-//
-//        getUnconsumedInvoiceOffers(customerUrl, headers)
+        getUnconsumedPurchaseOrders(customerUrl, headers)
+
+        getUnconsumedInvoices(networkOperatorUrl, headers)
+
+        getUnconsumedInvoiceOffers(customerUrl, headers)
 //
         checkAcceptedOffers(networkOperatorUrl)
 
-        logger.info("\n\n\n  \uD83D\uDD35 \uD83D\uDD35  \uD83D\uDD35 \uD83D\uDD35" +
-                " Client.kt:startTheWork is COMPLETE !!!  \uD83C\uDF4E  \uD83C\uDF4E  \uD83C\uDF4E ");
+        val end = DateTime()
+        val elapsedMinutes = (end.toDate().time - start.toDate().time)/1000/60
+
+        logger.info("\n\n\n\uD83D\uDD35 \uD83D\uDD35  \uD83D\uDD35 \uD83D\uDD35" +
+                " Client.kt: Demo Data Generation is COMPLETE !!! ${Emo.BLUE_DOT} " +
+                "$elapsedMinutes minutes elapsed \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E ");
 
         logger.info("  🍎   🍎   🍎  DONE DANCING!  🍎  🍎  🍎 \n\n")
     }
@@ -419,8 +426,6 @@ public class Client {
             }
 
         }
-
-
         logger.info(
                 "\n\n${Emo.YELLOW_BIRD} ${Emo.YELLOW_BIRD} ${Emo.YELLOW_BIRD} ${Emo.YELLOW_BIRD} " +
                         "Completed payments for investor: $investorId : ${Emo.RED_APPLE} " +
@@ -465,7 +470,6 @@ public class Client {
     private fun getUnconsumedInvoices(networkOperatorUrl: String, headers: Map<String, String>) {
         val resp1 = httpGet(url = "$networkOperatorUrl/bfn/admin/findInvoicesForNode",
                 timeout = TIMEOUT, headers = headers)
-        logger.info("RESPONSE: \uD83C\uDF4E statusCode: ${resp1.statusCode}  \uD83C\uDF4E ${resp1.text}")
         val stringReader = StringReader(resp1.text)
         val mList: MutableList<InvoiceDTO> = gson.fromJson(
                 stringReader, Array<InvoiceDTO>::class.java).toMutableList()
@@ -480,13 +484,12 @@ public class Client {
     private fun getUnconsumedPurchaseOrders(networkOperatorUrl: String, headers: Map<String, String>) {
         val resp1 = httpGet(url = "$networkOperatorUrl/bfn/admin/findPurchaseOrdersForNode",
                 timeout = TIMEOUT, headers = headers)
-        logger.info("RESPONSE: \uD83C\uDF4E statusCode: ${resp1.statusCode}  \uD83C\uDF4E ${resp1.text}")
         val stringReader = StringReader(resp1.text)
         val mList: MutableList<PurchaseOrderDTO> = gson.fromJson(
                 stringReader, Array<PurchaseOrderDTO>::class.java).toMutableList()
 
         logger.info("${Emo.PEAR}${Emo.PEAR}${Emo.PEACH} getUnconsumedPurchaseOrders: " +
-                "Result list from JSON string has ${Emo.PEAR}${mList.size} invoices")
+                "Result list from JSON string has ${Emo.PEAR}${mList.size} purchaseOrders")
         mList.forEach {
             logger.info("${Emo.BLUE_DOT}${Emo.BLUE_DOT}${Emo.BLUE_BIRD} " +
                     "Unconsumed PurchaseOrder: ${gson.toJson(it)} ${Emo.HEART_BLUE}")
@@ -507,8 +510,8 @@ public class Client {
                     "Unconsumed InvoiceOffer: ${gson.toJson(it)} ${Emo.HEART_BLUE}")
         }
     }
-    private fun generateAnchorNodeData(networkOperatorUrl: String, headers: Map<String, String>) {
-        val resp1 = httpGet(url = "$networkOperatorUrl/bfn/demo/generateAnchorNodeData?numberOfAccounts=6",
+    private fun generateAnchorNodeData(networkOperatorUrl: String, numberOfAccounts:Int, headers: Map<String, String>) {
+        val resp1 = httpGet(url = "$networkOperatorUrl/bfn/demo/generateAnchorNodeData?numberOfAccounts=$numberOfAccounts",
                 timeout = TIMEOUT, headers = headers)
         logger.info("RESPONSE: \uD83C\uDF4E statusCode: ${resp1.statusCode}  \uD83C\uDF4E ${resp1.text}")
     }

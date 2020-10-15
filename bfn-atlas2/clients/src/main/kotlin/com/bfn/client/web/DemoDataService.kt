@@ -182,6 +182,13 @@ class DemoDataService {
         customers.forEach() {
             createCustomerPurchaseOrders(mProxy, customer = it, numberOfMonths = numberOfMonths);
         }
+        //create a set of PO's for each customer in random fashion ....
+        customers.forEach() {
+            createCustomerPurchaseOrdersRandomly(mProxy, customer = it, numberOfMonths = numberOfMonths);
+        }
+        customers.forEach() {
+            createCustomerPurchaseOrders(mProxy, customer = it, numberOfMonths = 1);
+        }
 
         val msg2 = "\n\n${Emo.RED_APPLES} " +
                 "DemoDataService: generatePurchaseOrders COMPLETE! " +
@@ -213,6 +220,42 @@ class DemoDataService {
             }
             logger.info("${Emo.ANGRIES}${Emo.ANGRIES} $supplierPOs " +
                     "PurchaseOrders created for supplier: ${supplier.name} from customer: ${customer.name}\n\n")
+        }
+        val msg = "${Emo.RED_APPLES} " +
+                "DemoDataService: PurchaseOrders for Customer : ${customer.name} " +
+                "and ${suppliers.size} Suppliers completed  " +
+                "${Emo.RED_APPLES}\n"
+        logger.info(msg)
+        logger.info("\n\n")
+        return msg
+    }
+    private fun createCustomerPurchaseOrdersRandomly(mProxy: CordaRPCOps,
+                                             customer: AccountInfoDTO,
+                                             numberOfMonths: Int): String {
+
+        val startDate = DateTime().minusMonths(numberOfMonths)
+        logger.info("\n\n\n${Emo.FERNS}${Emo.FERNS}${Emo.FERNS} " +
+                " Start creating PurchaseOrders for Customer: " +
+                "${customer.name} ....${Emo.RED_APPLE} startDate: ${startDate.toDateTimeISO()} \n\n")
+
+        for (supplier in suppliers) {
+            val chooseSupplier = random.nextInt(100)
+            if (chooseSupplier > 60) {
+                var supplierPOs = 0
+                for (num in 0..numberOfMonths) {
+                    val mDate = startDate.plusMonths(num)
+                    val chooseMonth = random.nextInt(100)
+                    if (chooseMonth < 60) {
+                        createPurchaseOrder(mProxy = mProxy,
+                                customer = customer,
+                                supplier = supplier,
+                                date = mDate)
+                        supplierPOs++
+                    }
+                }
+                logger.info("${Emo.ANGRIES}${Emo.ANGRIES} $supplierPOs " +
+                        "PurchaseOrders created for supplier: ${supplier.name} from customer: ${customer.name}\n\n")
+            }
         }
         val msg = "${Emo.RED_APPLES} " +
                 "DemoDataService: PurchaseOrders for Customer : ${customer.name} " +
