@@ -118,6 +118,30 @@ object DTOUtil {
         )
     }
     @JvmStatic
+    fun getDTO(a: NetworkSupplierRoyaltyState): NetworkSupplierRoyaltyDTO {
+        return NetworkSupplierRoyaltyDTO(
+                networkOperator = getDTO(a.networkOperator),
+                supplierPayment = getDTO(a.supplierPayment),
+                amount = a.amount,
+                royaltyPercentage = a.royaltyPercentage,
+                networkRoyaltyId = a.networkRoyaltyId.toString(),
+                dateRegistered = a.dateRegistered
+
+        )
+    }
+    @JvmStatic
+    fun getDTO(a: NetworkInvestorRoyaltyState): NetworkInvestorRoyaltyDTO {
+        return NetworkInvestorRoyaltyDTO(
+                networkOperator = getDTO(a.networkOperator),
+                investorPayment = getDTO(a.investorPayment),
+                amount = a.amount,
+                royaltyPercentage = a.royaltyPercentage,
+                networkRoyaltyId = a.networkRoyaltyId.toString(),
+                dateRegistered = a.dateRegistered
+
+        )
+    }
+    @JvmStatic
     fun getDTO(a: AcceptedOfferState): AcceptedOfferDTO {
         return AcceptedOfferDTO(
                 invoiceId = a.invoiceId.toString(),
