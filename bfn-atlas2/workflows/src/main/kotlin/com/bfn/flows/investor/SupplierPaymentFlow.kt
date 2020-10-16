@@ -1,12 +1,10 @@
 package com.bfn.flows.investor
 
 import co.paralleluniverse.fibers.Suspendable
-import com.bfn.contractstates.contracts.SupplierPaymentContract
+import com.bfn.contractstates.contracts.InvestorPaymentContract
 import com.bfn.contractstates.states.AcceptedOfferState
-import com.bfn.contractstates.states.InvoiceOfferState
 import com.bfn.contractstates.states.SupplierPaymentState
 import com.bfn.flows.Em
-import com.bfn.flows.PaymentRequestParams
 import com.bfn.flows.services.*
 import com.bfn.flows.todaysDate
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
@@ -24,56 +22,46 @@ import java.util.*
  */
 @InitiatingFlow
 @StartableByRPC
-class SinglePaymentFlow(
-        private val offerId: String,
-        private val investorId: String) : FlowLogic<SupplierPaymentState>() {
+class SupplierPaymentFlow(
+        private val offerId: String) : FlowLogic<SupplierPaymentState>() {
 
     @Suspendable
     override fun call(): SupplierPaymentState {
-        Companion.logger.info("$pp SinglePaymentFlow started ... $pp")
+        Companion.logger.info("$pp ${Em.DICE} ${Em.DICE} " +
+                "SupplierPaymentFlow started ... ${Em.DICE} $pp")
 
-        val service = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
+        val service = serviceHub.cordaService(AcceptedOfferFinderService::class.java)
         val acceptedOffer = service.findAcceptedOffer(offerId) ?:
-            throw IllegalArgumentException(Em.NOT_OK+"Accepted offer not found")
+            throw IllegalArgumentException(Em.NOT_OK+"SupplierPaymentFlow: " +
+                    "Accepted offer not found ${Em.ERROR}")
 
         //todo -  🍊 🍊 🍊 fix this query - find a way!!  🍊 🍊 🍊
-        val payments = serviceHub.cordaService(PaymentFinderService::class.java)
+        val payments = serviceHub.cordaService(SupplierPaymentFinderService::class.java)
                 .getAllPaymentStateAndRefs()
 
         payments.forEach() {
             if (it.state.data.acceptedOffer.offerId == offerId) {
-                throw IllegalArgumentException(Em.NOT_OK + "Payment already exists for this offer: " +
-                        offerId)
+                throw IllegalArgumentException(Em.NOT_OK + "SupplierPayment already exists for this offer: " +
+                        offerId + " ${Em.ERROR}")
             }
         }
-        val command = SupplierPaymentContract.Pay()
-        val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
 
-        val supplierParty =  acceptedOffer.state.data.supplier
-        val customerParty =  acceptedOffer.state.data.customer
-        val investorParty =  acceptedOffer.state.data.investor
+        val supplierInfo =  acceptedOffer.state.data.supplier.account
+        val customerInfo =  acceptedOffer.state.data.customer.account
+        val investorInfo =  acceptedOffer.state.data.investor.account
 
-        val investorProfile = serviceHub.cordaService(ProfileFinderService::class.java)
-                .findInvestorProfile(investorId)
-                ?: throw IllegalArgumentException(Em.NOT_OK + "InvestorProfile not found for: " +
-                        "$investorId ")
-
-        val supplierProfile = serviceHub.cordaService(ProfileFinderService::class.java)
-                .findSupplierProfile(acceptedOffer.state.data.supplier.identifier.id.toString())
-
-                ?: throw java.lang.IllegalArgumentException("${Em.ERROR} Supplier profile not found")
-        logger.info("Investor making payment: ${investorProfile.state.data.account.name} " +
-                "to supplier: ${supplierProfile.state.data.account.name}")
         //create new supplier payment
         val payment = SupplierPaymentState(
                 supplierPaymentId = UUID.randomUUID().toString(),
                 acceptedOffer = acceptedOffer.state.data,
-                supplierProfile = supplierProfile.state.data,
-                dateRegistered = todaysDate()
+                supplierProfile = acceptedOffer.state.data.supplier,
+                dateRegistered = todaysDate(),
+                customerProfile = acceptedOffer.state.data.customer
         )
 
-        return processOKPayment(investorParty, supplierParty,
-                customerParty, txBuilder, command, acceptedOffer, payment)
+         processTransaction(investorInfo, supplierInfo,
+                customerInfo, acceptedOffer, payment)
+        return payment
     }
     @Suspendable
     private fun shareState(party: Party, supplierPaymentId: String) {
@@ -81,7 +69,7 @@ class SinglePaymentFlow(
         if (party.name.toString() == me.name.toString()) {
             return
         }
-        val paymentStateAndRef = serviceHub.cordaService(PaymentFinderService::class.java)
+        val paymentStateAndRef = serviceHub.cordaService(SupplierPaymentFinderService::class.java)
                 .findPaymentById(supplierPaymentId = supplierPaymentId)
         if (paymentStateAndRef != null) {
             subFlow(ShareStateAndSyncAccounts(
@@ -94,24 +82,20 @@ class SinglePaymentFlow(
     }
 
     @Suspendable
-    private fun processOKPayment(investor: AccountInfo,
-                                 supplier: AccountInfo,
-                                 customer: AccountInfo,
-                                 txBuilder: TransactionBuilder,
-                                 command: SupplierPaymentContract.Pay,
-                                 acceptedOffer: StateAndRef<AcceptedOfferState>,
-                                 payment: SupplierPaymentState): SupplierPaymentState {
-
-        logger.info("SinglePaymentFlow: ${Em.RED_APPLES} processOKPayment:  " +
-                "Stellar Anchor payment to supplier is OK ...")
+    private fun processTransaction(investor: AccountInfo,
+                                   supplier: AccountInfo,
+                                   customer: AccountInfo,
+                                   acceptedOffer: StateAndRef<AcceptedOfferState>,
+                                   payment: SupplierPaymentState) {
 
         val keys: MutableList<PublicKey> = mutableListOf(
                 investor.host.owningKey,
                 supplier.host.owningKey,
                 customer.host.owningKey
         )
+        val command = InvestorPaymentContract.Pay()
+        val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
 
-        logger.info("$pp adding command and states to txBuilder ...")
         txBuilder.addCommand(command, keys)
         txBuilder.addInputState(acceptedOffer)
         txBuilder.addOutputState(payment)
@@ -121,19 +105,19 @@ class SinglePaymentFlow(
 
         val sessions: MutableList<FlowSession> = mutableListOf()
         val thisParty = serviceHub.myInfo.legalIdentities[0]
-        if (acceptedOffer.state.data.supplier.host.name.organisation !=
+        if (acceptedOffer.state.data.supplier.account.host.name.organisation !=
                 thisParty.name.organisation) {
-            val session = initiateFlow(acceptedOffer.state.data.supplier.host)
+            val session = initiateFlow(acceptedOffer.state.data.supplier.account.host)
             sessions.add(session)
         }
-        if (acceptedOffer.state.data.investor.host.name.organisation !=
+        if (acceptedOffer.state.data.investor.account.host.name.organisation !=
                 thisParty.name.organisation) {
-            val session = initiateFlow(acceptedOffer.state.data.investor.host)
+            val session = initiateFlow(acceptedOffer.state.data.investor.account.host)
             sessions.add(session)
         }
-        if (acceptedOffer.state.data.customer.host.name.organisation !=
+        if (acceptedOffer.state.data.customer.account.host.name.organisation !=
                 thisParty.name.organisation) {
-            val session = initiateFlow(acceptedOffer.state.data.customer.host)
+            val session = initiateFlow(acceptedOffer.state.data.customer.account.host)
             sessions.add(session)
         }
         logger.info("$pp FlowSessions ready to go: ${sessions.size} sessions")
@@ -149,18 +133,18 @@ class SinglePaymentFlow(
         }
         logger.info("$pp SupplierPayment state created OK; " +
                 "${Em.YELLOW_BIRD} attempting to share state with foreign nodes ... $pp")
-        shareState(acceptedOffer.state.data.supplier.host, payment.supplierPaymentId)
-        shareState(acceptedOffer.state.data.customer.host, payment.supplierPaymentId)
-        shareState(acceptedOffer.state.data.investor.host, payment.supplierPaymentId)
+        shareState(acceptedOffer.state.data.supplier.account.host, payment.supplierPaymentId)
+        shareState(acceptedOffer.state.data.customer.account.host, payment.supplierPaymentId)
+        shareState(acceptedOffer.state.data.investor.account.host, payment.supplierPaymentId)
         logger.info("$pp Returning supplierPayment after processing .....")
-        return payment
+
     }
 
 
     private val pp = "\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95";
 
     companion object {
-        private val logger = LoggerFactory.getLogger(SinglePaymentFlow::class.java)
+        private val logger = LoggerFactory.getLogger(SupplierPaymentFlow::class.java)
     }
 
 }

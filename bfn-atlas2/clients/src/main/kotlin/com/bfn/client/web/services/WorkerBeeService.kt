@@ -7,14 +7,16 @@ import com.bfn.contractstates.states.*
 import com.bfn.flows.CreateAccountFlow
 import com.bfn.flows.CreateUserFlow
 import com.bfn.flows.customer.CustomerProfileFlow
+import com.bfn.flows.customer.InvestorPaymentFlow
 import com.bfn.flows.customer.PurchaseOrderFlow
 import com.bfn.flows.investor.InvestorProfileFlow
 import com.bfn.flows.invoices.InvoiceOfferFlow
 import com.bfn.flows.investor.MultiInvoiceOfferFlow
-import com.bfn.flows.investor.SinglePaymentFlow
+import com.bfn.flows.investor.SupplierPaymentFlow
 import com.bfn.flows.invoices.InvoiceRegistrationFlow
 import com.bfn.flows.queries.*
 import com.bfn.flows.scheduled.CreateInvoiceOffersFlow
+import com.bfn.flows.services.ProfileFinderService
 import com.bfn.flows.supplier.AcceptBestOfferForInvoiceFlow
 import com.bfn.flows.supplier.SupplierProfileFlow
 import com.bfn.flows.todaysDate
@@ -23,7 +25,11 @@ import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.messaging.CordaRPCOps
+import net.corda.core.node.services.Vault
 import net.corda.core.node.services.Vault.StateStatus
+import net.corda.core.node.services.queryBy
+import net.corda.core.node.services.vault.DEFAULT_PAGE_NUM
+import net.corda.core.node.services.vault.DEFAULT_PAGE_SIZE
 import net.corda.core.node.services.vault.PageSpecification
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.node.services.vault.QueryCriteria.VaultQueryCriteria
@@ -331,6 +337,105 @@ class WorkerBeeService {
         return dtos
     }
 
+    @Throws(Exception::class)
+    fun findSupplierPaymentsForNode(proxy: CordaRPCOps): List<SupplierPaymentDTO> {
+        val fut = proxy.startFlowDynamic(
+                SupplierPaymentQueryFlow::class.java, null,
+                SupplierPaymentQueryFlow.FIND_FOR_NODE).returnValue
+        val payments = fut.get()
+        val dtos: MutableList<SupplierPaymentDTO> = mutableListOf()
+        payments.forEach() {
+            dtos.add(DTOUtil.getDTO(it))
+        }
+        val m = "\uD83C\uDF3A done listing SupplierPayments:  \uD83C\uDF3A " + payments.size
+        logger.info(m)
+        return dtos
+    }
+    @Throws(Exception::class)
+    fun findInvestorPaymentsForNode(proxy: CordaRPCOps): List<InvestorPaymentDTO> {
+        val fut = proxy.startFlowDynamic(
+                InvestorPaymentQueryFlow::class.java, null,
+                InvestorPaymentQueryFlow.FIND_FOR_NODE).returnValue
+        val payments = fut.get()
+        val dtos: MutableList<InvestorPaymentDTO> = mutableListOf()
+        payments.forEach() {
+            dtos.add(DTOUtil.getDTO(it))
+        }
+        val m = "\uD83C\uDF3A done listing SupplierPayments:  \uD83C\uDF3A " + payments.size
+        logger.info(m)
+        return dtos
+    }
+    @Throws(Exception::class)
+    fun findSupplierPaymentsForInvestor(proxy: CordaRPCOps, investorId: String): List<SupplierPaymentDTO> {
+        val fut = proxy.startFlowDynamic(
+                SupplierPaymentQueryFlow::class.java, investorId,
+                SupplierPaymentQueryFlow.FIND_FOR_INVESTOR).returnValue
+        val payments = fut.get()
+        val dtos: MutableList<SupplierPaymentDTO> = mutableListOf()
+        payments.forEach() {
+            dtos.add(DTOUtil.getDTO(it))
+        }
+        val m = "\uD83C\uDF3A done listing SupplierPayments:  \uD83C\uDF3A " + payments.size
+        logger.info(m)
+        return dtos
+    }
+    @Throws(Exception::class)
+    fun findInvestorPaymentsForInvestor(proxy: CordaRPCOps, investorId: String): List<InvestorPaymentDTO> {
+        val fut = proxy.startFlowDynamic(
+                InvestorPaymentQueryFlow::class.java, investorId,
+                InvestorPaymentQueryFlow.FIND_FOR_INVESTOR).returnValue
+        val payments = fut.get()
+        val dtos: MutableList<InvestorPaymentDTO> = mutableListOf()
+        payments.forEach() {
+            dtos.add(DTOUtil.getDTO(it))
+        }
+        val m = "\uD83C\uDF3A done listing InvestorPayments:  \uD83C\uDF3A " + payments.size
+        logger.info(m)
+        return dtos
+    }
+    @Throws(Exception::class)
+    fun findInvestorPaymentsForCustomer(proxy: CordaRPCOps, customerId: String): List<InvestorPaymentDTO> {
+        val fut = proxy.startFlowDynamic(
+                InvestorPaymentQueryFlow::class.java, customerId,
+                InvestorPaymentQueryFlow.FIND_FOR_CUSTOMER).returnValue
+        val payments = fut.get()
+        val dtos: MutableList<InvestorPaymentDTO> = mutableListOf()
+        payments.forEach() {
+            dtos.add(DTOUtil.getDTO(it))
+        }
+        val m = "\uD83C\uDF3A done listing InvestorPayments:  \uD83C\uDF3A " + payments.size
+        logger.info(m)
+        return dtos
+    }
+    @Throws(Exception::class)
+    fun findSupplierPaymentsForCustomer(proxy: CordaRPCOps, customerId: String): List<SupplierPaymentDTO> {
+        val fut = proxy.startFlowDynamic(
+                SupplierPaymentQueryFlow::class.java, customerId,
+                SupplierPaymentQueryFlow.FIND_FOR_CUSTOMER).returnValue
+        val payments = fut.get()
+        val dtos: MutableList<SupplierPaymentDTO> = mutableListOf()
+        payments.forEach() {
+            dtos.add(DTOUtil.getDTO(it))
+        }
+        val m = "\uD83C\uDF3A done listing SupplierPayments:  \uD83C\uDF3A " + payments.size
+        logger.info(m)
+        return dtos
+    }
+    @Throws(Exception::class)
+    fun findSupplierPaymentsForSupplier(proxy: CordaRPCOps, supplierId: String): List<SupplierPaymentDTO> {
+        val fut = proxy.startFlowDynamic(
+                SupplierPaymentQueryFlow::class.java, supplierId,
+                SupplierPaymentQueryFlow.FIND_FOR_SUPPLIER).returnValue
+        val payments = fut.get()
+        val dtos: MutableList<SupplierPaymentDTO> = mutableListOf()
+        payments.forEach() {
+            dtos.add(DTOUtil.getDTO(it))
+        }
+        val m = "\uD83C\uDF3A done listing SupplierPayments:  \uD83C\uDF3A " + payments.size
+        logger.info(m)
+        return dtos
+    }
+
 
     @Throws(Exception::class)
     fun createInvestorProfile(proxy: CordaRPCOps,
@@ -523,6 +628,80 @@ class WorkerBeeService {
         val m = "\uD83D\uDCA6  done listing InvoiceOfferStates:  \uD83C\uDF3A " + offers.size
         logger.info(m)
         return dtos
+    }
+    @Throws(Exception::class)
+    fun findCustomerProfiles(proxy: CordaRPCOps): List<CustomerProfileStateDTO> {
+        var pageNumber = DEFAULT_PAGE_NUM
+        val states = mutableListOf<StateAndRef<CustomerProfileState>>()
+        do {
+            val pageSpec = PageSpecification(pageNumber = pageNumber, pageSize = DEFAULT_PAGE_SIZE)
+            val results = proxy.vaultQueryByWithPagingSpec(CustomerProfileState::class.java,
+                    criteria = VaultQueryCriteria(
+                            status = StateStatus.UNCONSUMED
+                    ), paging = pageSpec)
+
+            logger.info("\uD83D\uDD35\uD83D\uDD35 There are ${results.states.size} " +
+                    "customerProfiles just read from the ledger \uD83D\uDD35")
+            states.addAll(results.states)
+            pageNumber++
+        } while ((pageSpec.pageSize * (pageNumber - 1)) <= results.totalStatesAvailable)
+
+        logger.info("\uD83D\uDD35\uD83D\uDD35 There are ${states.size} customerProfiles on the ledger \uD83D\uDD35")
+        val list = mutableListOf<CustomerProfileStateDTO>()
+        states.forEach() {
+           list.add(DTOUtil.getDTO(it.state.data))
+        }
+        val m = "\uD83D\uDCA6  done listing CustomerProfiles:  \uD83C\uDF3A " + list.size
+        logger.info(m)
+        return list
+    }
+    @Throws(Exception::class)
+    fun findInvestorProfiles(proxy: CordaRPCOps): List<InvestorProfileStateDTO> {
+        var pageNumber = DEFAULT_PAGE_NUM
+        val states = mutableListOf<StateAndRef<InvestorProfileState>>()
+        do {
+            val pageSpec = PageSpecification(pageNumber = pageNumber, pageSize = DEFAULT_PAGE_SIZE)
+            val results = proxy.vaultQueryByWithPagingSpec(InvestorProfileState::class.java,
+                    criteria = VaultQueryCriteria(
+                            status = StateStatus.UNCONSUMED
+                    ), paging = pageSpec)
+
+            states.addAll(results.states)
+            pageNumber++
+        } while ((pageSpec.pageSize * (pageNumber - 1)) <= results.totalStatesAvailable)
+
+        logger.info("\uD83D\uDD35\uD83D\uDD35 There are ${states.size} customerProfiles on the ledger \uD83D\uDD35")
+        val list = mutableListOf<InvestorProfileStateDTO>()
+        states.forEach() {
+            list.add(DTOUtil.getDTO(it.state.data))
+        }
+        val m = "\uD83D\uDCA6  done listing InvestorProfileStates:  \uD83C\uDF3A " + list.size
+        logger.info(m)
+        return list
+    }
+    @Throws(Exception::class)
+    fun findSupplierProfiles(proxy: CordaRPCOps): List<SupplierProfileStateDTO> {
+        var pageNumber = DEFAULT_PAGE_NUM
+        val states = mutableListOf<StateAndRef<SupplierProfileState>>()
+        do {
+            val pageSpec = PageSpecification(pageNumber = pageNumber, pageSize = DEFAULT_PAGE_SIZE)
+            val results = proxy.vaultQueryByWithPagingSpec(SupplierProfileState::class.java,
+                    criteria = VaultQueryCriteria(
+                            status = StateStatus.UNCONSUMED
+                    ), paging = pageSpec)
+
+            states.addAll(results.states)
+            pageNumber++
+        } while ((pageSpec.pageSize * (pageNumber - 1)) <= results.totalStatesAvailable)
+
+        logger.info("\uD83D\uDD35\uD83D\uDD35 There are ${states.size} customerProfiles on the ledger \uD83D\uDD35")
+        val list = mutableListOf<SupplierProfileStateDTO>()
+        states.forEach() {
+            list.add(DTOUtil.getDTO(it.state.data))
+        }
+        val m = "\uD83D\uDCA6  done listing SupplierProfiles:  \uD83C\uDF3A " + list.size
+        logger.info(m)
+        return list
     }
 
     fun getDashboardData(proxy: CordaRPCOps): DashboardData {
@@ -807,6 +986,36 @@ class WorkerBeeService {
         }
     }
 
+    @Throws(Exception::class)
+    fun startInvestorPaymentFlow(proxy: CordaRPCOps, supplierPaymentId: String): InvestorPaymentDTO {
+
+        return try {
+            val investorPaymentState = proxy.startTrackedFlowDynamic(
+                    InvestorPaymentFlow::class.java, supplierPaymentId).returnValue.getOrThrow()
+
+            logger.info("\uD83C\uDF4F \uD83D\uDCA6 \uD83D\uDCA6 \uD83D\uDCA6 " +
+                    "InvestorPaymentFlow flow completed \uD83C\uDF51 ...")
+
+            val dto = DTOUtil.getDTO(investorPaymentState)
+            try {
+                firebaseService.addInvestorPayment(dto)
+            } catch (e: Exception) {
+                //todo -  🍎  🍎 send email to support about this .... firebase shit failed but ledger is OK
+                e.printStackTrace()
+                logger.error(e.message)
+            }
+            dto
+        } catch (e: Exception) {
+            e.printStackTrace()
+            if (e.message != null) {
+                throw Exception("Failed InvestorPaymentFlow. " + e.message)
+            } else {
+                throw Exception("Failed InvestorPaymentFlow. Unknown bloody cause!!")
+            }
+
+        }
+    }
+
     @Value("\${spring.profiles.active}")
     private var profile: String = "dev"
 
@@ -997,8 +1206,8 @@ class WorkerBeeService {
         if (acceptedOffer != null) {
             val mOffer = DTOUtil.getDTO(acceptedOffer)
             logger.info("${Emo.DICE} ${Emo.DICE} ${Emo.DICE} ${Emo.DICE} " +
-                    "Accepted Offer is : Investor: ${mOffer.investor?.name} " +
-                    "Supplier:  ${mOffer.supplier?.name} " +
+                    "Accepted Offer is : Investor: ${mOffer.investor?.account?.name} " +
+                    "Supplier:  ${mOffer.supplier?.account?.name} " +
                     "${Emo.DICE}Discount: ${mOffer.discount}% " +
                     "OfferAmount: ${mOffer.offerAmount} ${Emo.DICE}" +
                     "Original Amount: ${mOffer.originalAmount}  \uD83C\uDF40 \n\n")
@@ -1222,7 +1431,7 @@ class WorkerBeeService {
         logger.info("${Emo.PEAR} ${Emo.PEAR} starting corda flow with params: " +
                 "offerId: $offerId investorId: $investorId ${Emo.PEAR}")
         val cordaFuture = proxy.startTrackedFlowDynamic(
-                SinglePaymentFlow::class.java, offerId, investorId)
+                SupplierPaymentFlow::class.java, offerId, investorId)
                 .returnValue
         val supplierPaymentState = cordaFuture.get()
         val supplierPayment = DTOUtil.getDTO(supplierPaymentState)

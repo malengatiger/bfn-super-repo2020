@@ -4,6 +4,7 @@ package com.bfn.client.web
 //}
 
 //
+import com.bfn.client.data.InvestorPaymentDTO
 import com.bfn.client.web.services.*
 import com.google.gson.GsonBuilder
 import net.corda.core.messaging.CordaRPCOps
@@ -163,6 +164,19 @@ class DemoDataController(rpc: NodeRPCConnection) {
         logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 DemoDataController:generateCustomerNodeData result: " +
                 " \uD83C\uDF4F " + GSON.toJson(result)
                 + "    \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
+        return result
+    }
+    @GetMapping(value = ["/generateInvestorPayments"], produces = [MediaType.APPLICATION_JSON_VALUE])
+    @Throws(Exception::class)
+    private fun generateInvestorPayments(): List<InvestorPaymentDTO> {
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                "starting DemoDataController: generateInvestorPayments ... \uD83C\uDF4F ")
+
+        val result = demoDataService.generateInvestorPayments(proxy)
+        logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                "DemoDataController:generateInvestorPayments result: " +
+                " \uD83C\uDF4F " + result.size
+                + "  investorPayments generated  \uD83E\uDDE1 ")
         return result
     }
 

@@ -1,5 +1,7 @@
 package com.bfn.client.data
 
+import com.bfn.contractstates.states.SupplierProfileState
+
 
 data class AcceptedOfferDTO (
         var invoiceId: String = "",
@@ -7,8 +9,9 @@ data class AcceptedOfferDTO (
         var offerAmount: String = "",
         var discount: String = "",
         var originalAmount: String = "",
-        var supplier: AccountInfoDTO? = null,
-        var investor: AccountInfoDTO? = null,
+        var supplier: SupplierProfileStateDTO? = null,
+        var investor: InvestorProfileStateDTO? = null,
+        var customer: CustomerProfileStateDTO? = null,
         var investorDate: String = "",
         var acceptanceDate: String = "",
         var externalId: String = "tbd",

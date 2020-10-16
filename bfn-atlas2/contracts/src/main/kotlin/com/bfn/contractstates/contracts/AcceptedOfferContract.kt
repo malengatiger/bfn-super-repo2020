@@ -23,7 +23,7 @@ class AcceptedOfferContract : Contract {
         }
         val invoiceOfferState = tx.outputStates.first()
         if (invoiceOfferState is AcceptedOfferState) {
-            if (invoiceOfferState.supplier.name == invoiceOfferState.investor.name) {
+            if (invoiceOfferState.supplier.account.name == invoiceOfferState.investor.account.name) {
                 throw IllegalArgumentException("Investor and Supplier cannot be the same entity")
             }
             val ta =  BigDecimal(invoiceOfferState.discount)
@@ -31,10 +31,10 @@ class AcceptedOfferContract : Contract {
             if (ta <= tb) {
                 throw IllegalArgumentException("Discount Percent must be greater than zero")
             }
-            if (invoiceOfferState.customer.identifier.toString() == invoiceOfferState.supplier.identifier.toString()) {
+            if (invoiceOfferState.customer.account.identifier.toString() == invoiceOfferState.supplier.account.identifier.toString()) {
                 throw IllegalArgumentException("Customer and Supplier cannot be the same entity")
             }
-            if (invoiceOfferState.customer.identifier.toString() == invoiceOfferState.investor.identifier.toString()) {
+            if (invoiceOfferState.customer.account.identifier.toString() == invoiceOfferState.investor.account.identifier.toString()) {
                 throw IllegalArgumentException("Customer and Investor cannot be the same entity")
             }
             val ta1 =  BigDecimal(invoiceOfferState.offerAmount)

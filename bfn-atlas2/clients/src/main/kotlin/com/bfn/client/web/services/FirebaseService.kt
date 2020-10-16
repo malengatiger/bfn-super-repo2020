@@ -248,6 +248,11 @@ class FirebaseService() {
         logger.info("\uD83D\uDE3C Invoice added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
     @Throws(ExecutionException::class, InterruptedException::class)
+    fun addInvestorPayment(investorPayment: InvestorPaymentDTO) {
+        val future: ApiFuture<DocumentReference> = db.collection(BFN_INVESTOR_PAYMENTS).add(investorPayment);
+        logger.info("\uD83D\uDE3C InvestorPayment added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+    }
+    @Throws(ExecutionException::class, InterruptedException::class)
     fun addSupplierPayment(supplierPayment: SupplierPaymentDTO) {
         val future: ApiFuture<DocumentReference> = db.collection(BFN_SUPPLIER_PAYMENTS).add(supplierPayment);
         logger.info("\uD83D\uDE3C SupplierPayment added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
@@ -633,7 +638,7 @@ class FirebaseService() {
         }
         if (acceptedOffer != null) {
             logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 getAcceptedOffer Found " +
-                    "name: ${acceptedOffer!!.investor?.name} ")
+                    "name: ${acceptedOffer!!.investor?.account?.name} ")
         } else {
             logger.info("${Emo.ERRORS} getAcceptedOffer did not find nuthin for $offerId ")
         }

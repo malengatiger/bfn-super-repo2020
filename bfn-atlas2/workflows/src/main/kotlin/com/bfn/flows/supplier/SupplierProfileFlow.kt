@@ -3,6 +3,7 @@ package com.bfn.flows.supplier
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.contracts.InvestorProfileContract
 import com.bfn.contractstates.states.SupplierProfileState
+import com.bfn.flows.Em
 import com.bfn.flows.services.ProfileFinderService
 import com.r3.corda.lib.accounts.workflows.flows.ShareStateAndSyncAccounts
 import com.r3.corda.lib.accounts.workflows.internal.accountService
@@ -23,7 +24,7 @@ class SupplierProfileFlow(private val supplierProfileState: SupplierProfileState
 
     @Suspendable
     override fun call(): SignedTransaction {
-        Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95  \uD83C\uDFC8 \uD83C\uDFC8 \uD83C\uDFC8 \uD83C\uDFC8 \uD83C\uDFC8 \uD83C\uDFC8 " +
+        Companion.logger.info("${Em.FOX}${Em.FOX}${Em.FOX}${Em.FOX}${Em.FOX}" +
                 "SupplierProfileFlow started, accountId: ${supplierProfileState.account.identifier} ")
         val account = serviceHub.accountService.accountInfo(UUID.fromString(supplierProfileState.account.identifier.toString()))
                 ?: throw IllegalArgumentException("SupplierProfileFlow: \uD83D\uDC4E\uD83C\uDFFD Account not found: ${supplierProfileState.account.identifier.toString()}")
@@ -40,11 +41,10 @@ class SupplierProfileFlow(private val supplierProfileState: SupplierProfileState
         }
         txBuilder.addOutputState(supplierProfileState)
         txBuilder.verify(serviceHub)
-        Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95  Signing transaction ... ")
         val tx = serviceHub.signInitialTransaction(txBuilder)
         val signedTx = subFlow(FinalityFlow(tx, listOf()))
 
-        Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 " +
+        Companion.logger.info("${Em.FOX}${Em.FOX}${Em.FOX}${Em.FOX} " +
                 "Supplier Profile has been created for account:" +
                 " ${account.state.data.name} \uD83E\uDD8A \uD83E\uDD8A")
         shareState()
@@ -53,7 +53,7 @@ class SupplierProfileFlow(private val supplierProfileState: SupplierProfileState
 
     @Suspendable
     private fun shareState() {
-        logger.info("Sharing InvestorProfile state with all nodes in network")
+        logger.info("${Em.FOX} ${Em.FOX} Sharing InvestorProfile state with all nodes in network")
         val me = serviceHub.myInfo.legalIdentities[0]
         val nodes = serviceHub.networkMapCache.allNodes
         for (node in nodes) {
@@ -69,8 +69,8 @@ class SupplierProfileFlow(private val supplierProfileState: SupplierProfileState
                         subFlow(ShareStateAndSyncAccounts(
                                 state = profileStateAndRef,
                                 partyToShareWith = node.legalIdentities[0]))
-                        logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
-                                "InvestorProfile ${supplierProfileState.account.name} " +
+                        logger.info("${Em.FOX} ${Em.FOX} ${Em.FOX} ${Em.FOX} " +
+                                "SupplierProfile ${supplierProfileState.account.name} " +
                                 "has been shared with party ${node.legalIdentities[0].name} \uD83E\uDDE9")
                     }
                 }

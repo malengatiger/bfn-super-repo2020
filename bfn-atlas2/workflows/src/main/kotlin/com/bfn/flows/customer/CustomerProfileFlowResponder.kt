@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.states.CustomerProfileState
 import com.bfn.contractstates.states.InvoiceOfferState
 import com.bfn.contractstates.states.PurchaseOrderState
+import com.bfn.flows.Em
 import com.r3.corda.lib.accounts.workflows.ourIdentity
 import net.corda.core.flows.*
 import net.corda.core.transactions.SignedTransaction
@@ -14,7 +15,7 @@ class CustomerProfileFlowResponder(private val counterPartySession: FlowSession)
     @Suspendable
     @Throws(FlowException::class)
     override fun call(): SignedTransaction {
-       Companion.logger.info("\uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C " +
+       Companion.logger.info("${Em.DOLPHIN}${Em.DOLPHIN}${Em.DOLPHIN}${Em.DOLPHIN} " +
                "CustomerProfileFlowResponder starting ....")
         val myself = serviceHub.ourIdentity
         val party = counterPartySession.counterparty
@@ -24,7 +25,7 @@ class CustomerProfileFlowResponder(private val counterPartySession: FlowSession)
             @Suspendable
             @Throws(FlowException::class)
             override fun checkTransaction(stx: SignedTransaction) {
-               logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 checkTransaction here " +
+               logger.info("${Em.DOLPHIN}${Em.DOLPHIN}${Em.DOLPHIN} checkTransaction here " +
                         "${stx.id} outputStates ${stx.coreTransaction.outputStates.size}...")
                 if (stx.coreTransaction.outputStates.size != 1) {
                     throw FlowException("There must be only one Output state")
@@ -38,9 +39,9 @@ class CustomerProfileFlowResponder(private val counterPartySession: FlowSession)
         }
         subFlow(signTransactionFlow)
         val signedTransaction = subFlow(ReceiveFinalityFlow(counterPartySession))
-        logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D  " +
+        logger.info("${Em.DOLPHIN}${Em.DOLPHIN}${Em.DOLPHIN}  " +
                 "CustomerProfileFlowResponder Transaction finalized " +
-                "\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C \uD83E\uDD1F \uD83C\uDF4F \uD83C\uDF4E ${signedTransaction.id}")
+                "${Em.DOLPHIN} ${signedTransaction.id}")
 
         return signedTransaction
     }

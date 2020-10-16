@@ -55,7 +55,19 @@ object DTOUtil {
                 supplierProfile = getDTO(a.supplierProfile),
                 acceptedOffer = getDTO(a.acceptedOffer),
                 dateRegistered = a.dateRegistered,
-                supplierPaymentId = a.supplierPaymentId
+                supplierPaymentId = a.supplierPaymentId,
+                customerProfile = getDTO(a.customerProfile)
+        )
+    }
+    @JvmStatic
+    fun getDTO(a: InvestorPaymentState): InvestorPaymentDTO {
+
+        return InvestorPaymentDTO(
+                investorProfile = getDTO(a.investorProfile),
+                customerProfile = getDTO(a.customerProfile),
+                investorPaymentId = a.investorPaymentId,
+                dateRegistered = a.dateRegistered,
+                supplierPayment = getDTO(a.supplierPayment)
         )
     }
 
@@ -119,7 +131,8 @@ object DTOUtil {
                 externalId = a.externalId,
                 acceptanceDate = a.acceptanceDate,
                 offerId = a.offerId,
-                dateRegistered = a.dateRegistered
+                dateRegistered = a.dateRegistered,
+                customer = getDTO(a.customer)
 
         )
     }

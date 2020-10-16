@@ -50,7 +50,7 @@ class SupplierBeeService {
         val tx: AcceptedOfferState? = cordaFuture.get()
         if (tx != null) {
             logger.info("\uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C Offer accepted if result == InvoiceOfferState:" +
-                    " \uD83C\uDF4E supplier: \uD83E\uDD6C ${tx.supplier.name}")
+                    " \uD83C\uDF4E supplier: \uD83E\uDD6C ${tx.supplier.account.name}")
         }
         return tx
     }

@@ -1,7 +1,6 @@
 package com.bfn.flows.services
 
 import co.paralleluniverse.fibers.Suspendable
-import com.bfn.contractstates.states.InvoiceOfferState
 import com.bfn.contractstates.states.NetworkOperatorState
 import com.bfn.contractstates.states.SupplierPaymentState
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
@@ -23,7 +22,7 @@ import java.util.*
  * Service to query for SupplierPayments
  */
 @CordaService
-class PaymentFinderService(private val serviceHub: AppServiceHub) : SingletonSerializeAsToken() {
+class SupplierPaymentFinderService(private val serviceHub: AppServiceHub) : SingletonSerializeAsToken() {
     private val accountService: KeyManagementBackedAccountService =
             serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
 
@@ -96,7 +95,7 @@ class PaymentFinderService(private val serviceHub: AppServiceHub) : SingletonSer
         val investorPayments: MutableList<SupplierPaymentState> = mutableListOf()
 
         payments.forEach(){
-            if (it.state.data.acceptedOffer.investor.identifier.id.toString() == investorId) {
+            if (it.state.data.acceptedOffer.investor.account.identifier.id.toString() == investorId) {
                 investorPayments.add(it.state.data)
             }
         }
@@ -111,7 +110,7 @@ class PaymentFinderService(private val serviceHub: AppServiceHub) : SingletonSer
         val supplierPayments: MutableList<SupplierPaymentState> = mutableListOf()
 
         payments.forEach(){
-            if (it.state.data.acceptedOffer.supplier.identifier.id.toString() == supplierId) {
+            if (it.state.data.acceptedOffer.supplier.account.identifier.id.toString() == supplierId) {
                 supplierPayments.add(it.state.data)
             }
         }
@@ -143,7 +142,7 @@ class PaymentFinderService(private val serviceHub: AppServiceHub) : SingletonSer
         val customerInvoices: MutableList<SupplierPaymentState> = mutableListOf()
 
         payments.forEach(){
-            if (it.state.data.acceptedOffer.customer.identifier.id.toString() == customerId) {
+            if (it.state.data.acceptedOffer.customer.account.identifier.id.toString() == customerId) {
                 customerInvoices.add(it.state.data)
             }
         }
@@ -182,42 +181,9 @@ class PaymentFinderService(private val serviceHub: AppServiceHub) : SingletonSer
         logger.info("\uD83E\uDDE9 SupplierPayments found on node: \uD83C\uDF00 ${states.size} " )
         return states
     }
-    @Suspendable
-    fun getAnchorPaymentStateAndRefs(): List<StateAndRef<SupplierPaymentState>> {
-        val existingAnchor = serviceHub.vaultService.queryBy( NetworkOperatorState::class.java).states.singleOrNull()
-                ?: throw IllegalArgumentException("Anchor does not exist")
-        val list: MutableList<StateAndRef<SupplierPaymentState>> = mutableListOf()
-        //get first page
-        var pageNumber = 1
-        val pair = queryPaymentStateAndRef(pageNumber)
-        pair.first.forEach() {
-            if (existingAnchor.state.data.account.name == it.state.data.acceptedOffer.investor.name) {
-                list.add(it)
-            }
-        }
-
-        val remainder: Int = (pair.second % pageSize).toInt()
-        var pageCnt: Int = (pair.second/ pageSize).toInt()
-        if (remainder > 0) pageCnt++
-
-        if (pageCnt > 1)  {
-            while (pageNumber < pageCnt) {
-                pageNumber++
-                val pageX = queryPaymentStateAndRef(pageNumber)
-                pageX.first.forEach() {
-                    if (existingAnchor.state.data.account.name == it.state.data.acceptedOffer.investor.name) {
-                        list.add(it)
-                    }
-                }
-            }
-        }
-
-        logger.info("\uD83E\uDDE9 SupplierPayments found on node: \uD83C\uDF00 ${list.size} " )
-        return list
-    }
 
     companion object {
-        private val logger = LoggerFactory.getLogger(PaymentFinderService::class.java)
+        private val logger = LoggerFactory.getLogger(SupplierPaymentFinderService::class.java)
     }
 
     init {

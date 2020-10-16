@@ -12,12 +12,12 @@ class InvestorProfileFlowResponder(private val counterPartySession: FlowSession)
     @Suspendable
     @Throws(FlowException::class)
     override fun call(): SignedTransaction {
-       Companion.logger.info("${Em.FERNS}${Em.FERNS}  " +
+       Companion.logger.info("${Em.DOG} ${Em.DOG} ${Em.DOG} ${Em.DOG}  " +
                "InvestorProfileFlowResponder starting ....")
         val myself = serviceHub.ourIdentity
         val party = counterPartySession.counterparty
 
-        Companion.logger.info("${Em.FERNS}${Em.FERNS}  InvestorProfileFlowResponder: " +
+        Companion.logger.info("${Em.DOG} ${Em.DOG} ${Em.DOG}  InvestorProfileFlowResponder: " +
                 "This party: \uD83C\uDF4E $myself \uD83C\uDF45 \uD83C\uDF45 counterParty: $party" )
 
         val signTransactionFlow: SignTransactionFlow = object : SignTransactionFlow(counterPartySession) {
@@ -31,7 +31,7 @@ class InvestorProfileFlowResponder(private val counterPartySession: FlowSession)
 
         subFlow(signTransactionFlow)
         val signedTransaction = subFlow(ReceiveFinalityFlow(counterPartySession))
-        Companion.logger.info("${Em.FERNS}${Em.FERNS}   " +
+        Companion.logger.info("${Em.DOG} ${Em.DOG} ${Em.DOG} ${Em.DOG}    " +
                 "InvestorProfileFlowResponder Transaction finalized " +
                 "${Em.FERNS}${Em.FERNS}  ${signedTransaction.id}")
 

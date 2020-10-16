@@ -316,19 +316,19 @@ class AdminController(rpc: NodeRPCConnection) {
     @GetMapping(value = ["/getCustomerProfiles"])
     @Throws(Exception::class)
     fun getCustomerProfiles(): List<CustomerProfileStateDTO> {
-        return firebaseService.getCustomerProfiles()
+        return workerBeeService.findCustomerProfiles(proxy)
     }
 
     @GetMapping(value = ["/getInvestorProfiles"])
     @Throws(Exception::class)
     fun getInvestorProfiles(): List<InvestorProfileStateDTO> {
-        return firebaseService.getInvestorProfiles()
+        return workerBeeService.findInvestorProfiles(proxy)
     }
 
     @GetMapping(value = ["/getSupplierProfiles"])
     @Throws(Exception::class)
     fun getSupplierProfiles(): List<SupplierProfileStateDTO> {
-        return firebaseService.getSupplierProfiles()
+        return workerBeeService.findSupplierProfiles(proxy)
     }
 
     @GetMapping(value = ["/getNetworkNodes"])
@@ -405,6 +405,42 @@ class AdminController(rpc: NodeRPCConnection) {
     @Throws(Exception::class)
     fun findOffersForSupplier(@RequestParam(value = "accountId", required = true) accountId: String): List<InvoiceOfferDTO> {
         return workerBeeService.findOffersForSupplier(proxy, accountId)
+    }
+
+    @GetMapping(value = ["/findSupplierPaymentsForNode"])
+    @Throws(Exception::class)
+    fun findSupplierPaymentsForNode(): List<SupplierPaymentDTO> {
+        return workerBeeService.findSupplierPaymentsForNode(proxy)
+    }
+    @GetMapping(value = ["/findInvestorPaymentsForNode"])
+    @Throws(Exception::class)
+    fun findInvestorPaymentsForNode(): List<InvestorPaymentDTO> {
+        return workerBeeService.findInvestorPaymentsForNode(proxy)
+    }
+    @GetMapping(value = ["/findSupplierPaymentsForInvestor"])
+    @Throws(Exception::class)
+    fun findSupplierPaymentsForInvestor(@RequestParam investorId: String): List<SupplierPaymentDTO> {
+        return workerBeeService.findSupplierPaymentsForInvestor(proxy, investorId = investorId)
+    }
+    @GetMapping(value = ["/findInvestorPaymentsForInvestor"])
+    @Throws(Exception::class)
+    fun findInvestorPaymentsForInvestor(@RequestParam investorId: String): List<InvestorPaymentDTO> {
+        return workerBeeService.findInvestorPaymentsForInvestor(proxy, investorId = investorId)
+    }
+    @GetMapping(value = ["/findSupplierPaymentsForSupplier"])
+    @Throws(Exception::class)
+    fun findSupplierPaymentsForSupplier(@RequestParam supplierId: String): List<SupplierPaymentDTO> {
+        return workerBeeService.findSupplierPaymentsForSupplier(proxy, supplierId = supplierId)
+    }
+    @GetMapping(value = ["/findSupplierPaymentsForCustomer"])
+    @Throws(Exception::class)
+    fun findSupplierPaymentsForCustomer(@RequestParam customerId: String): List<SupplierPaymentDTO> {
+        return workerBeeService.findSupplierPaymentsForCustomer(proxy, customerId = customerId)
+    }
+    @GetMapping(value = ["/findInvestorPaymentsForCustomer"])
+    @Throws(Exception::class)
+    fun findInvestorPaymentsForCustomer(@RequestParam customerId: String): List<InvestorPaymentDTO> {
+        return workerBeeService.findInvestorPaymentsForCustomer(proxy, customerId = customerId)
     }
 
     @GetMapping(value = ["/findOffersForNode"])

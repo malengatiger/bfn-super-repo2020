@@ -8,7 +8,7 @@ import com.bfn.contractstates.states.TradeMatrixItem
 import com.bfn.flows.investor.MultiInvoiceOfferFlow
 import com.bfn.flows.operator.*
 import com.bfn.flows.investor.MultiplePaymentsFlow
-import com.bfn.flows.investor.SinglePaymentFlow
+import com.bfn.flows.investor.SupplierPaymentFlow
 import com.bfn.flows.queries.AccountInfoQueryFlow
 import com.bfn.flows.todaysDate
 import com.google.gson.GsonBuilder
@@ -20,7 +20,6 @@ import net.corda.core.node.services.vault.QueryCriteria
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
-import java.util.*
 import javax.annotation.PostConstruct
 
 @Service
@@ -60,7 +59,7 @@ class NetworkOperatorBeeService {
         logger.info("\uD83C\uDFC0 \uD83C\uDFC0 Starting to makeSinglePayment ... ")
 
         val cordaFuture = proxy.startFlowDynamic(
-                SinglePaymentFlow::class.java, offerId, investorId).returnValue
+                SupplierPaymentFlow::class.java, offerId, investorId).returnValue
         val result = cordaFuture.get()
         logger.info("\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C " +
                 "Bank: ${result.supplierProfile.bank} \uD83D\uDC4C amount: ${result.acceptedOffer.offerAmount} payment state made")

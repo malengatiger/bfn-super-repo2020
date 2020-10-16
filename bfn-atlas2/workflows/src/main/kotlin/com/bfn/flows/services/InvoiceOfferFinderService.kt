@@ -142,7 +142,7 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
         logger.info("\uD83D\uDC2C \uD83D\uDC2C allOffers: ${states.size} " +
                 "investor offers found on node ...")
         states.forEach() {
-            if (it.state.data.investor.identifier.id.toString() == investorId) {
+            if (it.state.data.investor.account.identifier.id.toString() == investorId) {
                     offers.add(it)
             }
 
@@ -150,7 +150,7 @@ class InvoiceOfferFinderService(private val serviceHub: AppServiceHub) : Singlet
         logger.info("\uD83D\uDC2C \uD83D\uDC2C accepted Offers: ${offers.size} " +
                 "investor offers found for $investorId ...")
         if (offers.isNotEmpty()) {
-            logger.info("\uD83D\uDC2C \uD83D\uDC2C INVESTOR: ${offers.first().state.data.investor.name} " +
+            logger.info("\uD83D\uDC2C \uD83D\uDC2C INVESTOR: ${offers.first().state.data.investor.account.name} " +
                     "has ${offers.size} offers accepted")
 
         }

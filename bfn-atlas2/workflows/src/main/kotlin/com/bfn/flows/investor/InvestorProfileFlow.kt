@@ -3,6 +3,7 @@ package com.bfn.flows.investor
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.contracts.InvestorProfileContract
 import com.bfn.contractstates.states.InvestorProfileState
+import com.bfn.flows.Em
 import com.bfn.flows.services.ProfileFinderService
 import com.r3.corda.lib.accounts.workflows.flows.ShareStateAndSyncAccounts
 import com.r3.corda.lib.accounts.workflows.internal.accountService
@@ -23,7 +24,7 @@ class InvestorProfileFlow(private val investorProfile: InvestorProfileState) : F
 
     @Suspendable
     override fun call(): SignedTransaction {
-        Companion.logger.info("\uD83D\uDE39 \uD83D\uDE39 \uD83D\uDE39  \uD83C\uDFC8  " +
+        Companion.logger.info("${Em.DOG}${Em.DOG}${Em.DOG}${Em.DOG}  " +
                 "InvestorProfileFlow started, accountId: ${investorProfile.account.identifier} ")
         val command = InvestorProfileContract.CreateProfile()
         val account = serviceHub.accountService.accountInfo(
@@ -34,7 +35,6 @@ class InvestorProfileFlow(private val investorProfile: InvestorProfileState) : F
         val profile = serviceHub.cordaService(ProfileFinderService::class.java)
                 .findInvestorProfile(investorProfile.account.identifier.toString())
 
-        Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95  build tx ...")
         val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
         txBuilder.addCommand(command, serviceHub.ourIdentity.owningKey)
         if (profile != null) {
@@ -43,11 +43,9 @@ class InvestorProfileFlow(private val investorProfile: InvestorProfileState) : F
         txBuilder.addOutputState(investorProfile)
         txBuilder.verify(serviceHub)
 
-        Companion.logger.info("\uD83E\uDD95 \uD83E\uDD95 \uD83E\uDD95" +
-                "  Signing transaction ... ")
         val tx = serviceHub.signInitialTransaction(txBuilder)
         val signedTx = subFlow(FinalityFlow(tx, listOf()))
-        Companion.logger.info("\uD83D\uDE39 \uD83D\uDE39 \uD83D\uDE39  " +
+        Companion.logger.info("${Em.DOG}${Em.DOG}${Em.DOG}${Em.DOG}${Em.DOG}  " +
                 "Investor Profile has been created for: " +
                 "${account.state.data.name} \uD83E\uDD8A \uD83E\uDD8A")
         shareState()
@@ -56,7 +54,7 @@ class InvestorProfileFlow(private val investorProfile: InvestorProfileState) : F
 
     @Suspendable
     private fun shareState() {
-        logger.info("Sharing InvestorProfile state with all nodes in network")
+        logger.info("${Em.DOG}${Em.DOG}${Em.DOG} Sharing InvestorProfile state with all nodes in network")
         val me = serviceHub.myInfo.legalIdentities[0]
         val nodes = serviceHub.networkMapCache.allNodes
         for (node in nodes) {
@@ -72,7 +70,7 @@ class InvestorProfileFlow(private val investorProfile: InvestorProfileState) : F
                         subFlow(ShareStateAndSyncAccounts(
                                 state = userStateAndRef,
                                 partyToShareWith = node.legalIdentities[0]))
-                        logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
+                        logger.info("${Em.DOG}${Em.DOG}${Em.DOG} " +
                                 "InvestorProfile ${investorProfile.account.name} " +
                                 "has been shared with party ${node.legalIdentities[0].name} \uD83E\uDDE9")
                     }

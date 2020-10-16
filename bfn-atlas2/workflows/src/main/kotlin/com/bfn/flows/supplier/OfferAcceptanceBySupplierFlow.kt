@@ -1,15 +1,21 @@
 package com.bfn.flows.supplier
 
 import co.paralleluniverse.fibers.Suspendable
-import com.bfn.contractstates.states.AcceptedOfferState
+import com.bfn.contractstates.states.*
+import com.bfn.flows.Em
 import com.bfn.flows.regulator.ReportToRegulatorFlow
 import com.bfn.flows.services.InvoiceFinderService
 import com.bfn.flows.services.InvoiceOfferFinderService
 import com.bfn.flows.todaysDate
 import com.r3.corda.lib.accounts.workflows.ourIdentity
 import com.template.AcceptedOfferContract
+import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
+import net.corda.core.node.services.Vault
+import net.corda.core.node.services.vault.DEFAULT_PAGE_SIZE
+import net.corda.core.node.services.vault.PageSpecification
+import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import org.slf4j.LoggerFactory
@@ -25,7 +31,8 @@ class OfferAcceptanceBySupplierFlow(
     @Suspendable
     @Throws(FlowException::class, IllegalArgumentException::class)
     override fun call(): AcceptedOfferState {
-        Companion.logger.info("$nn OfferAcceptanceBySupplierFlow started ..offerId: \uD83C\uDF4E $offerId \uD83D\uDE21 ")
+        Companion.logger.info("$nn OfferAcceptanceBySupplierFlow started " +
+                "..offerId: \uD83C\uDF4E $offerId \uD83D\uDE21 ")
 
         val offerFinderService = serviceHub.cordaService(InvoiceOfferFinderService::class.java)
         val invoiceOfferState = offerFinderService.findInvoiceOffer(offerId)
@@ -42,6 +49,16 @@ class OfferAcceptanceBySupplierFlow(
             throw IllegalArgumentException(msg)
         }
 
+        val suppProfileState = getSupplierProfile(invoiceState.state.data.supplierInfo.identifier
+                .id.toString())!!
+        val investorProfileState = getInvestorProfile(invoiceOfferState.state.data.investor.identifier
+                .id.toString())!!
+        val customerProfileState = getCustomerProfile(invoiceState.state.data.customerInfo.identifier
+                .id.toString())!!
+
+        logger.info("${Em.GLOBE} ${Em.GLOBE} ${Em.GLOBE} ${Em.GLOBE} " +
+                "OfferAcceptanceBySupplierFlow: creating AcceptedOfferState " +
+                "............. ${Em.GLOBE} ")
         val acceptedOffer = AcceptedOfferState(
                 invoiceId = invoiceOfferState.state.data.invoiceId,
                 invoiceNumber = invoiceOfferState.state.data.invoiceNumber,
@@ -49,19 +66,125 @@ class OfferAcceptanceBySupplierFlow(
                 discount = invoiceOfferState.state.data.discount,
                 externalId = invoiceOfferState.state.data.externalId,
                 originalAmount = invoiceOfferState.state.data.originalAmount,
-                customer = invoiceState.state.data.customerInfo,
-                supplier = invoiceOfferState.state.data.supplier,
-                investor = invoiceOfferState.state.data.investor,
+                supplier = suppProfileState,
+                investor = investorProfileState,
                 offerId = invoiceOfferState.state.data.offerId,
                 acceptanceDate = todaysDate(),
-                dateRegistered = invoiceOfferState.state.data.dateRegistered
+                dateRegistered = invoiceOfferState.state.data.dateRegistered,
+                customer = customerProfileState
         )
+
+        processTransaction(acceptedOffer, allOffersByInvoice, invoiceState)
+        return acceptedOffer
+    }
+
+    @Suspendable
+    private fun getCustomerProfile(customerId: String): CustomerProfileState? {
+        //todo -  🍊 🍊 🍊 refactor query ... this version don't scale, Bro!
+        logger.info("${Em.DOLPHIN} getCustomerProfile: customerId: " +
+                "${Em.DOLPHIN} $customerId ${Em.DOLPHIN}")
+        var pageNumber = 1
+        val customerProfileStates = mutableListOf<StateAndRef<CustomerProfileState>>()
+        val service = serviceHub.vaultService
+        do {
+            val pageSpec = PageSpecification(pageNumber = pageNumber, pageSize = 200)
+            val results = service.queryBy(
+                    contractStateType = CustomerProfileState::class.java,
+                    criteria = QueryCriteria.VaultQueryCriteria(
+                            status = Vault.StateStatus.UNCONSUMED
+                    ), paging = pageSpec)
+
+            logger.info("${Em.DOLPHIN} ${Em.DOLPHIN} There are ${results.states.size} " +
+                    "customerProfileStates just read from the Corda ledger ${Em.DOLPHIN} " +
+                    "Do we get here at all?")
+            customerProfileStates.addAll(results.states)
+            pageNumber++
+        } while ((pageSpec.pageSize * (pageNumber - 1)) <= results.totalStatesAvailable)
+
+        logger.info("${Em.DOLPHIN} ${Em.DOLPHIN} There are ${customerProfileStates.size} " +
+                "customerProfiles on the ledger ${Em.DOLPHIN}")
+        var profile: CustomerProfileState? = null
+        customerProfileStates.forEach {
+            if (customerId == it.state.data.account.identifier.id.toString()) {
+                profile = it.state.data
+            }
+        }
+        return profile
+    }
+    @Suspendable
+    private fun getInvestorProfile(investorId: String): InvestorProfileState? {
+        logger.info("${Em.DOG} getInvestorProfile: investorId: " +
+                "${Em.DOG} $investorId ${Em.DOG}")
+        var pageNumber = 1
+        val states = mutableListOf<StateAndRef<InvestorProfileState>>()
+        val service = serviceHub.vaultService
+        do {
+            val pageSpec = PageSpecification(pageNumber = pageNumber, pageSize = DEFAULT_PAGE_SIZE)
+            val results = service.queryBy(
+                    contractStateType = InvestorProfileState::class.java,
+                    criteria = QueryCriteria.VaultQueryCriteria(
+                            status = Vault.StateStatus.UNCONSUMED
+                    ), paging = pageSpec)
+
+            logger.info("${Em.DOG} ${Em.DOG} There are ${results.states.size} " +
+                    "investorProfileStates just read from the Corda ledger ${Em.DOG} " +
+                    "Do we get here at all?")
+            states.addAll(results.states)
+            pageNumber++
+        } while ((pageSpec.pageSize * (pageNumber - 1)) <= results.totalStatesAvailable)
+
+        logger.info("${Em.DOG} There are ${states.size} " +
+                "investorProfiles on the ledger ${Em.DOG}")
+        var profile: InvestorProfileState? = null
+        states.forEach {
+            if (investorId == it.state.data.account.identifier.id.toString()) {
+                profile = it.state.data
+            }
+        }
+        return profile
+    }
+    @Suspendable
+    private fun getSupplierProfile(supplierId: String): SupplierProfileState? {
+        logger.info("${Em.FOX} getSupplierProfile: supplierId: " +
+                "${Em.FOX} $supplierId ${Em.FOX}")
+        var pageNumber = 1
+        val states = mutableListOf<StateAndRef<SupplierProfileState>>()
+        val service = serviceHub.vaultService
+        do {
+            val pageSpec = PageSpecification(pageNumber = pageNumber, pageSize = DEFAULT_PAGE_SIZE)
+            val results = service.queryBy(
+                    contractStateType = SupplierProfileState::class.java,
+                    criteria = QueryCriteria.VaultQueryCriteria(
+                            status = Vault.StateStatus.UNCONSUMED
+                    ), paging = pageSpec)
+            logger.info("${Em.FOX} ${Em.FOX} There are ${results.states.size} " +
+                    "supplierProfileStates just read from the Corda ledger ${Em.FOX} " +
+                    "Do we get here at all?")
+            states.addAll(results.states)
+            pageNumber++
+        } while ((pageSpec.pageSize * (pageNumber - 1)) <= results.totalStatesAvailable)
+
+        logger.info("${Em.FOX} There are ${states.size} " +
+                "supplierProfiles on the ledger ${Em.FOX} ")
+        var profile: SupplierProfileState? = null
+        states.forEach {
+            if (supplierId == it.state.data.account.identifier.id.toString()) {
+                profile = it.state.data
+            }
+        }
+        return profile
+    }
+
+    @Suspendable
+    private fun processTransaction(acceptedOffer: AcceptedOfferState,
+                                   allOffersByInvoice: List<StateAndRef<InvoiceOfferState>>,
+                                   invoiceState: StateAndRef<InvoiceState>): SignedTransaction {
         val command = AcceptedOfferContract.AcceptOffer()
         val txBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities[0])
 
-        val supplierParty = acceptedOffer.supplier
-        val customerParty = acceptedOffer.customer
-        val investorParty = acceptedOffer.investor
+        val supplierParty = acceptedOffer.supplier.account
+        val customerParty = acceptedOffer.customer.account
+        val investorParty = acceptedOffer.investor.account
 
         logger.info("\uD83C\uDF1E Adding ${allOffersByInvoice.size} offers to transaction inputState  \uD83C\uDF1E")
         //consume all outstanding offers and replace with accepted offer
@@ -87,16 +210,16 @@ class OfferAcceptanceBySupplierFlow(
 
         reportToRegulator(signedTxFinal)
         logger.info("\uD83D\uDC9C \uD83D\uDC9C Offer accepted: \uD83C\uDF1D " +
-                "investor: ${acceptedOffer.investor.name} " +
-                "supplier: ${acceptedOffer.supplier.name} " +
-                "customer: ${acceptedOffer.customer.name} " +
+                "investor: ${acceptedOffer.investor.account.name} " +
+                "supplier: ${acceptedOffer.supplier.account.name} " +
+                "customer: ${acceptedOffer.customer.account.name} " +
                 "Offer Amt: ${acceptedOffer.offerAmount} " +
                 "Original AmT: ${acceptedOffer.originalAmount} " +
                 "discount: ${acceptedOffer.discount}% \uD83C\uDF1D ")
-
-        return acceptedOffer
+        return signedTx
     }
-//todo - 🍎 🍎 🍎 resolve the Party vs AnonymousParty thing with Accounts SDK - keys fail when trying RequestAccountKey thing ... 🍎
+
+    //todo - 🍎 🍎 🍎 resolve the Party vs AnonymousParty thing with Accounts SDK - keys fail when trying RequestAccountKey thing ... 🍎
     @Suspendable
     private fun processAcceptance(
             offer: AcceptedOfferState,
@@ -107,13 +230,13 @@ class OfferAcceptanceBySupplierFlow(
         val flowSessions: MutableList<FlowSession> = mutableListOf()
 
         val mName = serviceHub.ourIdentity.name.organisation
-        if (offer.customer.host.name.organisation!= mName) {
+        if (offer.customer.account.host.name.organisation!= mName) {
             flowSessions.add(initiateFlow(customer))
         }
-        if (offer.supplier.host.name.organisation!= mName) {
+        if (offer.supplier.account.host.name.organisation!= mName) {
             flowSessions.add(initiateFlow(supplier))
         }
-        if (offer.investor.host.name.organisation!= mName) {
+        if (offer.investor.account.host.name.organisation!= mName) {
             flowSessions.add(initiateFlow(investor))
         }
 

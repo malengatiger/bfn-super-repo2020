@@ -2,10 +2,8 @@ package com.bfn.flows.investor
 
 import co.paralleluniverse.fibers.Suspendable
 import com.bfn.contractstates.states.SupplierPaymentState
-import com.bfn.flows.PaymentRequestParams
 import com.bfn.flows.regulator.ReportToRegulatorFlow
 import com.bfn.flows.services.InvoiceOfferFinderService
-import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import net.corda.core.flows.*
 import net.corda.core.transactions.SignedTransaction
 import org.slf4j.LoggerFactory
@@ -36,8 +34,8 @@ class MultiplePaymentsFlow(
         logger.info("⚱️ ⚱️ ⚱️  ${acceptedOffers.size} accepted offers found for investor")
         for (offer in acceptedOffers) {
             try {
-                val response = subFlow(SinglePaymentFlow(
-                        offerId = offer.state.data.offerId, investorId = investorId))
+                val response = subFlow(SupplierPaymentFlow(
+                        offerId = offer.state.data.offerId))
                 paymentList.add(response)
             } catch (e:Exception) {
                 logger.error("SinglePaymentFlow failed", e)

@@ -4,9 +4,11 @@ import com.bfn.client.Emo
 import com.bfn.client.data.*
 import com.bfn.client.web.services.FirebaseService
 import com.bfn.client.web.services.NetworkOperatorBeeService
+import com.bfn.client.web.services.StellarAnchorService
 import com.bfn.client.web.services.WorkerBeeService
 import com.bfn.contractstates.states.NetworkOperatorState
 import com.bfn.contractstates.states.PurchaseOrderState
+import com.bfn.flows.StellarPaymentDTO
 import com.bfn.flows.todaysDate
 import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
@@ -69,6 +71,9 @@ class DemoDataService {
     @Autowired
     private lateinit var customerNodeService: CustomerNodeService
 
+    @Autowired
+    private lateinit var stellarAnchorService: StellarAnchorService
+
     /**
      * Generate data for the main anchor node : NetworkOperator is created here as well as Accounts
      */
@@ -106,6 +111,7 @@ class DemoDataService {
         firebaseService.deleteCollection(collectionName = BFN_INVESTOR_PROFILES)
         firebaseService.deleteCollection(collectionName = BFN_ACCEPTED_OFFERS)
         firebaseService.deleteCollection(collectionName = BFN_SUPPLIER_PAYMENTS)
+        firebaseService.deleteCollection(collectionName = BFN_INVESTOR_PAYMENTS)
 
         logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E Firebase clean up completed")
     }
@@ -325,8 +331,8 @@ class DemoDataService {
 
     private fun getSmallPOAmount(): String {
         var amt = random.nextInt(30) * 5000.00
-        if (amt <= 5000.0) {
-            amt = 4300.00
+        if (amt <= 10000.0) {
+            amt = 4200.00
         }
         return amt.toString()
     }
@@ -392,30 +398,30 @@ class DemoDataService {
     private fun getTradeMatrixItemsForInvestor(): MutableList<TradeMatrixItemDTO> {
 
         var disc1 = random.nextInt(15) * 1.0
-        if (disc1 == 0.0) {
+        if (disc1 <= 3.0) {
             disc1 = 4.5
         }
         var disc2 = random.nextInt(10) * 1.0
-        if (disc2 == 0.0 || disc2 >= disc1) {
+        if (disc2 <= 3.0 || disc2 >= disc1) {
             disc2 = 3.5
         }
         var disc3 = random.nextInt(8) * 1.0
-        if (disc3 == 0.0 || disc3 >= disc2) {
+        if (disc3 <= 3.0 || disc3 >= disc2) {
             disc3 = 3.0
         }
         var disc4 = random.nextInt(6) * 1.0
-        if (disc4 == 0.0 || disc4 >= disc3) {
+        if (disc4 <= 3.0 || disc4 >= disc3) {
             disc4 = 2.6
         }
         var disc5 = random.nextInt(4) * 1.0
-        if (disc5 == 0.0 || disc5 >= disc4) {
-            disc5 = 2.0
+        if (disc5 <= 2.0 || disc5 >= disc4) {
+            disc5 = 2.2
         }
         // disc1 minimum = 4.5% maximum = 15%
         // disc2 minimum = 3.5% maximum = 10%
         // disc3 minimum = 3.0% maximum = 8%
         // disc4 minimum = 2.6% maximum = 6%
-        // disc1 minimum = 2.0% maximum = 4%
+        // disc1 minimum = 2.2% maximum = 4%
 
         val m1 = TradeMatrixItemDTO(
                 "5000.00",
@@ -707,6 +713,30 @@ class DemoDataService {
                 "Total InvoiceOffers generated: \uD83E\uDD4F  $cnt \uD83E\uDD4F \n\n\n"
         logger.info(msg)
         return msg;
+    }
+
+    fun generateInvestorPayments(proxy:CordaRPCOps): List<InvestorPaymentDTO> {
+
+        val mList: MutableList<InvestorPaymentDTO> = mutableListOf()
+        val supplierPayments = workerBeeService.findSupplierPaymentsForNode(proxy)
+        supplierPayments.forEach {
+            //todo -  🍎 🍎 🍎 send payment to Stellar Anchor ....  🍎
+            val m = StellarPaymentDTO(
+                    paymentRequestId = UUID.randomUUID().toString(),
+                    amount = it.acceptedOffer!!.originalAmount,
+                    assetCode = it.supplierProfile!!.assetCode,
+                    sourceAccount = it.customerProfile!!.stellarAccountId,
+                    destinationAccount = it.supplierProfile!!.stellarAccountId,
+                    date = todaysDate()
+            )
+            stellarAnchorService.sendPayment(stellarPayment = m)
+            logger.info("${Emo.RAIN_DROPS} calling workerBeeService.startInvestorPaymentFlow .... ${it.supplierPaymentId}")
+            val payment = workerBeeService.startInvestorPaymentFlow(
+                    proxy,supplierPaymentId = it.supplierPaymentId)
+            mList.add(payment)
+        }
+        logger.info("${Emo.FERNS} Generated ${mList.size} investorPayments ${Emo.RED_APPLE}")
+        return mList;
     }
 
     @get:Throws(Exception::class)

@@ -5,7 +5,7 @@ import com.bfn.client.Emo
 import com.bfn.client.data.*
 import com.bfn.client.web.DTOUtil
 import com.bfn.flows.StellarPaymentDTO
-import com.bfn.flows.investor.SinglePaymentFlow
+import com.bfn.flows.investor.SupplierPaymentFlow
 import com.bfn.flows.queries.AcceptedOfferQueryFlow
 import com.bfn.flows.todaysDate
 import com.google.gson.GsonBuilder
@@ -129,11 +129,13 @@ class StellarAnchorService {
         val acceptedOffer = DTOUtil.getDTO(mList.first())
 
         logger.info("${Emo.FERNS}${Emo.FERNS} SupplierPayment to be made for accepted offer: " +
-                "${gson.toJson(acceptedOffer)} ${Emo.FERNS}")
+                "investor: ${acceptedOffer.investor?.account?.name} " +
+                "supplier: ${acceptedOffer.supplier?.account?.name} " +
+                "offerAmount: ${acceptedOffer.offerAmount} ${Emo.FERNS}")
         val supplierProfile = firebaseService.getSupplierProfile(
-                accountId = acceptedOffer.supplier!!.identifier)
+                accountId = acceptedOffer.supplier!!.account!!.identifier)
         val investorProfile = firebaseService.getInvestorProfile(
-                accountId = acceptedOffer.investor!!.identifier)
+                accountId = acceptedOffer.investor!!.account!!.identifier)
 
         var assetCode = "ZAR"
         if (supplierProfile != null) {
@@ -167,7 +169,7 @@ class StellarAnchorService {
                     "statusCode: ${result.statusCode} ${Emo.GOLD_BELL} text: ${result.text}   ")
 
             if (result.statusCode == 200) {
-                return startSinglePaymentFlow(acceptedOffer, proxy)
+                return startSupplierPaymentFlow(acceptedOffer, proxy)
             } else {
                logger.info("${Emo.ERRORS} " +
                         "StellarAnchorService:sendPayment fucked up! : " +
@@ -182,16 +184,16 @@ class StellarAnchorService {
 
     }
 
-    private fun startSinglePaymentFlow(acceptedOffer: AcceptedOfferDTO, proxy: CordaRPCOps): SupplierPaymentDTO {
+    private fun startSupplierPaymentFlow(acceptedOffer: AcceptedOfferDTO, proxy: CordaRPCOps): SupplierPaymentDTO {
         logger.info("${Emo.LEAF}${Emo.LEAF} result status is A-OK! ${Emo.LEAF}" +
                 "PaymentRequest has been successfully returned!" +
                 " ${Emo.GOLD_BELL}")
 
         logger.info("${Emo.GLOBE}${Emo.GLOBE}${Emo.GLOBE} makePaymentForOffer: " +
-                "... Talking to Corda SinglePaymentFlow ... ${Emo.GLOBE} ")
+                "... Talking to Corda SupplierPaymentFlow ... ${Emo.GLOBE} ")
 
-        val future = proxy.startFlowDynamic(SinglePaymentFlow::class.java,
-                acceptedOffer.offerId, acceptedOffer.investor!!.identifier).returnValue
+        val future = proxy.startFlowDynamic(SupplierPaymentFlow::class.java,
+                acceptedOffer.offerId).returnValue
 
         val supplierPaymentState = future.get()
 

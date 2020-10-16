@@ -1,12 +1,11 @@
 package com.bfn.contractstates.contracts
 
-import com.bfn.contractstates.states.InvoiceState
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.Contract
 import net.corda.core.transactions.LedgerTransaction
 import org.slf4j.LoggerFactory
 
-class SupplierPaymentContract : Contract {
+class InvestorPaymentContract : Contract {
     @Throws(IllegalArgumentException::class)
     override fun verify(tx: LedgerTransaction) {
         logger.info(
@@ -48,7 +47,7 @@ class SupplierPaymentContract : Contract {
     class Pay : CommandData
     class Close : CommandData
     companion object {
-        val ID: String = SupplierPaymentContract::class.java.name
-        private val logger = LoggerFactory.getLogger(SupplierPaymentContract::class.java)
+        val ID: String = InvestorPaymentContract::class.java.name
+        private val logger = LoggerFactory.getLogger(InvestorPaymentContract::class.java)
     }
 }

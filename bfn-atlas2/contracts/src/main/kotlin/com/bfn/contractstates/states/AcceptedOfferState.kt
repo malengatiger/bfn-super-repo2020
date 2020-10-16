@@ -14,17 +14,17 @@ class AcceptedOfferState(val invoiceId: UUID,
                          val offerAmount: String,
                          val discount: String,
                          val originalAmount: String,
-                         val supplier: AccountInfo,
-                         val investor: AccountInfo,
+                         val supplier: SupplierProfileState,
+                         val investor: InvestorProfileState,
                          val acceptanceDate: String,
                          val externalId: String,
                          val invoiceNumber: String,
                          val offerId: String,
                          val dateRegistered: String,
-                         val customer: AccountInfo) : ContractState {
+                         val customer: CustomerProfileState) : ContractState {
 
     override val participants: List<AbstractParty>
-        get() = listOf(supplier.host,
-                investor.host, customer.host)
+        get() = listOf(supplier.account.host,
+                investor.account.host, customer.account.host)
 
 }
