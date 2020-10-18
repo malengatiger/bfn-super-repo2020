@@ -7,7 +7,7 @@ import net.corda.core.flows.*
 import net.corda.core.transactions.SignedTransaction
 import org.slf4j.LoggerFactory
 
-@InitiatedBy(NetworkOperatorSupplierRoyaltyFlow::class)
+@InitiatedBy(NetworkInvestorRoyaltyFlow::class)
 class NetworkOperatorInvestorRoyaltyFlowResponder(private val counterPartySession: FlowSession) : FlowLogic<SignedTransaction>() {
     @Suspendable
     @Throws(FlowException::class)

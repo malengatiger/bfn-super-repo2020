@@ -394,11 +394,23 @@ class AdminController(rpc: NodeRPCConnection) {
             investorId: String): List<InvoiceOfferDTO> {
         return workerBeeService.findOffersForInvestor(proxy, investorId)
     }
-
-    @GetMapping(value = ["/makePaymentForOffer"], produces = [MediaType.APPLICATION_JSON_VALUE])
+    //getConsumedSupplierPayment
+    @GetMapping(value = ["/getConsumedSupplierPayment"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
-    fun makePaymentForOffer(offerId: String): SupplierPaymentDTO? {
-        return stellarAnchorService.makePaymentForOffer(proxy, offerId = offerId)
+    fun getConsumedSupplierPayment(offerId: String): SupplierPaymentDTO? {
+        return workerBeeService.getSupplierPayment(proxy, offerId = offerId)
+    }
+
+
+    @GetMapping(value = ["/makeSupplierPaymentForOffer"], produces = [MediaType.APPLICATION_JSON_VALUE])
+    @Throws(Exception::class)
+    fun makeSupplierPaymentForOffer(offerId: String): SupplierPaymentDTO? {
+        return stellarAnchorService.makeSupplierPaymentForOffer(proxy, offerId = offerId)
+    }
+    @GetMapping(value = ["/makeInvestorPaymentForOffer"], produces = [MediaType.APPLICATION_JSON_VALUE])
+    @Throws(Exception::class)
+    fun makeInvestorPaymentForOffer(offerId: String): InvestorPaymentDTO? {
+        return stellarAnchorService.makeInvestorPaymentForOffer(proxy, offerId = offerId)
     }
 
     @GetMapping(value = ["/findOffersForSupplier"])

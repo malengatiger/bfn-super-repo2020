@@ -1,6 +1,5 @@
 package com.bfn.flows.queries
 
-import com.bfn.contractstates.states.AcceptedOfferState
 import com.bfn.contractstates.states.SupplierPaymentState
 import com.bfn.flows.services.SupplierPaymentFinderService
 import net.corda.core.flows.FlowException
@@ -29,7 +28,14 @@ class SupplierPaymentQueryFlow(
                     mList.add(state.state.data)
                 }
                 return mList
-
+            }
+            FIND_FOR_OFFER -> {
+                val mList: MutableList<SupplierPaymentState> = mutableListOf()
+                val state = service.findSupplierPaymentForOffer(offerId = id!!)
+                if (state != null) {
+                    mList.add(state.state.data)
+                }
+                return mList
             }
         }
 
@@ -49,6 +55,7 @@ class SupplierPaymentQueryFlow(
         const val FIND_FOR_SUPPLIER = 2
         const val FIND_FOR_INVESTOR = 3
         const val FIND_FOR_INVOICE = 4
+        const val FIND_FOR_OFFER = 5
         const val FIND_FOR_CUSTOMER = 6
     }
 

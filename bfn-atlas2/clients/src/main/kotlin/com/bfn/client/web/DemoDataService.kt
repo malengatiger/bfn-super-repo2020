@@ -8,6 +8,7 @@ import com.bfn.client.web.services.StellarAnchorService
 import com.bfn.client.web.services.WorkerBeeService
 import com.bfn.contractstates.states.NetworkOperatorState
 import com.bfn.contractstates.states.PurchaseOrderState
+import com.bfn.flows.PAYMENT_INVESTOR
 import com.bfn.flows.StellarPaymentDTO
 import com.bfn.flows.todaysDate
 import com.google.gson.GsonBuilder
@@ -112,6 +113,8 @@ class DemoDataService {
         firebaseService.deleteCollection(collectionName = BFN_ACCEPTED_OFFERS)
         firebaseService.deleteCollection(collectionName = BFN_SUPPLIER_PAYMENTS)
         firebaseService.deleteCollection(collectionName = BFN_INVESTOR_PAYMENTS)
+        firebaseService.deleteCollection(collectionName = INVESTOR_ROYALTIES)
+        firebaseService.deleteCollection(collectionName = SUPPLIER_ROYALTIES)
 
         logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E Firebase clean up completed")
     }
@@ -175,7 +178,7 @@ class DemoDataService {
             if (it.host.contains("Customer")) {
                 customers.add(it)
             } else {
-                if (!it.name.contains(operator.account.name)) {
+                if (!it.name.contains(operator.account!!.name)) {
                     suppliers.add(it)
                 }
             }
@@ -346,6 +349,8 @@ class DemoDataService {
                 cellphone = "+27710441887",
                 date = DateTime().toDateTimeISO().toString(),
                 password = "pass123",
+                supplierRoyaltyPercentage = "1.0",
+                investorRoyaltyPercentage = "1.5",
                 account = AccountInfoDTO(
                         "TBD", "TBD",
                         "BFN Network Operator Ltd"
@@ -598,7 +603,7 @@ class DemoDataService {
         val err = "\uD83D\uDE21\uD83D\uDE21\uD83D\uDE21\uD83D\uDE21"
         for (state in page.states) {
             val user = firebaseService.getBFNUserByAccountName(state.state.data.name)
-            if (operator.account.name != state.state.data.name) {
+            if (operator.account!!.name != state.state.data.name) {
                 try {
                     if (user != null) {
                         addInvestorProfile(
@@ -636,9 +641,9 @@ class DemoDataService {
         val operator = firebaseService.getNetworkOperator()
         if (operator != null) {
             logger.info("\uD83D\uDD35 generateOffersFromAccount starting ..... " +
-                    "account: ${operator.account.name}: \uD83D\uDCA6 \uD83D\uDCA6")
+                    "account: ${operator.account!!.name}: \uD83D\uDCA6 \uD83D\uDCA6")
             nodeInvoices = workerBeeService.findInvoicesForNode(proxy)
-            generateOffersFromInvestor(proxy, operator.account)
+            generateOffersFromInvestor(proxy, operator.account!!)
         }
         val msg = "\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
                 "Total InvoiceOffers made by Account ${operator?.account?.name}"
@@ -721,19 +726,19 @@ class DemoDataService {
         val supplierPayments = workerBeeService.findSupplierPaymentsForNode(proxy)
         supplierPayments.forEach {
             //todo -  🍎 🍎 🍎 send payment to Stellar Anchor ....  🍎
-            val m = StellarPaymentDTO(
+            val stellarPayment = StellarPaymentDTO(
                     paymentRequestId = UUID.randomUUID().toString(),
                     amount = it.acceptedOffer!!.originalAmount,
                     assetCode = it.supplierProfile!!.assetCode,
                     sourceAccount = it.customerProfile!!.stellarAccountId,
-                    destinationAccount = it.supplierProfile!!.stellarAccountId,
-                    date = todaysDate()
+                    destinationAccount = it.acceptedOffer!!.investor!!.stellarAccountId,
+                    date = todaysDate(),
+                    paymentType = PAYMENT_INVESTOR
             )
-            stellarAnchorService.sendPayment(stellarPayment = m)
-            logger.info("${Emo.RAIN_DROPS} calling workerBeeService.startInvestorPaymentFlow .... ${it.supplierPaymentId}")
-            val payment = workerBeeService.startInvestorPaymentFlow(
-                    proxy,supplierPaymentId = it.supplierPaymentId)
-            mList.add(payment)
+            val payment = stellarAnchorService.makeInvestorPaymentForOffer(proxy, it.acceptedOffer!!.offerId)
+            if (payment != null) {
+                mList.add(payment)
+            }
         }
         logger.info("${Emo.FERNS} Generated ${mList.size} investorPayments ${Emo.RED_APPLE}")
         return mList;

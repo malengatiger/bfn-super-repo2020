@@ -93,7 +93,9 @@ object DTOUtil {
                 cellphone = a.cellphone,
                 email = a.email,
                 password = "",
-                date = a.dateRegistered
+                date = a.dateRegistered,
+                supplierRoyaltyPercentage = a.supplierRoyaltyPercentage,
+                investorRoyaltyPercentage = a.investorRoyaltyPercentage
         )
     }
     @JvmStatic
@@ -120,7 +122,7 @@ object DTOUtil {
     @JvmStatic
     fun getDTO(a: NetworkSupplierRoyaltyState): NetworkSupplierRoyaltyDTO {
         return NetworkSupplierRoyaltyDTO(
-                networkOperator = getDTO(a.networkOperator),
+                networkOperator = a.networkOperator.toString(),
                 supplierPayment = getDTO(a.supplierPayment),
                 amount = a.amount,
                 royaltyPercentage = a.royaltyPercentage,
@@ -132,7 +134,7 @@ object DTOUtil {
     @JvmStatic
     fun getDTO(a: NetworkInvestorRoyaltyState): NetworkInvestorRoyaltyDTO {
         return NetworkInvestorRoyaltyDTO(
-                networkOperator = getDTO(a.networkOperator),
+                networkOperator = a.networkOperator.toString(),
                 investorPayment = getDTO(a.investorPayment),
                 amount = a.amount,
                 royaltyPercentage = a.royaltyPercentage,

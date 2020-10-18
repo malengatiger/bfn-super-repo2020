@@ -55,8 +55,7 @@ class NetworkInvestorRoyaltyContract : Contract {
                 ".....\uD83E\uDD1F \uD83E\uDD1F ")
     }
 
-    class MakeOffer : CommandData
-    class AcceptOffer: CommandData
+    class CreateRoyalty : CommandData
     companion object {
         // This is used to identify our contract when building a transaction.
         val ID: String = NetworkInvestorRoyaltyContract::class.java.name

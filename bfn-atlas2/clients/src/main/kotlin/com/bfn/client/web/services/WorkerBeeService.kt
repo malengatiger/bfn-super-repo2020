@@ -361,7 +361,7 @@ class WorkerBeeService {
         payments.forEach() {
             dtos.add(DTOUtil.getDTO(it))
         }
-        val m = "\uD83C\uDF3A done listing SupplierPayments:  \uD83C\uDF3A " + payments.size
+        val m = "${Emo.CORN} done listing InvestorPayments:  ${Emo.CORN} " + payments.size
         logger.info(m)
         return dtos
     }
@@ -392,6 +392,26 @@ class WorkerBeeService {
         val m = "\uD83C\uDF3A done listing InvestorPayments:  \uD83C\uDF3A " + payments.size
         logger.info(m)
         return dtos
+    }
+    @Throws(Exception::class)
+    fun findInvestorPaymentStatesForInvestor(proxy: CordaRPCOps, investorId: String): List<InvestorPaymentState> {
+        val fut = proxy.startFlowDynamic(
+                InvestorPaymentQueryFlow::class.java, investorId,
+                InvestorPaymentQueryFlow.FIND_FOR_INVESTOR).returnValue
+        val payments = fut.get()
+        val m = "\uD83C\uDF3A done listing InvestorPayments:  \uD83C\uDF3A " + payments.size
+        logger.info(m)
+        return payments
+    }
+    @Throws(Exception::class)
+    fun findSupplierPaymentStatesForInvestor(proxy: CordaRPCOps, investorId: String): List<SupplierPaymentState> {
+        val fut = proxy.startFlowDynamic(
+                SupplierPaymentQueryFlow::class.java, investorId,
+                SupplierPaymentQueryFlow.FIND_FOR_INVESTOR).returnValue
+        val payments = fut.get()
+        val m = "\uD83C\uDF3A done listing SupplierPayments:  \uD83C\uDF3A " + payments.size
+        logger.info(m)
+        return payments
     }
     @Throws(Exception::class)
     fun findInvestorPaymentsForCustomer(proxy: CordaRPCOps, customerId: String): List<InvestorPaymentDTO> {
@@ -1416,15 +1436,28 @@ class WorkerBeeService {
     private val xx = "\uD83C\uDF53 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35"
     private val xx1 = "\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 "
 
+    fun getSupplierPayment(proxy: CordaRPCOps, offerId: String): SupplierPaymentDTO? {
+
+        val future = proxy.startFlowDynamic(SupplierPaymentQueryFlow::class.java, offerId,
+                SupplierPaymentQueryFlow.FIND_FOR_OFFER).returnValue
+        val payments = future.get()
+        return if (payments.isNotEmpty()) {
+            val p = DTOUtil.getDTO(payments.first())
+            logger.info("${Emo.HEART_PURPLE} SupplierPayment found ${p.acceptedOffer?.offerAmount}")
+            p
+        } else {
+            null
+        }
+    }
 
     @Throws(Exception::class)
-    fun makePaymentForOffer(proxy: CordaRPCOps,
-                            investorId: String,
-                            offerId: String): SupplierPaymentDTO {
+    fun makeSupplierPaymentForOffer(proxy: CordaRPCOps,
+                                    investorId: String,
+                                    offerId: String): SupplierPaymentDTO {
 
-        logger.info("\n\n\n${Emo.RAIN_DROPS} starting makePaymentForOffer, " +
+        logger.info("\n\n\n${Emo.RAIN_DROPS} starting makeSupplierPaymentForOffer, " +
                 "${Emo.RED_DOT} investor: $investorId offer: $offerId")
-        val suffix = "bfn/admin/makePaymentForOffer"
+        val suffix = "bfn/admin/makeSupplierPaymentForOffer"
         val url = "$stellarAnchorUrl$suffix"
         logger.info("${Emo.RAIN_DROPS} Stellar Anchor URL for processing this payment: ${Emo.RED_APPLE} $url")
 

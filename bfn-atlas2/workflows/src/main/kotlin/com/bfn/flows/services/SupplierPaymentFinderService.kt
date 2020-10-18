@@ -1,7 +1,6 @@
 package com.bfn.flows.services
 
 import co.paralleluniverse.fibers.Suspendable
-import com.bfn.contractstates.states.NetworkOperatorState
 import com.bfn.contractstates.states.SupplierPaymentState
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.contracts.StateAndRef
@@ -27,8 +26,7 @@ class SupplierPaymentFinderService(private val serviceHub: AppServiceHub) : Sing
             serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
 
     @Suspendable
-     fun findPaymentForInvoice(invoiceId: String): StateAndRef<SupplierPaymentState>? {
-
+    fun findPaymentForInvoice(invoiceId: String): StateAndRef<SupplierPaymentState>? {
         var paymentState: StateAndRef<SupplierPaymentState>? = null
         var pageNumber = DEFAULT_PAGE_NUM
         val states = mutableListOf<StateAndRef<SupplierPaymentState>>()
@@ -61,6 +59,40 @@ class SupplierPaymentFinderService(private val serviceHub: AppServiceHub) : Sing
 
         return paymentState
     }
+    @Suspendable
+    fun findSupplierPaymentForOffer(offerId: String): StateAndRef<SupplierPaymentState>? {
+        var paymentState: StateAndRef<SupplierPaymentState>? = null
+        var pageNumber = DEFAULT_PAGE_NUM
+        val states = mutableListOf<StateAndRef<SupplierPaymentState>>()
+        do {
+            val pageSpec = PageSpecification(pageNumber = pageNumber, pageSize = pageSize)
+            val results = serviceHub.vaultService
+                    .queryBy<SupplierPaymentState>(QueryCriteria.VaultQueryCriteria(
+                            status = Vault.StateStatus.UNCONSUMED
+                    ), pageSpec)
+            states.addAll(results.states)
+            pageNumber++
+        } while ((pageSpec.pageSize * (pageNumber - 1)) <= results.totalStatesAvailable)
+
+
+        states.forEach() {
+            if (offerId == it.state.data.acceptedOffer.offerId) {
+                paymentState = it
+            }
+        }
+
+        if (paymentState == null) {
+            logger.warn("findPaymentForOffer :  " +
+                    "\uD83D\uDE3C \uD83D\uDE3C  \uD83D\uDE3C unconsumed SupplierPayment NOT FOUND: " +
+                    "\uD83C\uDF4E $offerId \uD83C\uDF4E")
+        } else {
+            logger.warn("findPaymentForOffer :  " +
+                    "\uD83D\uDE3C " +
+                    "consumed SupplierPayment FOUND: \uD83C\uDF4E $offerId \uD83C\uDF4E")
+        }
+
+        return paymentState
+    }
 
     @Suspendable
     fun findPaymentById(supplierPaymentId: String): StateAndRef<SupplierPaymentState>? {
@@ -79,43 +111,46 @@ class SupplierPaymentFinderService(private val serviceHub: AppServiceHub) : Sing
 
         states.forEach() {
             if (it.state.data.supplierPaymentId == supplierPaymentId) {
-               return it
+                return it
             }
         }
 
         return null
     }
+
     @Suspendable
     @Throws(Exception::class)
     fun findPaymentsForInvestor(investorId: String): List<SupplierPaymentState> {
 
-        accountService.accountInfo(UUID.fromString(investorId)) ?:
-        throw IllegalArgumentException("Account does not exist")
+        accountService.accountInfo(UUID.fromString(investorId))
+                ?: throw IllegalArgumentException("Account does not exist")
         val payments = getAllPaymentStateAndRefs()
         val investorPayments: MutableList<SupplierPaymentState> = mutableListOf()
 
-        payments.forEach(){
+        payments.forEach() {
             if (it.state.data.acceptedOffer.investor.account.identifier.id.toString() == investorId) {
                 investorPayments.add(it.state.data)
             }
         }
         return investorPayments
     }
+
     @Suspendable
     fun findPaymentsForSupplier(supplierId: String): List<SupplierPaymentState> {
 
-        accountService.accountInfo(UUID.fromString(supplierId)) ?:
-        throw IllegalArgumentException("Account does not exist")
+        accountService.accountInfo(UUID.fromString(supplierId))
+                ?: throw IllegalArgumentException("Account does not exist")
         val payments = getAllPaymentStateAndRefs()
         val supplierPayments: MutableList<SupplierPaymentState> = mutableListOf()
 
-        payments.forEach(){
+        payments.forEach() {
             if (it.state.data.acceptedOffer.supplier.account.identifier.id.toString() == supplierId) {
                 supplierPayments.add(it.state.data)
             }
         }
         return supplierPayments
     }
+
     @Suspendable
     fun getAllNodes(): List<Party> {
         val map: MutableMap<String, Party> = mutableMapOf()
@@ -133,15 +168,16 @@ class SupplierPaymentFinderService(private val serviceHub: AppServiceHub) : Sing
         }
         return map.values.toList()
     }
+
     @Suspendable
     fun findPaymentsForCustomer(customerId: String): List<SupplierPaymentState> {
 
-        accountService.accountInfo(UUID.fromString(customerId)) ?:
-            throw IllegalArgumentException("Account does not exist")
+        accountService.accountInfo(UUID.fromString(customerId))
+                ?: throw IllegalArgumentException("Account does not exist")
         val payments = getAllPaymentStateAndRefs()
         val customerInvoices: MutableList<SupplierPaymentState> = mutableListOf()
 
-        payments.forEach(){
+        payments.forEach() {
             if (it.state.data.acceptedOffer.customer.account.identifier.id.toString() == customerId) {
                 customerInvoices.add(it.state.data)
             }
@@ -149,7 +185,7 @@ class SupplierPaymentFinderService(private val serviceHub: AppServiceHub) : Sing
         return customerInvoices
     }
 
-    private val pageSize:Int = 500
+    private val pageSize: Int = 500
 
     @Suspendable
     private fun queryPaymentStateAndRef(pageNumber: Int): Pair<List<StateAndRef<SupplierPaymentState>>, Long> {
@@ -160,7 +196,7 @@ class SupplierPaymentFinderService(private val serviceHub: AppServiceHub) : Sing
                 contractStateType = SupplierPaymentState::class.java,
                 paging = PageSpecification(pageNumber = pageNumber, pageSize = pageSize),
                 criteria = criteria)
-        return Pair(page.states, page.totalStatesAvailable )
+        return Pair(page.states, page.totalStatesAvailable)
     }
 
     @Suspendable
@@ -178,7 +214,7 @@ class SupplierPaymentFinderService(private val serviceHub: AppServiceHub) : Sing
             pageNumber++
         } while ((pageSpec.pageSize * (pageNumber - 1)) <= results.totalStatesAvailable)
 
-        logger.info("\uD83E\uDDE9 SupplierPayments found on node: \uD83C\uDF00 ${states.size} " )
+        logger.info("\uD83E\uDDE9 SupplierPayments found on node: \uD83C\uDF00 ${states.size} ")
         return states
     }
 
@@ -187,7 +223,7 @@ class SupplierPaymentFinderService(private val serviceHub: AppServiceHub) : Sing
     }
 
     init {
-        logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E PaymentFinderService initialized " )
+        logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E PaymentFinderService initialized ")
 
     }
 }

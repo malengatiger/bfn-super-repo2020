@@ -94,7 +94,7 @@ class NetworkOperatorBeeService {
         ).states
         logger.info("\uD83C\uDF15 \uD83C\uDF15  NetworkOperator states found: ${states.size}")
         states.forEach() {
-            if (it.state.data.account.name == networkOperator.account.name) {
+            if (it.state.data.account.name == networkOperator.account!!.name) {
                 oldState = it.state.data
             }
         }
@@ -116,7 +116,7 @@ class NetworkOperatorBeeService {
                 "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 Starting to make Offers for Anchor ... ")
         val operator = getNetworkOperator(proxy)
         val cordaFuture = proxy.startFlowDynamic(
-                MultiInvoiceOfferFlow::class.java, operator.account.identifier).returnValue
+                MultiInvoiceOfferFlow::class.java, operator.account!!.identifier).returnValue
         val result = cordaFuture.get()
         val mList: MutableList<InvoiceOfferDTO> = mutableListOf()
         result.forEach() {
@@ -157,8 +157,8 @@ class NetworkOperatorBeeService {
         val accounts = proxy.vaultQuery(AccountInfo::class.java).states
         accounts.forEach {
             logger.info("\uD83D\uDD35 Compare it.state.data.name: ${it.state.data.name} " +
-                    "networkOperator.name ${networkOperator.account.name}")
-            if (it.state.data.name == networkOperator.account.name) {
+                    "networkOperator.name ${networkOperator.account!!.name}")
+            if (it.state.data.name == networkOperator.account!!.name) {
                 stellarAccount = it.state.data
             }
         }
@@ -169,7 +169,7 @@ class NetworkOperatorBeeService {
                         "Creating BRAND NEW NetworkOperator BFN Corda account ................ ${Emo.RED_APPLE}")
                 val user = workerBeeService.startAccountRegistrationFlow(
                         proxy,
-                        networkOperator.account.name,
+                        networkOperator.account!!.name,
                         networkOperator.email,
                         networkOperator.cellphone,
                         networkOperator.password)
@@ -231,7 +231,9 @@ class NetworkOperatorBeeService {
                 account = mAccount,
                 email = networkOperator.email,
                 cellphone = networkOperator.cellphone,
-                dateRegistered = todaysDate())
+                dateRegistered = todaysDate(),
+                investorRoyaltyPercentage = "2.0",
+                supplierRoyaltyPercentage = "1.0")
 
         val fut = proxy.startTrackedFlowDynamic(
                 NetworkOperatorCreationFlow::class.java, anc).returnValue
@@ -242,7 +244,7 @@ class NetworkOperatorBeeService {
         firebaseService.addNetworkOperator(DTOUtil.getDTO(anc))
 
         val msg = "\n\n$em4 ....... NetworkOperatorState set up, added to Firestore. DONE!: " +
-                "${networkOperator.account.name} - ${networkOperator.email} \uD83C\uDF3A " +
+                "${networkOperator.account!!.name} - ${networkOperator.email} \uD83C\uDF3A " +
                 "txId: ${tx.id} \n\n"
         logger.info(msg)
         return DTOUtil.getDTO(anc);

@@ -272,6 +272,16 @@ class FirebaseService() {
         logger.info("\uD83D\uDE3C InvestorProfileState added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
     @Throws(ExecutionException::class, InterruptedException::class)
+    fun addSupplierRoyalty(supplierRoyalty: NetworkSupplierRoyaltyDTO) {
+        val future: ApiFuture<DocumentReference> = db.collection(SUPPLIER_ROYALTIES).add(supplierRoyalty);
+        logger.info("\uD83D\uDE3C NetworkSupplierRoyalty added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+    }
+    @Throws(ExecutionException::class, InterruptedException::class)
+    fun addInvestorRoyalty(investorRoyalty: NetworkInvestorRoyaltyDTO) {
+        val future: ApiFuture<DocumentReference> = db.collection(INVESTOR_ROYALTIES).add(investorRoyalty);
+        logger.info("\uD83D\uDE3C NetworkSupplierRoyalty added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
+    }
+    @Throws(ExecutionException::class, InterruptedException::class)
     fun addSupplierProfile(profile: SupplierProfileStateDTO) {
         val future: ApiFuture<DocumentReference> = db.collection(BFN_SUPPLIER_PROFILES).add(profile);
         logger.info("\uD83D\uDE3C SupplierProfileState added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
@@ -589,6 +599,23 @@ class FirebaseService() {
             val m = page.get()
             m.documents.forEach {
                 record = it.toObject(SupplierProfileStateDTO::class.java)
+            }
+
+        } catch (e: Exception) {
+            logger.error(e.message)
+        }
+
+        return record
+    }
+    fun getCustomerProfile(accountId:String): CustomerProfileStateDTO? {
+        var record: CustomerProfileStateDTO? = null
+        try {
+            val page = db.collection(BFN_CUSTOMER_PROFILES)
+                    .whereEqualTo("account.identifier", accountId)
+                    .get()
+            val m = page.get()
+            m.documents.forEach {
+                record = it.toObject(CustomerProfileStateDTO::class.java)
             }
 
         } catch (e: Exception) {

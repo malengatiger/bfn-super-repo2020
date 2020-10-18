@@ -15,6 +15,8 @@ class NetworkOperatorState(
                            val account: AccountInfo,
                            val email: String,
                            val cellphone: String,
+                           val supplierRoyaltyPercentage: String,
+                           val investorRoyaltyPercentage: String,
                            val dateRegistered: String
                    ) : ContractState {
 

@@ -4,13 +4,13 @@ package com.bfn.client.web.services
 import com.bfn.client.Emo
 import com.bfn.client.data.*
 import com.bfn.client.web.DTOUtil
+import com.bfn.flows.PAYMENT_INVESTOR
+import com.bfn.flows.PAYMENT_SUPPLIER
 import com.bfn.flows.StellarPaymentDTO
-import com.bfn.flows.investor.SupplierPaymentFlow
 import com.bfn.flows.queries.AcceptedOfferQueryFlow
 import com.bfn.flows.todaysDate
 import com.google.gson.GsonBuilder
 import khttp.post
-import khttp.responses.Response
 import net.corda.core.messaging.CordaRPCOps
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -40,9 +40,12 @@ class StellarAnchorService {
     @Autowired
     private lateinit var firebaseService: FirebaseService
 
+    @Autowired
+    private lateinit var networkRoyaltyService: NetworkRoyaltyService
+
     fun sendPayment(stellarPayment: StellarPaymentDTO): Int {
         val suffix = "sendPayment"
-        logx.info("${Emo.SOCCER_BALL}${Emo.SOCCER_BALL}" +
+        logx.info("${Emo.SOCCER_BALL}${Emo.SOCCER_BALL}${Emo.SOCCER_BALL}${Emo.SOCCER_BALL}" +
                 "Request(POST) for Stellar payment to be sent over the wire: sent to " +
                 "\uD83C\uDF4E $stellarAnchorUrl$suffix \uD83C\uDF4E")
 
@@ -54,6 +57,7 @@ class StellarAnchorService {
         logx.info("$good sendPayment RESPONSE: returning statusCode: " +
                 "${Emo.YELLOW_BIRD}${result.statusCode}  ${Emo.YELLOW_BIRD} " +
                 "result text: ${Emo.BLUE_BIRD}${result.text}${Emo.BLUE_BIRD}  ")
+
         return result.statusCode
     }
     fun createStellarAccount(proxy: CordaRPCOps): StellarResponse? {
@@ -113,13 +117,11 @@ class StellarAnchorService {
         return stellarResponse
     }
 
-    fun makePaymentForOffer(proxy: CordaRPCOps, offerId: String): SupplierPaymentDTO? {
-
+    fun makeSupplierPaymentForOffer(proxy: CordaRPCOps, offerId: String): SupplierPaymentDTO? {
        logger.info("${Emo.GOLD_BELL}${Emo.GOLD_BELL}${Emo.GOLD_BELL}${Emo.GOLD_BELL} " +
                 "calling the Stellar Anchor server to send SupplierPayment ... " +
                " offerId: ${Emo.RED_APPLE} $offerId  ${Emo.RED_APPLE}")
 
-        //todo - get acceptedOffer from ledger
         val future = proxy.startFlowDynamic(AcceptedOfferQueryFlow::class.java, offerId,
                 AcceptedOfferQueryFlow.FIND_FOR_OFFER ).returnValue
         val mList = future.get()
@@ -141,8 +143,6 @@ class StellarAnchorService {
         if (supplierProfile != null) {
             assetCode = supplierProfile.assetCode
         }
-        var result: Response? = null
-
 
         if (supplierProfile != null && investorProfile != null) {
             val stellarPayment = StellarPaymentDTO(
@@ -151,32 +151,66 @@ class StellarAnchorService {
                     assetCode = assetCode,
                     date = todaysDate(),
                     destinationAccount = supplierProfile.stellarAccountId,
-                    sourceAccount = investorProfile.stellarAccountId
+                    sourceAccount = investorProfile.stellarAccountId,
+                    paymentType = PAYMENT_SUPPLIER
             )
-            logger.info("${Emo.BLUE_DOT}${Emo.BLUE_DOT} sending to Stellar Anchor:" +
-                    " ${gson.toJson(stellarPayment)} ")
-            val headers = mapOf("Content-Type" to "application/json")
-            val suffix = "sendPayment"
-            val url = "$stellarAnchorUrl$suffix"
-
-            result = post(
-                    url = url,
-                    data = gson.toJson(stellarPayment),
-                    headers = headers)
-
-           logger.info("${Emo.GOLD_BELL}${Emo.GOLD_BELL}${Emo.GOLD_BELL}${Emo.GOLD_BELL}" +
-                   " $url ${Emo.LEAF}RESPONSE: " +
-                    "statusCode: ${result.statusCode} ${Emo.GOLD_BELL} text: ${result.text}   ")
-
-            if (result.statusCode == 200) {
-                return startSupplierPaymentFlow(acceptedOffer, proxy)
+            val statusCode = sendPayment(stellarPayment)
+            if (statusCode == 200) {
+                val supplierPayment = networkRoyaltyService.startSupplierPaymentFlow(
+                        offerId = acceptedOffer.offerId, proxy = proxy)
+                networkRoyaltyService.processSupplierRoyalty(
+                        proxy = proxy, stellarPayment = stellarPayment,
+                        supplierPayment =  supplierPayment)
+                return supplierPayment
             } else {
-               logger.info("${Emo.ERRORS} " +
-                        "StellarAnchorService:sendPayment fucked up! : " +
-                        "statusCode: ${result.statusCode} text: ${result.text}  \uD83C\uDF4E  \uD83C\uDF4E")
-                throw Exception("${Emo.NOT_OK} ${Emo.NOT_OK} ${Emo.ERRORS} " +
-                        "Stellar Anchor Payment failed : " +
-                        "statusCode: ${result.statusCode} ${Emo.ANGRY} msg: ${result.text}")
+                throw Exception("${Emo.ERROR} makeSupplierPaymentForOffer failed: " +
+                        "statusCode: $statusCode ${Emo.NOT_OK}")
+            }
+        } else {
+            throw Exception("${Emo.ERROR} Investor or supplier missing ${Emo.NOT_OK}")
+        }
+
+    }
+
+    fun makeInvestorPaymentForOffer(proxy: CordaRPCOps, offerId: String): InvestorPaymentDTO? {
+        logger.info("${Emo.GOLD_BELL}${Emo.GOLD_BELL}${Emo.GOLD_BELL}${Emo.GOLD_BELL} " +
+                "makeInvestorPaymentForOffer starting: INVESTOR GETTING PAID ... " +
+                " ${Emo.RED_APPLE} offerId: $offerId  ${Emo.RED_APPLE}")
+
+        val supplierPayment = workerBeeService.getSupplierPayment(proxy,offerId)
+                ?: throw Exception("SupplierPayment not found ${Emo.NOT_OK}")
+
+        logger.info("${Emo.GOLD_BELL}${Emo.GOLD_BELL} InvestorPayment to be made for consumed SupplierPayment: " +
+                "investor: ${supplierPayment.acceptedOffer!!.investor?.account?.name} " +
+                "supplier: ${supplierPayment.acceptedOffer!!.supplier?.account?.name} " +
+                "customer: ${supplierPayment.acceptedOffer!!.customer?.account?.name} " +
+                "offerAmount: ${supplierPayment.acceptedOffer!!.offerAmount} ${Emo.FERNS}")
+
+        val customerProfile = firebaseService.getCustomerProfile(
+                accountId = supplierPayment.acceptedOffer!!.customer!!.account!!.identifier)
+        val investorProfile = firebaseService.getInvestorProfile(
+                accountId = supplierPayment.acceptedOffer!!.investor!!.account!!.identifier)
+
+        if (customerProfile != null && investorProfile != null) {
+            val stellarPayment = StellarPaymentDTO(
+                    paymentRequestId = UUID.randomUUID().toString(),
+                    amount = supplierPayment.acceptedOffer!!.offerAmount,
+                    assetCode = supplierPayment.acceptedOffer!!.supplier!!.assetCode,
+                    date = todaysDate(),
+                    destinationAccount = investorProfile.stellarAccountId,
+                    sourceAccount = customerProfile.stellarAccountId,
+                    paymentType = PAYMENT_INVESTOR
+            )
+            val statusCode = sendPayment(stellarPayment)
+            if (statusCode == 200) {
+                val investorPayment = networkRoyaltyService.startInvestorPaymentFlow(
+                        supplierPayment.supplierPaymentId, proxy)
+                networkRoyaltyService.processInvestorRoyalty(proxy, stellarPayment, investorPayment)
+                return investorPayment
+            } else {
+                throw Exception("${Emo.ERROR} ${Emo.ERROR} " +
+                        "stellarAnchorService.makeInvestorPaymentForOffer failed; " +
+                        "statusCode: $statusCode ${Emo.NOT_OK}")
             }
         } else {
             throw Exception("${Emo.ERROR}Investor or supplier missing")
@@ -184,31 +218,6 @@ class StellarAnchorService {
 
     }
 
-    private fun startSupplierPaymentFlow(acceptedOffer: AcceptedOfferDTO, proxy: CordaRPCOps): SupplierPaymentDTO {
-        logger.info("${Emo.LEAF}${Emo.LEAF} result status is A-OK! ${Emo.LEAF}" +
-                "PaymentRequest has been successfully returned!" +
-                " ${Emo.GOLD_BELL}")
-
-        logger.info("${Emo.GLOBE}${Emo.GLOBE}${Emo.GLOBE} makePaymentForOffer: " +
-                "... Talking to Corda SupplierPaymentFlow ... ${Emo.GLOBE} ")
-
-        val future = proxy.startFlowDynamic(SupplierPaymentFlow::class.java,
-                acceptedOffer.offerId).returnValue
-
-        val supplierPaymentState = future.get()
-
-        if (supplierPaymentState != null) {
-            logger.info("${Emo.GLOBE}${Emo.GLOBE}${Emo.GLOBE}  " +
-                    "${Emo.LEAF} supplierPayment recorded on Corda Ledger ${Emo.LEAF}")
-            val dto = DTOUtil.getDTO(supplierPaymentState)
-            firebaseService.addSupplierPayment(dto)
-            logger.info("${Emo.GLOBE}${Emo.GLOBE}${Emo.GLOBE} SupplierPayment made on ledger: " +
-                    "${gson.toJson(dto)} ${Emo.SOCCER_BALL}${Emo.SOCCER_BALL}${Emo.SOCCER_BALL} \n\n\n")
-            return dto
-        } else {
-            throw Exception("Unable to save successful supplierPayment on Corda Ledger ${Emo.NOT_OK}")
-        }
-    }
 
     private val good = "\uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C \uD83E\uDD6C"
     private val err = "\uD83D\uDC7F \uD83D\uDE21 \uD83D\uDC7F \uD83D\uDE21 \uD83D\uDC7F \uD83D\uDE21"
