@@ -50,13 +50,13 @@ class DemoDataController(rpc: NodeRPCConnection) {
 
     @GetMapping(value = ["/generateAnchorNodeData"], produces = [MediaType.TEXT_PLAIN_VALUE])
     @Throws(Exception::class)
-    private fun generateAnchorNodeData(numberOfAccounts:String): String? {
+    private fun generateAnchorNodeData(numberOfAccounts:String, demoAdminEmail:String): String? {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
                 "starting DemoDataController: generateAnchorNodeData " +
                 "... \uD83C\uDF4F number accts: $numberOfAccounts")
 
         val num = numberOfAccounts.toInt()
-        val result = demoDataService.generateAnchorNodeData(proxy, num)
+        val result = demoDataService.generateAnchorNodeData(proxy, num, demoAdminEmail)
         logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 DemoDataController:generateAnchorNodeData result: " +
                 " \uD83C\uDF4F " + GSON.toJson(result)
                 + "    \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")

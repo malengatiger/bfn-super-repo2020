@@ -2,6 +2,7 @@ package com.bfn.client.web
 
 import com.bfn.client.Emo
 import com.bfn.client.data.*
+import com.bfn.client.local.Client
 import com.bfn.client.web.services.FirebaseService
 import com.bfn.client.web.services.NetworkOperatorBeeService
 import com.bfn.client.web.services.StellarAnchorService
@@ -11,6 +12,9 @@ import com.bfn.contractstates.states.PurchaseOrderState
 import com.bfn.flows.PAYMENT_INVESTOR
 import com.bfn.flows.StellarPaymentDTO
 import com.bfn.flows.todaysDate
+import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.UserRecord
 import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import net.corda.core.contracts.StateAndRef
@@ -78,13 +82,15 @@ class DemoDataService {
     /**
      * Generate data for the main anchor node : NetworkOperator is created here as well as Accounts
      */
-    fun generateAnchorNodeData(mProxy: CordaRPCOps, numberOfAccounts: Int): String {
+    fun generateAnchorNodeData(mProxy: CordaRPCOps,
+                               numberOfAccounts: Int,
+                               demoAdminEmail:String): String {
         logger.info("\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
                 "Generating data for the main anchor Node: " +
                 "NetworkOperator + Suppliers + Investors; " +
                 "${Emo.BLUE_DOT}numberOfAccounts to generate: $numberOfAccounts")
 
-        deleteFirebaseShit()
+        deleteFirebaseShit(demoAdminEmail)
         createNetworkOperator(mProxy)
         generateLocalNodeAccounts(mProxy, numberOfAccounts)
 
@@ -94,10 +100,10 @@ class DemoDataService {
         return msg
     }
 
-    private fun deleteFirebaseShit() {
+    private fun deleteFirebaseShit(demoAdminEmail:String) {
         val users = firebaseService.getBFNUsers()
         users.forEach {
-            if (it.email != "bfnadmin@bfn.com") {
+            if (it.email != "bfnadmin@bfn.com" && it.email != demoAdminEmail) {
                 firebaseService.deleteAuthUser(it.uid)
             }
         }
@@ -117,6 +123,24 @@ class DemoDataService {
         firebaseService.deleteCollection(collectionName = SUPPLIER_ROYALTIES)
 
         logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E Firebase clean up completed")
+    }
+
+    lateinit var token:String
+     fun setFirebaseSecurityToken() {
+        logger.info("\uD83D\uDD35 \uD83D\uDD35  \uD83D\uDD35 \uD83D\uDD35 " +
+                "initializing Firebase and creating demo user ")
+        FirebaseApp.initializeApp();
+        val auth = FirebaseAuth.getInstance()
+        val create = UserRecord.CreateRequest()
+        create.setEmail("mTEST${System.currentTimeMillis()}@bfn.com")
+        create.setPassword("pass123")
+        create.setDisplayName("DemoData Administrator")
+        val userRecord = auth.createUser(create)
+        Client.logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                "DemoData Admin User created UID: ${userRecord.uid}")
+        token = auth.createCustomToken(userRecord.uid)
+        Client.logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                "token to be used for data generation: \uD83C\uDF4E $token \uD83C\uDF4E ")
     }
 
     var accounts: List<AccountInfoDTO> = mutableListOf()

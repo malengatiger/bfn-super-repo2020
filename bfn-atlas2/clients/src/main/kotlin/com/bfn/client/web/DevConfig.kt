@@ -8,7 +8,8 @@ import org.springframework.stereotype.Component
 @Component
 class DevConfig : Config {
     private val logger = LoggerFactory.getLogger(DevConfig::class.java)
+
     override fun setup() { //setup some configuration here
-        logger.info("⛅️ ⛅️ ⛅️ ............ Development configuration ⛅️ ⛅️ ⛅️")
+        logger.info("⛅️ ⛅️ ⛅️ ............ This is a Development configuration  ..... ⛅️ ⛅️ ⛅️")
     }
 }
