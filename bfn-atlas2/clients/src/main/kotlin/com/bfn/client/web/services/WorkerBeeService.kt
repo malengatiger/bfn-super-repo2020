@@ -101,6 +101,9 @@ class WorkerBeeService {
 
         }
 
+        logger.info("\uD83C\uDF50 \uD83C\uDF50 " +
+                "Node Accounts found: ${list.size} \uD83C\uDF50")
+
         return list
     }
 

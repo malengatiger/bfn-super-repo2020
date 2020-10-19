@@ -1,6 +1,7 @@
 import org.springframework.boot.gradle.tasks.run.BootRun
 
 apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
 apply plugin: 'java'
 sourceSets {
     main {
@@ -35,6 +36,14 @@ dependencies {
     // https://mvnrepository.com/artifact/joda-time/joda-time
     compile group: 'joda-time', name: 'joda-time', version: '2.10.6'
     implementation 'com.github.stellar:java-stellar-sdk:0.18.0'
+
+//    compile('org.springframework.boot:spring-boot-starter-security'){
+//        exclude group: "org.springframework.boot", module: "spring-boot-starter-logging"
+//    }
+
+    // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-security
+//    compile group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: '2.3.4.RELEASE'
+
 
 }
 

@@ -71,17 +71,17 @@ public class Client {
 
 //        generateStellarAnchor(anchorName = "BFN Network Operator Ltd", fundingSeed = fundingSeed);
 
-//        generateAnchorNodeData(networkOperatorUrl, 3, headers)
+        generateAnchorNodeData(networkOperatorUrl, 6, headers)
+
+        generateCustomerNodeData(customerUrl, headers = headers, numberOfMonths = 3)
+
+        fundPlayers(networkOperatorUrl)
+
+        generateInvoiceOffers(networkOperatorUrl, headers) //investors make offers
 //
-//        generateCustomerNodeData(customerUrl, headers = headers, numberOfMonths = 2)
+        generateOfferAcceptances(networkOperatorUrl) //suppliers accept, or do not accept offers
 //
-//        fundPlayers(networkOperatorUrl)
-//
-//        generateInvoiceOffers(networkOperatorUrl, headers) //investors make offers
-////
-//        generateOfferAcceptances(networkOperatorUrl) //suppliers accept, or do not accept offers
-////
-//        generateSupplierPayments(networkOperatorUrl) //investors pay for their accepted offers
+        generateSupplierPayments(networkOperatorUrl) //investors pay for their accepted offers
 
         generateInvestorPayments(networkOperatorUrl) //customers pay investors for each supplierPayment
 
@@ -143,7 +143,8 @@ public class Client {
         logger.info("\n\n\n${Emo.RAIN_DROPS} fundCustomersWithZAR completed " +
                 " ${Emo.RAIN_DROPS}\n\n\n")
     }
-
+    private val  fundingAmount = "100000000"
+    private val  assetCode = "ZAR"
     private fun fundInvestorsWithZAR(networkOperatorUrl: String, anchor: Anchor) {
         logger.info("\n\n\n${Emo.RAIN_DROPS} fundInvestorsWithZAR started .... at " +
                 "$networkOperatorUrl ${Emo.RAIN_DROPS}")
@@ -194,8 +195,8 @@ public class Client {
                 sourceAccount = anchor.distributionAccount!!.accountId,
                 destinationAccount = customerProfile.stellarAccountId,
                 paymentRequestId = UUID.randomUUID().toString(),
-                assetCode = "ZAR",
-                amount = "100000000",
+                assetCode = assetCode,
+                amount = fundingAmount,
                 date = todaysDate(),
                 paymentType = PAYMENT_FUNDING
         )
@@ -219,8 +220,8 @@ public class Client {
                 sourceAccount = anchor.distributionAccount!!.accountId,
                 destinationAccount = investorProfile.stellarAccountId,
                 paymentRequestId = UUID.randomUUID().toString(),
-                assetCode = "ZAR",
-                amount = "100000000",
+                assetCode = assetCode,
+                amount = fundingAmount,
                 date = todaysDate(),
                 paymentType = PAYMENT_FUNDING
         )
@@ -312,11 +313,6 @@ public class Client {
                 "checkInvestorPayments completed! ${Emo.RED_APPLES}\n\n\n")
     }
 
-    /*
-    localhost:8084/anchor/data/generateAnchor
-    public Anchor generateAnchor(@RequestParam String anchorName, @RequestParam String fundingSeed) throws Exception {
-
-     */
     private val stellarUrl = "http://localhost:8084/anchor/"
     private fun generateStellarAnchor(anchorName: String, fundingSeed: String) {
         val headers = mapOf("Content-Type" to MediaType.APPLICATION_JSON_VALUE)
@@ -354,7 +350,7 @@ public class Client {
 
         for (payment in mList) {
             logger.info("${Emo.LEAF}${Emo.LEAF}${Emo.LEAF} " +
-                    "InvestorPayment: ${gson.toJson(payment)}")
+                    "InvestorPayment: ${payment.supplierPayment?.acceptedOffer?.offerAmount}")
         }
         logger.info("${Emo.LEAF}${Emo.LEAF}${Emo.LEAF} " +
                 "Total payments made: ${Emo.RED_APPLE}${mList.size}  ${Emo.RED_APPLE}")
@@ -461,8 +457,6 @@ public class Client {
                 "Result list from JSON string has ${mList.size} possible investors")
         return mList
     }
-
-
 
     private fun makeSupplierPayments(networkOperatorUrl: String,
                                      investorId: String): Int {

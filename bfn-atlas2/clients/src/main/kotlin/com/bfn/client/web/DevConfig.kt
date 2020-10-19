@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component
 @Profile("dev")
 @Component
 class DevConfig : Config {
-    private val logger = LoggerFactory.getLogger(FirestoreNodeRefresh::class.java)
+    private val logger = LoggerFactory.getLogger(DevConfig::class.java)
     override fun setup() { //setup some configuration here
         logger.info("⛅️ ⛅️ ⛅️ ............ Development configuration ⛅️ ⛅️ ⛅️")
     }

@@ -42,7 +42,7 @@ class FirestoreNodeRefresh {
     @PostConstruct
     fun init() {
         logger.info("\uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D \uD83D\uDC7D " +
-                "FirestoreNodeRefresh PostConstruct: \uD83C\uDF3F Alexa and AI are coming for you! \uD83C\uDF1E SPRINGBOOT_PROFILE : $profile \uD83C\uDF1E")
+                "FirestoreNodeRefresh PostConstruct: init() : \uD83C\uDF3F Alexa and AI are coming for you! \uD83C\uDF1E SPRINGBOOT_PROFILE : $profile \uD83C\uDF1E")
 
         logger.info("\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06  FirestoreNodeRefresh: setting up Firebase service account ...."
                 + " \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06")

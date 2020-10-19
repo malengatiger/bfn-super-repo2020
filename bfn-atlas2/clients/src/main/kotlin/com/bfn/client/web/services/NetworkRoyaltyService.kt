@@ -69,7 +69,7 @@ class NetworkRoyaltyService {
         if (statusCode == 200) {
             //tell the ledger
             logger.info("${Emo.HEART_BLUE}${Emo.HEART_BLUE} " +
-                    "NetworkOperatorSupplierRoyaltyFlow starting ...")
+                    "NetworkSupplierRoyaltyFlow starting ...")
 
             val operatorAccount = workerBeeService.getNodeAccount(
                     proxy, identifier = operator.account!!.identifier)
@@ -138,7 +138,7 @@ class NetworkRoyaltyService {
         if (statusCode == 200) {
             //tell the ledger
             logger.info("${Emo.HEART_ORANGE}${Emo.HEART_ORANGE} " +
-                    "NetworkOperatorInvestorRoyaltyFlow starting ...")
+                    "NetworkInvestorRoyaltyFlow starting ...")
             val operatorAccount = workerBeeService.getNodeAccount(
                     proxy, identifier = operator.account!!.identifier)
             if (operatorAccount != null) {

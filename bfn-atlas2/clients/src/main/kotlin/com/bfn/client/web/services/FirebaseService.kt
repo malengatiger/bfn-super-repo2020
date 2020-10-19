@@ -302,8 +302,6 @@ class FirebaseService() {
             throw e
         }
     }
-
-
     @Throws(Exception::class)
     fun deleteBFNAnchor() {
         try {
@@ -318,7 +316,6 @@ class FirebaseService() {
             throw e
         }
     }
-
     @Throws(Exception::class)
     fun deleteAuthUser(uid:String) {
         try {
@@ -363,7 +360,6 @@ class FirebaseService() {
         }
         return mList
     }
-
 
     @Throws(Exception::class)
     fun getNetworkOperator(): NetworkOperatorDTO? {
@@ -671,7 +667,6 @@ class FirebaseService() {
         }
         return acceptedOffer
     }
-
     fun getAcceptedOffersByInvestor(investorId:String): List<AcceptedOfferDTO> {
         val acceptedOffers: MutableList<AcceptedOfferDTO> = mutableListOf()
         try {
@@ -691,7 +686,6 @@ class FirebaseService() {
 
         return acceptedOffers
     }
-
 
     fun deleteCollections() {
         val m = db.listCollections()
@@ -714,7 +708,6 @@ class FirebaseService() {
             }
         }
     }
-
     /**
      * Delete a collection in batches to avoid out-of-memory errors.
      * Batch size may be tuned based on document size (at most 1MB) and application requirements.
@@ -740,7 +733,6 @@ class FirebaseService() {
     }
 
     private  val batchSize = 2000
-
 
     @Throws(ExecutionException::class, InterruptedException::class)
     fun deleteCollection(collectionName: String?) { // retrieve a small batch of documents to avoid out-of-memory errors

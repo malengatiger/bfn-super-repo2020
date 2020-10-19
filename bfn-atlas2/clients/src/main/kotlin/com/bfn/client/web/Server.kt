@@ -14,6 +14,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.boot.web.context.WebServerInitializedEvent
 import org.springframework.boot.web.server.WebServerFactoryCustomizer
+import org.springframework.boot.web.servlet.ServletComponentScan
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory
 import org.springframework.context.ApplicationContext
 import org.springframework.context.ApplicationListener
@@ -84,7 +85,7 @@ fun main(args: Array<String>) {
 
 @SpringBootApplication
 @EnableScheduling
-
+@ServletComponentScan
 private open class ApiApp : ApplicationListener<ApplicationReadyEvent> {
     private val logger = LoggerFactory.getLogger(ApiApp::class.java.name)
 

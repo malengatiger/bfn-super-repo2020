@@ -385,7 +385,7 @@ class AdminController(rpc: NodeRPCConnection) {
     @Throws(Exception::class)
     fun findAcceptedOffersForInvestor(
             investorId: String): List<AcceptedOfferDTO> {
-        return workerBeeService.findAcceptedOffersForInvestor(proxy,investorId)
+        return workerBeeService.findAcceptedOffersForInvestor(proxy, investorId)
     }
 
     @GetMapping(value = ["/findOffersForInvestor"])
@@ -538,7 +538,8 @@ class AdminController(rpc: NodeRPCConnection) {
 
     @GetMapping(value = ["/ping"], produces = [MediaType.APPLICATION_JSON_VALUE])
     fun ping(): String {
-        val msg = ("\uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A AdminController:BFN Web API pinged: " + Date().toString()
+        println("\uD83D\uDE21 \uD83D\uDE21 \uD83D\uDE21 ")
+        val msg =("\uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A AdminController:BFN Web API pinged: " + Date().toString()
                 + " \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A")
         val start = Date()
         logger.info(msg)
