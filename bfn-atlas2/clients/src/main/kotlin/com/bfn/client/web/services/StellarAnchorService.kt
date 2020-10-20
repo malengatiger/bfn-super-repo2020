@@ -43,16 +43,25 @@ class StellarAnchorService {
     @Autowired
     private lateinit var networkRoyaltyService: NetworkRoyaltyService
 
-    fun sendPayment(stellarPayment: StellarPaymentDTO): Int {
+    fun sendPayment(stellarPayment: StellarPaymentDTO, token: String): Int {
+        if (stellarPayment.sourceAccount == "tbd") {
+            throw Exception("Source Account is invalid")
+        }
+        if (stellarPayment.destinationAccount == "tbd") {
+            throw Exception("Destination Account is invalid")
+        }
         val suffix = "sendPayment"
         logx.info("${Emo.SOCCER_BALL}${Emo.SOCCER_BALL}${Emo.SOCCER_BALL}${Emo.SOCCER_BALL}" +
                 "Request(POST) for Stellar payment to be sent over the wire: sent to " +
                 "\uD83C\uDF4E $stellarAnchorUrl$suffix \uD83C\uDF4E")
 
-        val headers = mapOf("Content-Type" to MediaType.APPLICATION_JSON_VALUE)
+        val mHeaders:MutableMap<String,String> = mutableMapOf()
+        mHeaders["Content-Type"] = MediaType.APPLICATION_JSON_VALUE
+        mHeaders["Authorization"] = "Bearer $token"
+
         val result = post(url = "$stellarAnchorUrl$suffix",
                 data = gson.toJson(stellarPayment),
-                timeout = 990000000.0, headers = headers)
+                timeout = 990000000.0, headers = mHeaders)
 
         logx.info("$good sendPayment RESPONSE: returning statusCode: " +
                 "${Emo.YELLOW_BIRD}${result.statusCode}  ${Emo.YELLOW_BIRD} " +
@@ -60,7 +69,7 @@ class StellarAnchorService {
 
         return result.statusCode
     }
-    fun createStellarAccount(proxy: CordaRPCOps): StellarResponse? {
+    fun createStellarAccount(token: String): StellarResponse? {
         val suffix = "createStellarAccount"
         logx.info("\n\uD83C\uDF30 Sending HTTP call to the BFN network to create a brand new Stellar ACCOUNT" +
                 ": \uD83E\uDDE9 } \uD83C\uDF30 $stellarAnchorUrl$suffix")
@@ -68,13 +77,14 @@ class StellarAnchorService {
         var stellarResponse: StellarResponse? = null
         try {
             logx.info("\uD83C\uDF4E call the Stellar anchor server and obtain a Stellar account ")
-            val headers = mapOf("Content-Type" to MediaType.APPLICATION_JSON_VALUE)
-
+            val mHeaders:MutableMap<String,String> = mutableMapOf()
+            mHeaders["Content-Type"] = MediaType.APPLICATION_JSON_VALUE
+            mHeaders["Authorization"] = "Bearer $token"
             logx.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
                     "... Request for Stellar account to be sent over the wire: sent to " +
                     "\uD83C\uDF4E $stellarAnchorUrl$suffix \uD83C\uDF4E")
 
-            val result = post(url = "$stellarAnchorUrl$suffix",  timeout = 990000000.0, headers = headers)
+            val result = post(url = "$stellarAnchorUrl$suffix",  timeout = 990000000.0, headers = mHeaders)
 
             logx.info("$good createStellarAccount RESPONSE: statusCode: ${result.statusCode}  ")
             logx.info("$good createStellarAccount RESPONSE: result text: ${result.text}  ")
@@ -117,7 +127,7 @@ class StellarAnchorService {
         return stellarResponse
     }
 
-    fun makeSupplierPaymentForOffer(proxy: CordaRPCOps, offerId: String): SupplierPaymentDTO? {
+    fun makeSupplierPaymentForOffer(proxy: CordaRPCOps, offerId: String, token: String): SupplierPaymentDTO? {
        logger.info("${Emo.GOLD_BELL}${Emo.GOLD_BELL}${Emo.GOLD_BELL}${Emo.GOLD_BELL} " +
                 "calling the Stellar Anchor server to send SupplierPayment ... " +
                " offerId: ${Emo.RED_APPLE} $offerId  ${Emo.RED_APPLE}")
@@ -154,13 +164,13 @@ class StellarAnchorService {
                     sourceAccount = investorProfile.stellarAccountId,
                     paymentType = PAYMENT_SUPPLIER
             )
-            val statusCode = sendPayment(stellarPayment)
+            val statusCode = sendPayment(stellarPayment, token)
             if (statusCode == 200) {
                 val supplierPayment = networkRoyaltyService.startSupplierPaymentFlow(
                         offerId = acceptedOffer.offerId, proxy = proxy)
                 networkRoyaltyService.processSupplierRoyalty(
                         proxy = proxy, stellarPayment = stellarPayment,
-                        supplierPayment =  supplierPayment)
+                        supplierPayment =  supplierPayment, token = token)
                 return supplierPayment
             } else {
                 throw Exception("${Emo.ERROR} makeSupplierPaymentForOffer failed: " +
@@ -172,7 +182,7 @@ class StellarAnchorService {
 
     }
 
-    fun makeInvestorPaymentForOffer(proxy: CordaRPCOps, offerId: String): InvestorPaymentDTO? {
+    fun makeInvestorPaymentForOffer(proxy: CordaRPCOps, offerId: String, token: String): InvestorPaymentDTO? {
         logger.info("${Emo.GOLD_BELL}${Emo.GOLD_BELL}${Emo.GOLD_BELL}${Emo.GOLD_BELL} " +
                 "makeInvestorPaymentForOffer starting: INVESTOR GETTING PAID ... " +
                 " ${Emo.RED_APPLE} offerId: $offerId  ${Emo.RED_APPLE}")
@@ -201,11 +211,11 @@ class StellarAnchorService {
                     sourceAccount = customerProfile.stellarAccountId,
                     paymentType = PAYMENT_INVESTOR
             )
-            val statusCode = sendPayment(stellarPayment)
+            val statusCode = sendPayment(stellarPayment, token)
             if (statusCode == 200) {
                 val investorPayment = networkRoyaltyService.startInvestorPaymentFlow(
                         supplierPayment.supplierPaymentId, proxy)
-                networkRoyaltyService.processInvestorRoyalty(proxy, stellarPayment, investorPayment)
+                networkRoyaltyService.processInvestorRoyalty(proxy, stellarPayment, investorPayment, token = token)
                 return investorPayment
             } else {
                 throw Exception("${Emo.ERROR} ${Emo.ERROR} " +

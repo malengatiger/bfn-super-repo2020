@@ -46,17 +46,20 @@ class DemoDataController(rpc: NodeRPCConnection) {
     @Autowired
     private lateinit var  networkService: StellarAnchorService
 
-
+//    @Autowired
+//    private lateinit var clientDemoDataDriver: ClientDemoDataDriver
 
     @GetMapping(value = ["/generateAnchorNodeData"], produces = [MediaType.TEXT_PLAIN_VALUE])
     @Throws(Exception::class)
-    private fun generateAnchorNodeData(numberOfAccounts:String, demoAdminEmail:String): String? {
+    private fun generateAnchorNodeData(numberOfAccounts:String, demoAdminEmail:String,
+                                       @RequestHeader("Authorization") token: String): String? {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
                 "starting DemoDataController: generateAnchorNodeData " +
                 "... \uD83C\uDF4F number accts: $numberOfAccounts")
 
         val num = numberOfAccounts.toInt()
-        val result = demoDataService.generateAnchorNodeData(proxy, num, demoAdminEmail)
+        val mToken = token.substring(7)
+        val result = demoDataService.generateAnchorNodeData(proxy, num, demoAdminEmail, mToken)
         logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 DemoDataController:generateAnchorNodeData result: " +
                 " \uD83C\uDF4F " + GSON.toJson(result)
                 + "    \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
@@ -143,12 +146,14 @@ class DemoDataController(rpc: NodeRPCConnection) {
     }
     @GetMapping(value = ["/generateAnchorNodeAccounts"], produces = [MediaType.TEXT_PLAIN_VALUE])
     @Throws(Exception::class)
-    private fun generateAnchorNodeAccounts(numberOfAccounts:String): String? {
+    private fun generateAnchorNodeAccounts(numberOfAccounts:String,
+                                           @RequestHeader("Authorization") token: String): String? {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
                 "starting DemoDataController: generateAnchorNodeAccounts " +
                 "... \uD83C\uDF4F number accts: $numberOfAccounts")
         val num = numberOfAccounts.toInt()
-        val result = demoDataService.generateAccounts(proxy = proxy, numberOfAccounts = num)
+        val mToken = token.substring(7)
+        val result = demoDataService.generateAccounts(proxy = proxy, numberOfAccounts = num, token = mToken)
         logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 DemoDataController:generateAnchorNodeAccounts result: " +
                 " \uD83C\uDF4F " + GSON.toJson(result)
                 + "    \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
@@ -156,11 +161,12 @@ class DemoDataController(rpc: NodeRPCConnection) {
     }
     @GetMapping(value = ["/generateCustomerNodeData"], produces = [MediaType.TEXT_PLAIN_VALUE])
     @Throws(Exception::class)
-    private fun generateCustomerNodeData(numberOfMonths:Int): String? {
+    private fun generateCustomerNodeData(numberOfMonths:Int,
+                                         @RequestHeader("Authorization") token: String): String? {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
                 "starting DemoDataController: generateCustomerNodeData ... \uD83C\uDF4F ")
-
-        val result = demoDataService.generateCustomerNodeData(proxy, numberOfMonths)
+        val mToken = token.substring(7)
+        val result = demoDataService.generateCustomerNodeData(proxy, numberOfMonths, mToken)
         logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 DemoDataController:generateCustomerNodeData result: " +
                 " \uD83C\uDF4F " + GSON.toJson(result)
                 + "    \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
@@ -168,16 +174,41 @@ class DemoDataController(rpc: NodeRPCConnection) {
     }
     @GetMapping(value = ["/generateInvestorPayments"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
-    private fun generateInvestorPayments(): List<InvestorPaymentDTO> {
+    private fun generateInvestorPayments(@RequestHeader("Authorization") token: String): List<InvestorPaymentDTO> {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
                 "starting DemoDataController: generateInvestorPayments ... \uD83C\uDF4F ")
 
-        val result = demoDataService.generateInvestorPayments(proxy)
+        val mToken = token.substring(7)
+        val result = demoDataService.generateInvestorPayments(proxy, mToken)
         logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
                 "DemoDataController:generateInvestorPayments result: " +
                 " \uD83C\uDF4F " + result.size
                 + "  investorPayments generated  \uD83E\uDDE1 ")
         return result
+    }
+    @Autowired
+    private lateinit var clientDemoDataDriver: ClientDemoDataDriverService
+
+    @GetMapping(value = ["/startClientDemoDriver"], produces = [MediaType.APPLICATION_JSON_VALUE])
+    @Throws(Exception::class)
+    private fun startClientDemoDriver(
+            @RequestParam seed: String?,
+            @RequestHeader("Authorization") token: String): String{
+        logger.info("\n\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                "starting DemoDataController: startClient ... \uD83C\uDF4F ")
+
+        val mToken = token.substring(7)
+        clientDemoDataDriver.startTheWork(
+                networkOperatorUrl = "http://localhost:10050",
+                customerUrl = "http://localhost:10053",
+                authToken = mToken, seed = seed)
+
+        val msg = ("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                "DemoDataController:startClient result: " +
+                " \uD83C\uDF4F "
+                + "  Demo Data generated  \uD83E\uDDE1 ")
+        logger.info(msg)
+        return msg
     }
 
     @GetMapping(value = ["/getProxy"])

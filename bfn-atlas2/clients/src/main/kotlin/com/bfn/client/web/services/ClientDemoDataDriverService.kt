@@ -1,4 +1,4 @@
-package com.bfn.client.local
+package com.bfn.client.web.services
 
 
 import com.bfn.client.Emo
@@ -22,6 +22,7 @@ import net.corda.core.utilities.NetworkHostAndPort
 import net.corda.core.utilities.loggerFor
 import org.joda.time.DateTime
 import org.springframework.http.MediaType
+import org.springframework.stereotype.Service
 import java.io.StringReader
 import java.util.*
 import kotlin.collections.set
@@ -34,12 +35,12 @@ import khttp.post as httpPost
  *
  * The RPC connection is configured using command line arguments.
  */
-fun main(args: Array<String>) = Client().main(args)
+//fun main(args: Array<String>) = ClientDemoDataDriver().main(args)
 
-
-class Client {
+@Service
+class ClientDemoDataDriverService {
     companion object {
-        val logger = loggerFor<Client>()
+        val logger = loggerFor<ClientDemoDataDriverService>()
         private val GSON = GsonBuilder().setPrettyPrinting().create()
 
     }
@@ -51,36 +52,22 @@ class Client {
     lateinit var proxyRegulator: CordaRPCOps
     private val mGson = Gson()
 
-    fun main(args: Array<String>) {
-        startTheWork("http://localhost:10050",
-                "http://localhost:10053");
-
-    }
-
-    val token = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjBlM2FlZWUyYjVjMDhjMGMyODFhNGZmN2RjMmRmOGIyMzgyOGQ1YzYiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vc3RlbGxhci1hbmNob3ItMzMzIiwiYXVkIjoic3RlbGxhci1hbmNob3ItMzMzIiwiYXV0aF90aW1lIjoxNjAxODA0MTUyLCJ1c2VyX2lkIjoiVHl3M0g1cDJPcWVlNVJubDIxZlBGZjlJZmU0MyIsInN1YiI6IlR5dzNINXAyT3FlZTVSbmwyMWZQRmY5SWZlNDMiLCJpYXQiOjE2MDMxNDc4MzEsImV4cCI6MTYwMzE1MTQzMSwiZW1haWwiOiJiZm5hZG1pbkBiZm4uY29tIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7ImVtYWlsIjpbImJmbmFkbWluQGJmbi5jb20iXX0sInNpZ25faW5fcHJvdmlkZXIiOiJwYXNzd29yZCJ9fQ.CVLho-gm8i7fby2f5-AjmAc4UcOl5C1ZVRqvxTRSx3xNmJH9zmVNgI6sxrgSYweHSdRkgWBf2h6-tvqc0wr0wN0TealoPB7j564kfRoyjButHB9dM1V_ISBbqaZKzuswDPdVTlvdIYxsdjZ-NkjGWLN8ndQ99a4dxUqZ4prJ3-qVcFZZi1u6WCNjNf64TslZjZPSqfA-Z0Xp270l3q4g2VRopuU16a7bWFuTmWLPkzFAQijJRMW4AvWzfvOftKNXF1DMs7UaCVEuvr8KPTdikkYCSP9z64u_7mWJVKdcdiqWKMF77dnz-nFbcFmPaKwMhDiQdfpNjBvboPJgRLYnBg"
-//    lateinit var userRecord: UserRecord
-
-//    private fun setFirebaseSecurityUserAndToken() {
-//        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
-//                "initializing Firebase and creating demo user ")
-//        FirebaseApp.initializeApp();
-//        val auth = FirebaseAuth.getInstance()
-//        val create = UserRecord.CreateRequest()
-//        create.setEmail("mTEST${System.currentTimeMillis()}@bfn.com")
-//        create.setPassword("pass123")
-//        create.setDisplayName("DemoData Administrator")
-//        userRecord = auth.createUser(create)
-//        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
-//                "DemoData Admin User created, displayName: ${userRecord.displayName}")
-////        token = auth.createCustomToken(userRecord.uid)
-////        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
-////                "token to be used for data generation: \uD83C\uDF4E $token \uD83C\uDF4E ")
+//    fun main(args: Array<String>) {
+//
+//        startTheWork("http://localhost:10050",
+//                "http://localhost:10053", "token")
 //    }
 
-    private val fundingSeed = ""
+    var token = ""
     private var networkHeaders: MutableMap<String, String> = mutableMapOf()
 
-    private fun startTheWork(networkOperatorUrl: String, customerUrl: String) {
+    fun startTheWork(networkOperatorUrl: String, customerUrl: String,
+                     authToken: String,  seed: String?): String {
+        token = authToken
+        logger.info("\uD83C\uDF50 \uD83C\uDF50 \uD83C\uDF50 \uD83C\uDF50 ")
+        logger.info("\uD83C\uDF50 \uD83C\uDF50 \uD83C\uDF50 \uD83C\uDF50 " +
+                "Have you refreshed the Firebase token from Flutter app? \uD83C\uDF50 \uD83C\uDF50")
+        logger.info("\uD83C\uDF50 \uD83C\uDF50 \uD83C\uDF50 \uD83C\uDF50 \n\n ")
         logger.info("\n\n\n  \uD83D\uDD35 \uD83D\uDD35  \uD83D\uDD35 \uD83D\uDD35 " +
                 "Starting the Demo Data Generation for the BFN Network .....  \uD83D\uDD35 \uD83D\uDD35")
 
@@ -89,50 +76,46 @@ class Client {
                 " \uD83D\uDE21\uD83D\uDE21\uD83D\uDE21 \n\n\n")
 
         logger.info("🍎   🍎   🍎  ................. START DANCING! ...............  🍎  🍎  🍎 ")
-//        setFirebaseSecurityUserAndToken()
+
         networkHeaders["Content-Type"] = MediaType.APPLICATION_JSON_VALUE
         networkHeaders["Authorization"] = "Bearer $token"
 
         val start = DateTime()
 
-//        generateStellarAnchor(anchorName = "BFN Network Operator Ltd", fundingSeed = fundingSeed);
+        if (seed != null) {
+            generateStellarAnchor(anchorName = "BFN Anchor Bank Ltd",
+                    fundingSeed = seed, authToken = authToken)
+        }
 
-//        generateAnchorNodeData(networkOperatorUrl, 3, "bfnadmin@bfn.com")
-//        generateCustomerNodeData(customerUrl, numberOfMonths = 2)
+        generateAnchorNodeData(networkOperatorUrl, 3, "bfnadmin@bfn.com")
+        generateCustomerNodeData(customerUrl, numberOfMonths = 2)
 
         fundPlayers(networkOperatorUrl)
-
         generateInvoiceOffers(networkOperatorUrl) //investors make offers
-//
         generateOfferAcceptances(networkOperatorUrl) //suppliers accept, or do not accept offers
-//
-        generateSupplierPayments(networkOperatorUrl) //investors pay for their accepted offers
 
+        generateSupplierPayments(networkOperatorUrl) //investors pay for their accepted offers
         generateInvestorPayments(networkOperatorUrl) //customers pay investors for each supplierPayment
 
         logger.info("\n\n${Emo.ANGRIES}${Emo.ANGRIES}${Emo.ANGRIES} " +
                 "Check results of demo data generation ...........\n\n")
 
         getUnconsumedPurchaseOrders(customerUrl)
-
         getUnconsumedInvoices(networkOperatorUrl)
-
         getUnconsumedInvoiceOffers(customerUrl)
-//
         checkAcceptedOffers(networkOperatorUrl)
-
         checkSupplierPayments(networkOperatorUrl)
-
         checkInvestorPayments(networkOperatorUrl)
 
         val end = DateTime()
         val elapsedMinutes = (end.toDate().time - start.toDate().time) / 1000 / 60
 
-        logger.info("\n\n\n\uD83D\uDD35 \uD83D\uDD35  \uD83D\uDD35 \uD83D\uDD35" +
+        val mss = ("\n\n\n\uD83D\uDD35 \uD83D\uDD35  \uD83D\uDD35 \uD83D\uDD35" +
                 " Client.kt: Demo Data Generation is COMPLETE !!! ${Emo.BLUE_DOT} " +
                 "$elapsedMinutes minutes elapsed \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E ");
-
+        logger.info(mss)
         logger.info("  🍎   🍎   🍎  DONE DANCING!  🍎  🍎  🍎 \n\n")
+        return mss
     }
 
     private fun fundPlayers(networkOperatorUrl: String) {
@@ -332,12 +315,17 @@ class Client {
     }
 
     private val stellarUrl = "http://localhost:8084/anchor/"
-    private fun generateStellarAnchor(anchorName: String, fundingSeed: String) {
+    private fun generateStellarAnchor(anchorName: String, fundingSeed: String, authToken: String) {
+        val mHeaders: MutableMap<String, String> = mutableMapOf()
+        mHeaders["Content-Type"] = MediaType.APPLICATION_JSON_VALUE
+        mHeaders["Authorization"] = "Bearer $authToken"
+
+
         val suffix = "data/generateAnchor?anchorName=$anchorName&fundingSeed=$fundingSeed"
         val url = "$stellarUrl$suffix"
         logger.info("\n\n\n${Emo.YELLOW_BIRD}${Emo.YELLOW_BIRD}${Emo.YELLOW_BIRD}generateStellarAnchor using $url")
         val resp1 = httpGet(url = url,
-                timeout = timeOut, headers = networkHeaders)
+                timeout = timeOut, headers = mHeaders)
 
         logger.info("${Emo.RAIN_DROPS} RESPONSE: \uD83C\uDF4E statusCode: ${resp1.statusCode}  \uD83C\uDF4E ${resp1.text}")
         logger.info("${Emo.BLUE_DOT}${Emo.BLUE_DOT}${Emo.BLUE_DOT}${Emo.BLUE_DOT}${Emo.BLUE_DOT}" +
@@ -357,19 +345,23 @@ class Client {
                 timeout = timeOut, headers = networkHeaders)
         logger.info("${Emo.RAIN_DROPS} RESPONSE: \uD83C\uDF4E statusCode: ${resp1.statusCode}  \uD83C\uDF4E ")
 
-        val stringReader = StringReader(resp1.text)
-        val mList: MutableList<InvestorPaymentDTO> = gson.fromJson(
-                stringReader, Array<InvestorPaymentDTO>::class.java).toMutableList()
+        if (resp1.statusCode == 200) {
+            val stringReader = StringReader(resp1.text)
+            val mList: MutableList<InvestorPaymentDTO> = gson.fromJson(
+                    stringReader, Array<InvestorPaymentDTO>::class.java).toMutableList()
 
-        logger.info(" \uD83D\uDD35 generateInvestorPayments: " +
-                "Result list from JSON string has ${mList.size} invoices")
+            logger.info(" \uD83D\uDD35 generateInvestorPayments: " +
+                    "Result list from JSON string has ${mList.size} invoices")
 
-        for (payment in mList) {
+            for (payment in mList) {
+                logger.info("${Emo.LEAF}${Emo.LEAF}${Emo.LEAF} " +
+                        "InvestorPayment: ${payment.supplierPayment?.acceptedOffer?.offerAmount}")
+            }
             logger.info("${Emo.LEAF}${Emo.LEAF}${Emo.LEAF} " +
-                    "InvestorPayment: ${payment.supplierPayment?.acceptedOffer?.offerAmount}")
+                    "Total payments made: ${Emo.RED_APPLE}${mList.size}  ${Emo.RED_APPLE}")
+        } else {
+            logger.warn("${Emo.ERRORS} Invoice search failed; statusCode: ${resp1.statusCode} ${Emo.ERROR} ${resp1.text}")
         }
-        logger.info("${Emo.LEAF}${Emo.LEAF}${Emo.LEAF} " +
-                "Total payments made: ${Emo.RED_APPLE}${mList.size}  ${Emo.RED_APPLE}")
     }
 
     private fun generateSupplierPayments(networkOperatorUrl: String) {
@@ -432,7 +424,7 @@ class Client {
                 " RESPONSE: \uD83C\uDF4E statusCode: ${resp1.statusCode} \uD83C\uDF4E")
         val acceptedOffer = gson.fromJson(resp1.text, AcceptedOfferDTO::class.java)
         logger.info("${Emo.RED_APPLES} findBestOfferForInvoice: " +
-                "Accepted Offer is ${gson.toJson(acceptedOffer)} ${Emo.RED_APPLES} \n\n\n")
+                "Accepted Offer is ${acceptedOffer.offerAmount} original: ${acceptedOffer.originalAmount} ${Emo.RED_APPLES} \n\n\n")
 
     }
 

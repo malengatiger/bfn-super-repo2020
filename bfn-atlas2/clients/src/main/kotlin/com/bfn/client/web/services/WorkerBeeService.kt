@@ -521,7 +521,7 @@ class WorkerBeeService {
 
     fun createCustomerProfile(proxy: CordaRPCOps,
                               customerProfile: CustomerProfileStateDTO,
-                              password: String): CustomerProfileStateDTO {
+                              password: String, token: String): CustomerProfileStateDTO {
         logger.info("\n\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
                 "Creating Customer ${customerProfile.account?.name} .............")
 
@@ -529,7 +529,8 @@ class WorkerBeeService {
             val acctInfo1 = startAccountRegistrationFlow(proxy = proxy,
                     accountName = customerProfile.account!!.name,
                     email = customerProfile.email,
-                    password = password, cellphone = customerProfile.cellphone
+                    password = password, cellphone = customerProfile.cellphone,
+                    token = token
             )
 
             if (acctInfo1 != null) {
@@ -1071,7 +1072,7 @@ class WorkerBeeService {
                                      accountName: String,
                                      email: String,
                                      cellphone: String,
-                                     password: String): UserDTO? {
+                                     password: String, token: String): UserDTO? {
         try {
             val criteria: QueryCriteria = VaultQueryCriteria(StateStatus.UNCONSUMED)
             val page = proxy.vaultQueryByWithPagingSpec(
@@ -1107,7 +1108,7 @@ class WorkerBeeService {
                 var mStellarId = "tbd"
                 val mRippleId = "tbd"
                 try {
-                    val stellarResponse = stellarAnchorService.createStellarAccount(proxy = proxy)
+                    val stellarResponse = stellarAnchorService.createStellarAccount(token = token)
                     if (stellarResponse != null) {
                         if (stellarResponse.accountId != null) {
                             logger.info("\uD83E\uDD6C\uD83E\uDD6C\uD83E\uDD6C\uD83E\uDD6C " +

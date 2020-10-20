@@ -36,9 +36,9 @@ echo "🔵 Waiting for web servers to finish booting up, sleeping for another 20
 sleep 20s
 echo "🔵 🍎 🍎 🍎 🍎 🍎 🍎 🍎 🍎 corda nodes and web servers should all be booted up by now! 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵 🔵"
 
-# ------------ Data Generation
-echo "🔆 Woke up, 🔆 🔆 🔆  starting data generation script ..... 🔵 🔵"
-./scripts/demodata.sh
+## ------------ Data Generation
+#echo "🔆 Woke up, 🔆 🔆 🔆  starting data generation script ..... 🔵 🔵"
+#./scripts/demodata.sh
 
 # ------------ API Web Servers
 #echo "🦕🦕🦕🦕🦕🦕 starting the Client to perform data generation using 🥬 CordaRPCClient and 🍔 basic http 🦕🦕🦕🦕🦕🦕 ..."

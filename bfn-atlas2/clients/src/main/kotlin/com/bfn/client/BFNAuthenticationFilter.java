@@ -33,7 +33,8 @@ public class BFNAuthenticationFilter extends OncePerRequestFilter {
         String m = httpServletRequest.getHeader("Authorization");
         if (m == null) {
             String msg = "\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 " +
-                    "Authorization Header is missing. Needs token! \uD83C\uDF4E ";
+                    "Authorization Header is missing. Needs token! \uD83C\uDF4E path: "
+                    + httpServletRequest.getContextPath();
             LOGGER.info(msg);
             throw new ServletException(msg);
         }

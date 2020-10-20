@@ -39,7 +39,7 @@ class NetworkRoyaltyService {
 
     fun processSupplierRoyalty(proxy: CordaRPCOps,
                                stellarPayment: StellarPaymentDTO,
-                               supplierPayment: SupplierPaymentDTO) {
+                               supplierPayment: SupplierPaymentDTO,  token:String) {
         logger.info("${Emo.HEART_BLUE}${Emo.HEART_BLUE}${Emo.HEART_BLUE}" +
                 "Processing settlement of supplier royalty payments to NetworkOperator ${Emo.RED_APPLE}")
 
@@ -65,7 +65,7 @@ class NetworkRoyaltyService {
                 paymentType = PAYMENT_ROYALTY,
                 assetCode = stellarPayment.assetCode
         )
-        val statusCode = stellarAnchorService.sendPayment(royaltyPayment)
+        val statusCode = stellarAnchorService.sendPayment(royaltyPayment, token)
         if (statusCode == 200) {
             //tell the ledger
             logger.info("${Emo.HEART_BLUE}${Emo.HEART_BLUE} " +
@@ -109,7 +109,7 @@ class NetworkRoyaltyService {
     }
     fun processInvestorRoyalty(proxy: CordaRPCOps,
                                stellarPayment: StellarPaymentDTO,
-                               investorPayment: InvestorPaymentDTO) {
+                               investorPayment: InvestorPaymentDTO, token: String) {
         logger.info("${Emo.HEART_ORANGE}${Emo.HEART_ORANGE}${Emo.HEART_ORANGE}" +
                 "Processing settlement of investor royalty payments to NetworkOperator ${Emo.RED_APPLE}")
 
@@ -134,7 +134,7 @@ class NetworkRoyaltyService {
                 paymentType = PAYMENT_ROYALTY,
                 assetCode = stellarPayment.assetCode
         )
-        val statusCode = stellarAnchorService.sendPayment(royaltyPayment)
+        val statusCode = stellarAnchorService.sendPayment(royaltyPayment, token)
         if (statusCode == 200) {
             //tell the ledger
             logger.info("${Emo.HEART_ORANGE}${Emo.HEART_ORANGE} " +

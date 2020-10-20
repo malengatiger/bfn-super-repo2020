@@ -12,6 +12,7 @@ import com.bfn.contractstates.states.AcceptedOfferState
 import com.bfn.flows.StellarPaymentDTO
 import com.google.firebase.auth.UserRecord
 import com.google.gson.GsonBuilder
+import khttp.request
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.node.services.Vault
 import net.corda.core.node.services.vault.PageSpecification
@@ -69,11 +70,14 @@ class AdminController(rpc: NodeRPCConnection) {
 
     @GetMapping(value = ["/demo"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
-    private fun buildDemo(@RequestParam numberOfAccounts: String): DemoSummary? {
-        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 starting DemoDataService: buildDemo ... \uD83C\uDF4F number accts: $numberOfAccounts")
+    private fun buildDemo(@RequestParam numberOfAccounts: String,
+                          @RequestHeader("Authorization") token: String): DemoSummary? {
+        logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                "starting DemoDataService: buildDemo ... \uD83C\uDF4F number accts: $numberOfAccounts")
 
         val num = numberOfAccounts.toInt()
-        val result = demoDataService.generateLocalNodeAccounts(proxy, num)
+        val mToken = token.substring(7)
+        val result = demoDataService.generateLocalNodeAccounts(proxy, num, mToken)
         logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 DemoUtil result: " +
                 " \uD83C\uDF4F " + GSON.toJson(result)
                 + "    \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
@@ -161,10 +165,11 @@ class AdminController(rpc: NodeRPCConnection) {
 
     @PostMapping(value = ["/createStellarAccount"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
-    private fun createStellarAccount(): StellarResponse? {
+    private fun createStellarAccount(@RequestHeader("Authorization") token: String): StellarResponse? {
         logger.info("\n\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E  " +
                 "Creating Stellar Account by calling Stellar anchor server $stellarAnchorUrl ")
-        val stellarResponse = stellarAnchorService.createStellarAccount(proxy = proxy)
+        val mToken = token.substring(7)
+        val stellarResponse = stellarAnchorService.createStellarAccount(mToken)
 
         logger.info(" \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
                 "AdminController.createStellarAccount returns responseBag:  ${GSON.toJson(stellarResponse)}")
@@ -176,16 +181,17 @@ class AdminController(rpc: NodeRPCConnection) {
     @Throws(Exception::class)
     private fun createNetworkOperator(@RequestBody networkOperator: NetworkOperatorDTO,
                                       investorProfile: InvestorProfileStateDTO,
-                                      supplierProfile: SupplierProfileStateDTO): NetworkOperatorDTO? {
+                                      supplierProfile: SupplierProfileStateDTO,@RequestHeader("Authorization") token: String): NetworkOperatorDTO? {
 
         logger.info("\n\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E  " +
                 "Creating Network Operator:, check fields, tradeFrequencyInMinutes, defaultOfferDiscount ...  ${GSON.toJson(networkOperator)}")
 
+        val mToken = token.substring(7)
         val operator = networkOperatorBeeService.createNetworkOperator(
                 networkOperator = networkOperator,
                 proxy = proxy,
                 investorProfile = investorProfile,
-                supplierProfile = supplierProfile)
+                supplierProfile = supplierProfile, token = mToken)
 
         logger.info(" \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
                 "networkOperatorBeeService.createNetworkOperator returns operator:  ${GSON.toJson(operator)}")
@@ -203,19 +209,27 @@ class AdminController(rpc: NodeRPCConnection) {
             consumes = [MediaType.APPLICATION_JSON_VALUE],
             produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
-    private fun sendPayment(@RequestBody paymentRequest: StellarPaymentDTO): Int {
+    private fun sendPayment(@RequestBody paymentRequest: StellarPaymentDTO, @RequestHeader("Authorization") token: String): Int {
         logger.info(" \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40" +
                 " sendPayment using stellarAnchorService... sourceAccount: ${paymentRequest.sourceAccount} " +
-                "destinationAccount: ${paymentRequest.destinationAccount}")
-        return stellarAnchorService.sendPayment(paymentRequest)
+                "destinationAccount: ${paymentRequest.destinationAccount} token: $token")
+        if (paymentRequest.sourceAccount == "tbd") {
+            throw Exception("Source Account is invalid")
+        }
+        if (paymentRequest.destinationAccount == "tbd") {
+            throw Exception("Destination Account is invalid")
+        }
+        val mToken = token.substring(7)
+        return stellarAnchorService.sendPayment(paymentRequest, mToken)
     }
     @PostMapping(value = ["/startAccountRegistrationFlow"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
-    private fun startAccountRegistrationFlow(@RequestBody user: UserDTO): UserDTO? {
+    private fun startAccountRegistrationFlow(@RequestBody user: UserDTO, @RequestHeader("Authorization") token: String): UserDTO? {
         logger.info(" \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40" +
                 " startAccountRegistrationFlow ... ${user.accountInfo.name}")
+        val mToken = token.substring(7)
         return workerBeeService.startAccountRegistrationFlow(proxy, user.accountInfo.name,
-                user.email, user.cellphone, user.password)
+                user.email, user.cellphone, user.password, mToken)
     }
 
     @PostMapping(value = ["/startInvoiceOfferFlow"], produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -404,13 +418,15 @@ class AdminController(rpc: NodeRPCConnection) {
 
     @GetMapping(value = ["/makeSupplierPaymentForOffer"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
-    fun makeSupplierPaymentForOffer(offerId: String): SupplierPaymentDTO? {
-        return stellarAnchorService.makeSupplierPaymentForOffer(proxy, offerId = offerId)
+    fun makeSupplierPaymentForOffer(offerId: String, @RequestHeader("Authorization") token: String): SupplierPaymentDTO? {
+        val mToken = token.substring(7)
+        return stellarAnchorService.makeSupplierPaymentForOffer(proxy, offerId = offerId, token = mToken)
     }
     @GetMapping(value = ["/makeInvestorPaymentForOffer"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
-    fun makeInvestorPaymentForOffer(offerId: String): InvestorPaymentDTO? {
-        return stellarAnchorService.makeInvestorPaymentForOffer(proxy, offerId = offerId)
+    fun makeInvestorPaymentForOffer(offerId: String, @RequestHeader("Authorization") token: String): InvestorPaymentDTO? {
+        val mToken = token.substring(7)
+        return stellarAnchorService.makeInvestorPaymentForOffer(proxy, offerId = offerId, token = mToken)
     }
 
     @GetMapping(value = ["/findOffersForSupplier"])

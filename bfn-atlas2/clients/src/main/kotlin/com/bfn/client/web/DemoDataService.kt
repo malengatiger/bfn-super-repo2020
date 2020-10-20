@@ -2,19 +2,13 @@ package com.bfn.client.web
 
 import com.bfn.client.Emo
 import com.bfn.client.data.*
-import com.bfn.client.local.Client
 import com.bfn.client.web.services.FirebaseService
 import com.bfn.client.web.services.NetworkOperatorBeeService
 import com.bfn.client.web.services.StellarAnchorService
 import com.bfn.client.web.services.WorkerBeeService
 import com.bfn.contractstates.states.NetworkOperatorState
 import com.bfn.contractstates.states.PurchaseOrderState
-import com.bfn.flows.PAYMENT_INVESTOR
-import com.bfn.flows.StellarPaymentDTO
 import com.bfn.flows.todaysDate
-import com.google.firebase.FirebaseApp
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.UserRecord
 import com.google.gson.GsonBuilder
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import net.corda.core.contracts.StateAndRef
@@ -84,15 +78,15 @@ class DemoDataService {
      */
     fun generateAnchorNodeData(mProxy: CordaRPCOps,
                                numberOfAccounts: Int,
-                               demoAdminEmail:String): String {
+                               demoAdminEmail:String, token: String): String {
         logger.info("\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
                 "Generating data for the main anchor Node: " +
                 "NetworkOperator + Suppliers + Investors; " +
                 "${Emo.BLUE_DOT}numberOfAccounts to generate: $numberOfAccounts")
 
         deleteFirebaseShit(demoAdminEmail)
-        createNetworkOperator(mProxy)
-        generateLocalNodeAccounts(mProxy, numberOfAccounts)
+        createNetworkOperator(mProxy, token)
+        generateLocalNodeAccounts(mProxy, numberOfAccounts, token)
 
         val msg = "\n\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 DemoDataService: " +
                 "generateAnchorNodeData COMPLETE! \uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40\n"
@@ -125,30 +119,13 @@ class DemoDataService {
         logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E Firebase clean up completed")
     }
 
-    lateinit var token:String
-     fun setFirebaseSecurityToken() {
-        logger.info("\uD83D\uDD35 \uD83D\uDD35  \uD83D\uDD35 \uD83D\uDD35 " +
-                "initializing Firebase and creating demo user ")
-        FirebaseApp.initializeApp();
-        val auth = FirebaseAuth.getInstance()
-        val create = UserRecord.CreateRequest()
-        create.setEmail("mTEST${System.currentTimeMillis()}@bfn.com")
-        create.setPassword("pass123")
-        create.setDisplayName("DemoData Administrator")
-        val userRecord = auth.createUser(create)
-        Client.logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
-                "DemoData Admin User created UID: ${userRecord.uid}")
-        token = auth.createCustomToken(userRecord.uid)
-        Client.logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
-                "token to be used for data generation: \uD83C\uDF4E $token \uD83C\uDF4E ")
-    }
 
     var accounts: List<AccountInfoDTO> = mutableListOf()
 
     /**
      * Generate data for the customer node : Accounts are created for several customers
      */
-    fun generateCustomerNodeData(mProxy: CordaRPCOps, numberOfMonths: Int): String {
+    fun generateCustomerNodeData(mProxy: CordaRPCOps, numberOfMonths: Int, token: String): String {
         logger.info("\n\n\n\uD83C\uDF40 \uD83C\uDF40 \uD83C\uDF40 " +
                 "Generating data for the Customer Node: Customers only, Boss!")
 
@@ -174,7 +151,7 @@ class DemoDataService {
         firebaseService.deleteCollection(BFN_INVOICE_OFFERS)
         firebaseService.deleteCollection(BFN_ACCEPTED_OFFERS)
 
-        createCustomers(mProxy)
+        createCustomers(mProxy,token)
         generatePurchaseOrders(mProxy, numberOfMonths)
         generateInvoices(mProxy)
 
@@ -494,7 +471,7 @@ class DemoDataService {
         return mutableListOf(m1, m2, m3, m4, m5)
     }
     @Throws(Exception::class)
-    private fun createNetworkOperator(mProxy: CordaRPCOps): NetworkOperatorDTO? {
+    private fun createNetworkOperator(mProxy: CordaRPCOps, token: String): NetworkOperatorDTO? {
         logger.info("\n\n\uD83E\uDDA0 \uD83E\uDDA0 \uD83E\uDDA0 " +
                 "Demo createNetworkOperator started ..... \uD83E\uDDA0 \uD83E\uDDA0")
         val page = mProxy.vaultQuery(NetworkOperatorState::class.java)
@@ -526,7 +503,7 @@ class DemoDataService {
 
         operator.password = "pass123"
         val result = networkOperatorService.createNetworkOperator(
-                mProxy, operator, investorProfile, supplierProfile)
+                mProxy, operator, investorProfile, supplierProfile, token)
         logger.info("\uD83E\uDD6E \uD83E\uDD6E \uD83E\uDD6E " +
                 "DemoDataService: createNetworkOperator result: " +
                 gson.toJson(result) + " \uD83E\uDD6E \uD83E\uDD6E")
@@ -536,7 +513,7 @@ class DemoDataService {
     private val em4 = "\uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 \uD83D\uDD06 "
 
     @Throws(Exception::class)
-    fun generateLocalNodeAccounts(mProxy: CordaRPCOps, numberOfAccounts: Int = 10): DemoSummary {
+    fun generateLocalNodeAccounts(mProxy: CordaRPCOps, numberOfAccounts: Int = 10, token: String): DemoSummary {
         val start = Date().time;
         logger.info(em4 +
                 "DemoDataService started, proxy: $mProxy...   " +
@@ -561,7 +538,7 @@ class DemoDataService {
 
         logger.info("👽 👽 👽 👽 start data generation:  numberOfAccounts $numberOfAccounts 👽 👽 👽 👽  ")
 
-        generateAccounts(mProxy, numberOfAccounts)
+        generateAccounts(mProxy, numberOfAccounts,token)
         //
         val list = workerBeeService.getNodeAccounts(mProxy)
         var cnt = 0
@@ -579,7 +556,7 @@ class DemoDataService {
     }
 
     @Throws(Exception::class)
-    fun generateAccounts(proxy: CordaRPCOps, numberOfAccounts: Int = 4): String {
+    fun generateAccounts(proxy: CordaRPCOps, numberOfAccounts: Int = 4, token: String): String {
         logger.info("\n\n$em1 ..... generateAccounts started ...  " +
                 "\uD83D\uDD06 \uD83D\uDD06 ................. generating numberOfAccounts: $numberOfAccounts")
 
@@ -601,7 +578,7 @@ class DemoDataService {
                         accountName = mName,
                         email = "$prefix@bfn.com",
                         cellphone = phone,
-                        password = "pass123")
+                        password = "pass123", token = token)
 
                 cnt++
             } catch (e1: Exception) {
@@ -744,22 +721,14 @@ class DemoDataService {
         return msg;
     }
 
-    fun generateInvestorPayments(proxy:CordaRPCOps): List<InvestorPaymentDTO> {
+    fun generateInvestorPayments(proxy:CordaRPCOps, token: String): List<InvestorPaymentDTO> {
 
         val mList: MutableList<InvestorPaymentDTO> = mutableListOf()
         val supplierPayments = workerBeeService.findSupplierPaymentsForNode(proxy)
         supplierPayments.forEach {
             //todo -  🍎 🍎 🍎 send payment to Stellar Anchor ....  🍎
-            val stellarPayment = StellarPaymentDTO(
-                    paymentRequestId = UUID.randomUUID().toString(),
-                    amount = it.acceptedOffer!!.originalAmount,
-                    assetCode = it.supplierProfile!!.assetCode,
-                    sourceAccount = it.customerProfile!!.stellarAccountId,
-                    destinationAccount = it.acceptedOffer!!.investor!!.stellarAccountId,
-                    date = todaysDate(),
-                    paymentType = PAYMENT_INVESTOR
-            )
-            val payment = stellarAnchorService.makeInvestorPaymentForOffer(proxy, it.acceptedOffer!!.offerId)
+            val payment = stellarAnchorService.makeInvestorPaymentForOffer(
+                    proxy, it.acceptedOffer!!.offerId, token)
             if (payment != null) {
                 mList.add(payment)
             }
@@ -1000,7 +969,7 @@ class DemoDataService {
 
     val concat = " \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 "
 
-    private fun createCustomers(proxy: CordaRPCOps) {
+    private fun createCustomers(proxy: CordaRPCOps, token: String) {
         logger.info("\n\n\n\n")
         logger.info(concat
                 + "Start createCustomers .... createCustomers  \uD83D\uDECE  ")
@@ -1020,13 +989,13 @@ class DemoDataService {
         doOneCustomer(proxy, buildCustomerProfile(
                 "Department of Health",
                 minimumInvoiceAmount = "10000.00",
-                maximumInvoiceAmount = "10000000.00"))
+                maximumInvoiceAmount = "10000000.00"), token = token)
         logger.info("\n\n\n\n")
 
         doOneCustomer(proxy, buildCustomerProfile(
                 "BMW South Africa Limited",
                 minimumInvoiceAmount = "5000.00",
-                maximumInvoiceAmount = "40000000.00"))
+                maximumInvoiceAmount = "40000000.00"), token = token)
         logger.info("\n\n\n\n")
 
 
@@ -1051,11 +1020,11 @@ class DemoDataService {
     }
 
     private fun doOneCustomer(proxy: CordaRPCOps,
-                              customerProfile: CustomerProfileStateDTO) {
+                              customerProfile: CustomerProfileStateDTO, token: String) {
         logger.info("\n\uD83D\uDD35 ........... Creating Customer ${customerProfile.account?.name}")
         val password = "pass123"
         try {
-            val resultProfile = workerBeeService.createCustomerProfile(proxy, customerProfile, password)
+            val resultProfile = workerBeeService.createCustomerProfile(proxy, customerProfile, password, token)
             logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
                     "Processed customerProfile returned from workerBeeService.createCustomer: "
                     + gson.toJson(resultProfile))

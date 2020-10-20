@@ -139,7 +139,7 @@ class NetworkOperatorBeeService {
     fun createNetworkOperator(proxy: CordaRPCOps,
                               networkOperator: NetworkOperatorDTO,
                               investorProfile: InvestorProfileStateDTO,
-                              supplierProfile: SupplierProfileStateDTO): NetworkOperatorDTO? {
+                              supplierProfile: SupplierProfileStateDTO, token: String): NetworkOperatorDTO? {
         logger.info("\n\n\n$xx Starting to create NetworkOperator: BFN Head Honcho to " +
                 "\uD83C\uDF88 Firebase auth, \uD83C\uDF88 Corda and \uD83C\uDF88 Firestore, " +
                 " ${gson.toJson(networkOperator)} \uD83C\uDF88 " +
@@ -172,7 +172,7 @@ class NetworkOperatorBeeService {
                         networkOperator.account!!.name,
                         networkOperator.email,
                         networkOperator.cellphone,
-                        networkOperator.password)
+                        networkOperator.password, token = token)
 
                 if (user != null) {
                     investorProfile.stellarAccountId = user.stellarAccountId
