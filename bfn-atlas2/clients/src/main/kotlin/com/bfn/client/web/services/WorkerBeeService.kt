@@ -1028,8 +1028,9 @@ class WorkerBeeService {
             try {
                 firebaseService.sendInvoiceMessage(dto)
                 firebaseService.addInvoice(dto)
-                if (poState != null) {
-                    firebaseService.updatePurchaseOrderInvoiceCreated(poState.purchaseOrderId)
+                if (invoice.purchaseOrder != null) {
+                    firebaseService.updatePurchaseOrderInvoiceCreated(
+                            invoice.purchaseOrder!!.purchaseOrderId)
                 }
 
             } catch (e: Exception) {
@@ -1209,13 +1210,13 @@ class WorkerBeeService {
                                purchaseOrder: PurchaseOrderDTO): String {
         val tranxId: String
         try {
-
-//            logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
-//                    "Starting the PurchaseOrderFlow ...................... " +
-//                    "customer: ${purchaseOrder.customer?.name} " +
-//                    "supplier: ${purchaseOrder.supplier?.name} " +
-//                    "amount: ${purchaseOrder.amount}" +
-//                    "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35\n\n")
+            logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
+                    "Starting the PurchaseOrderFlow ...................... " +
+                    "purchaseOrderId: ${purchaseOrder.purchaseOrderId} " +
+                    "customer: ${purchaseOrder.customer?.name} " +
+                    "supplier: ${purchaseOrder.supplier?.name} " +
+                    "amount: ${purchaseOrder.amount} " +
+                    "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35\n\n")
 
             val customerAccount = getNodeAccount(proxy, purchaseOrder.customer!!.identifier)
             val supplierAccount = getNodeAccount(proxy, purchaseOrder.supplier!!.identifier)
@@ -1237,7 +1238,7 @@ class WorkerBeeService {
                         PurchaseOrderFlow::class.java, po).returnValue
 
                 tranxId = profileCordaFuture.get().toString()
-                firebaseService.addPurchaseOrder(purchaseOrder)
+                firebaseService.addPurchaseOrder(DTOUtil.getDTO(po))
                 logger.info("${Emo.FLOWER_RED} " +
                         " PurchaseOrderFlow completed ... " +
                         "; ${Emo.FERNS} PurchaseOrder created for " +

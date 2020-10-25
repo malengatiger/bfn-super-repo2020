@@ -336,7 +336,7 @@ class ClientDemoDataDriverService {
 
     private val gson = GsonBuilder().setPrettyPrinting().create()
 
-    private fun generateInvestorPayments(networkOperatorUrl: String) {
+     fun generateInvestorPayments(networkOperatorUrl: String) {
         logger.info("\n\n\n${Emo.RAIN_DROPS} generateInvestorPayments started .... at " +
                 "$networkOperatorUrl ${Emo.RAIN_DROPS}")
         val suffix = "/bfn/demo/generateInvestorPayments"
@@ -365,7 +365,7 @@ class ClientDemoDataDriverService {
         }
     }
 
-    private fun generateSupplierPayments(networkOperatorUrl: String) {
+     fun generateSupplierPayments(networkOperatorUrl: String) {
         logger.info("\n\n\n${Emo.DICE} ${Emo.DICE} ...... generateSupplierPayments starting ....: " +
                 "${Emo.YELLOW_BIRD} ${Emo.YELLOW_BIRD} ${Emo.YELLOW_BIRD} ")
         var totalPayments = 0
@@ -384,7 +384,7 @@ class ClientDemoDataDriverService {
                 " ${Emo.PEACH} \n\n")
     }
 
-    private fun generateOfferAcceptances(networkOperatorUrl: String) {
+    fun generateOfferAcceptances(networkOperatorUrl: String) {
         logger.info("\n\n\n${Emo.RAIN_DROPS} generateOfferAcceptances started .... at " +
                 "$networkOperatorUrl ${Emo.RAIN_DROPS}")
         val suffix = "/bfn/admin/findInvoicesForNode"

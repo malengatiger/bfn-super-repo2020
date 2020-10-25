@@ -899,7 +899,8 @@ class DemoDataService {
                     supplier = DTOUtil.getDTO(po.supplier),
                     description = po.description,
                     invoiceId = UUID.randomUUID().toString(),
-                    dateRegistered = DateTime.parse(po.dateRegistered).plusDays(random.nextInt(10)).toDateTimeISO().toString(),
+                    dateRegistered = DateTime.parse(po.dateRegistered)
+                            .plusDays(random.nextInt(5)).toDateTimeISO().toString(),
                     valueAddedTax = "15.0",
                     totalAmount = "tbd",
                     externalId = "tbd",

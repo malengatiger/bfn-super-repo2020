@@ -86,6 +86,16 @@ class DemoDataController(rpc: NodeRPCConnection) {
                 "... \uD83C\uDF4F ")
 
         val result = demoDataService.generatePurchaseOrders(proxy, numberOfMonths)
+        val result2 = demoDataService.generateInvoices(proxy)
+        val result3 = demoDataService.generateInvoiceOffers(proxy)
+        val result4 = demoDataService.generateInvoiceOffers(proxy)
+        val result5 = clientDemoDataDriver.generateOfferAcceptances(
+                "http://localhost:10050")
+        val result6 = clientDemoDataDriver.generateSupplierPayments(
+                "http://localhost:10050")
+        val result7 = clientDemoDataDriver.generateInvestorPayments(
+                "http://localhost:10050")
+
         logger.info("\n\n\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
                 "DemoDataController:generatePurchaseOrders result: $result " +
                 "  \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")

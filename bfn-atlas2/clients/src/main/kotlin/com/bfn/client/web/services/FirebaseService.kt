@@ -403,6 +403,8 @@ class FirebaseService() {
     }
     @Throws(Exception::class)
     fun updatePurchaseOrderInvoiceCreated(purchaseOrderId: String)  {
+        logger.info("${Emo.RAIN_DROPS} updatePurchaseOrderInvoiceCreated ... " +
+                "purchaseOrderId: $purchaseOrderId")
         val future = db.collection(BFN_PURCHASE_ORDERS)
                 .whereEqualTo("purchaseOrderId", purchaseOrderId)
                 .limit(1)
@@ -416,7 +418,7 @@ class FirebaseService() {
             logger.info("${Emo.PEACH}${Emo.PEACH}${Emo.PEACH}${Emo.PEACH}${Emo.PEACH} " +
                     "PurchaseOrderDTO has been updated with invoiceCreatedDate")
         } else {
-            throw Exception("PurchaseOrderDTO not found for update")
+            throw Exception("${Emo.ERRORS} PurchaseOrder not found for update")
         }
     }
     @Throws(Exception::class)
