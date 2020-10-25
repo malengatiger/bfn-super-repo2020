@@ -171,6 +171,7 @@ class StellarAnchorService {
                 networkRoyaltyService.processSupplierRoyalty(
                         proxy = proxy, stellarPayment = stellarPayment,
                         supplierPayment =  supplierPayment, token = token)
+
                 return supplierPayment
             } else {
                 throw Exception("${Emo.ERROR} makeSupplierPaymentForOffer failed: " +

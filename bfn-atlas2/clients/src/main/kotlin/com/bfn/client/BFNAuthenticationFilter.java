@@ -28,7 +28,18 @@ public class BFNAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(@NotNull HttpServletRequest httpServletRequest,
                                     @NotNull HttpServletResponse httpServletResponse,
-                                    FilterChain filterChain) throws ServletException, IOException {
+                                    @NotNull FilterChain filterChain) throws ServletException, IOException {
+
+//        Enumeration<String> enumeration = httpServletRequest.getHeaderNames();
+//        while (enumeration.hasMoreElements()) {
+//            // Get request header name
+//            String name = enumeration.nextElement();
+//            // Get request header value
+//            String value = httpServletRequest.getHeader(name);
+//            logger.info(Emo.FLOWER_RED + Emo.FLOWER_RED + "header: "
+//                    + name + " value: " + value);
+//
+//        }
 
         String m = httpServletRequest.getHeader("Authorization");
         if (m == null) {

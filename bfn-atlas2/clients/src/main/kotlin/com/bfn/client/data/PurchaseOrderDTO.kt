@@ -10,6 +10,7 @@ class PurchaseOrderDTO (
         var supplier: AccountInfoDTO? = null,
         var amount: String  = "",
         var dateRegistered: String = "",
-        var description: String = ""
+        var description: String = "",
+        var invoiceCreatedDate: String? = null
 ) {
 }

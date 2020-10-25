@@ -81,7 +81,6 @@ class ClientDemoDataDriverService {
         networkHeaders["Authorization"] = "Bearer $token"
 
         val start = DateTime()
-
         if (seed != null) {
             generateStellarAnchor(anchorName = "BFN Anchor Bank Ltd",
                     fundingSeed = seed, authToken = authToken)
@@ -111,7 +110,7 @@ class ClientDemoDataDriverService {
         val elapsedMinutes = (end.toDate().time - start.toDate().time) / 1000 / 60
 
         val mss = ("\n\n\n\uD83D\uDD35 \uD83D\uDD35  \uD83D\uDD35 \uD83D\uDD35" +
-                " Client.kt: Demo Data Generation is COMPLETE !!! ${Emo.BLUE_DOT} " +
+                " ClientDemoDataDriverService: Demo Data Generation is COMPLETE !!! ${Emo.BLUE_DOT} " +
                 "$elapsedMinutes minutes elapsed \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E ");
         logger.info(mss)
         logger.info("  🍎   🍎   🍎  DONE DANCING!  🍎  🍎  🍎 \n\n")
@@ -150,7 +149,6 @@ class ClientDemoDataDriverService {
         logger.info("\n\n\n${Emo.RAIN_DROPS} fundCustomersWithZAR completed " +
                 " ${Emo.RAIN_DROPS}\n\n\n")
     }
-
     private val fundingAmount = "100000000"
     private val assetCode = "ZAR"
     private fun fundInvestorsWithZAR(networkOperatorUrl: String, anchor: Anchor) {
@@ -315,21 +313,24 @@ class ClientDemoDataDriverService {
     }
 
     private val stellarUrl = "http://localhost:8084/anchor/"
+
     private fun generateStellarAnchor(anchorName: String, fundingSeed: String, authToken: String) {
+        logger.info("\n\n\n${Emo.YELLOW_BIRD}${Emo.YELLOW_BIRD}${Emo.YELLOW_BIRD}${Emo.YELLOW_BIRD}" +
+                "generateStellarAnchor: $anchorName")
         val mHeaders: MutableMap<String, String> = mutableMapOf()
         mHeaders["Content-Type"] = MediaType.APPLICATION_JSON_VALUE
         mHeaders["Authorization"] = "Bearer $authToken"
 
-
         val suffix = "data/generateAnchor?anchorName=$anchorName&fundingSeed=$fundingSeed"
         val url = "$stellarUrl$suffix"
-        logger.info("\n\n\n${Emo.YELLOW_BIRD}${Emo.YELLOW_BIRD}${Emo.YELLOW_BIRD}generateStellarAnchor using $url")
+        logger.info("${Emo.YELLOW_BIRD}${Emo.YELLOW_BIRD}${Emo.YELLOW_BIRD} ... generateStellarAnchor using $url")
+        logger.info("${Emo.YELLOW_BIRD}${Emo.YELLOW_BIRD}${Emo.YELLOW_BIRD}${Emo.YELLOW_BIRD}")
         val resp1 = httpGet(url = url,
                 timeout = timeOut, headers = mHeaders)
 
-        logger.info("${Emo.RAIN_DROPS} RESPONSE: \uD83C\uDF4E statusCode: ${resp1.statusCode}  \uD83C\uDF4E ${resp1.text}")
+        logger.info("${Emo.RAIN_DROPS} RESPONSE: \uD83C\uDF4E statusCode: ${resp1.statusCode}  \uD83C\uDF4E text: ${resp1.text}")
         logger.info("${Emo.BLUE_DOT}${Emo.BLUE_DOT}${Emo.BLUE_DOT}${Emo.BLUE_DOT}${Emo.BLUE_DOT}" +
-                "Stellar Anchor Generated ${Emo.RED_APPLES}\n\n\n")
+                "Stellar Anchor Generated: $anchorName ${Emo.RED_APPLES}\n\n\n")
 
     }
 

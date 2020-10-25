@@ -189,6 +189,7 @@ class NetworkRoyaltyService {
                     "${Emo.LEAF} supplierPayment recorded on Corda Ledger ${Emo.LEAF}")
             val dto = DTOUtil.getDTO(supplierPaymentState)
             firebaseService.addSupplierPayment(dto)
+            firebaseService.closeInvoiceOffers(supplierPaymentState.acceptedOffer.invoiceId.toString())
             logger.info("${Emo.GLOBE}${Emo.GLOBE}${Emo.GLOBE} SupplierPayment made on ledger: " +
                     "${dto.acceptedOffer?.offerAmount} " +
                     "${Emo.SOCCER_BALL}${Emo.SOCCER_BALL}${Emo.SOCCER_BALL} \n\n\n")

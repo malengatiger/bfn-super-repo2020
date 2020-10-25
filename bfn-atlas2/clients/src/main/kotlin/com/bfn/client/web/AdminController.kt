@@ -420,7 +420,8 @@ class AdminController(rpc: NodeRPCConnection) {
     @Throws(Exception::class)
     fun makeSupplierPaymentForOffer(offerId: String, @RequestHeader("Authorization") token: String): SupplierPaymentDTO? {
         val mToken = token.substring(7)
-        return stellarAnchorService.makeSupplierPaymentForOffer(proxy, offerId = offerId, token = mToken)
+        return stellarAnchorService.makeSupplierPaymentForOffer(
+                proxy, offerId = offerId, token = mToken)
     }
     @GetMapping(value = ["/makeInvestorPaymentForOffer"], produces = [MediaType.APPLICATION_JSON_VALUE])
     @Throws(Exception::class)
@@ -508,6 +509,11 @@ class AdminController(rpc: NodeRPCConnection) {
         return firebaseService.getInvestorProfile(accountId)
     }
 
+    @GetMapping(value = ["/makeInvestorOffers"])
+    @Throws(Exception::class)
+    fun makeInvestorOffers(investorId: String): List<InvoiceOfferDTO> {
+        return workerBeeService.makeInvestorOffers(proxy,investorId);
+    }
     @PostMapping(value = ["/createSupplierProfile"])
     @Throws(Exception::class)
     fun createSupplierProfile(@RequestBody profile: SupplierProfileStateDTO): String? {

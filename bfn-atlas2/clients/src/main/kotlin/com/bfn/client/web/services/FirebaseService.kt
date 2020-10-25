@@ -3,6 +3,7 @@ package com.bfn.client.web.services
 import com.bfn.client.Emo
 import com.bfn.client.data.*
 import com.bfn.client.web.*
+import com.bfn.flows.todaysDate
 import com.google.api.core.ApiFuture
 import com.google.cloud.firestore.CollectionReference
 import com.google.cloud.firestore.DocumentReference
@@ -380,6 +381,44 @@ class FirebaseService() {
         }
     }
 
+    @Throws(Exception::class)
+    fun closeInvoiceOffers(invoiceId: String)  {
+        val future = db.collection(BFN_INVOICE_OFFERS)
+                .whereEqualTo("invoiceId", invoiceId)
+                .get()
+        val qs: QuerySnapshot = future.get()
+        if (qs.documents.isNotEmpty()) {
+            qs.documents.forEach {
+                val offer = it.toObject(InvoiceOfferDTO::class.java)
+                offer.dateClosed = todaysDate()
+                val ref = it.reference
+                ref.set(offer)
+                logger.info("${Emo.PEAR}${Emo.PEAR}${Emo.PEAR}${Emo.PEAR}${Emo.PEAR} " +
+                        "InvoiceOffer has been updated with dateClosed; ${Emo.PEAR} " +
+                        "investor: ${offer.investor?.name} amount:  ${offer.offerAmount}")
+            }
+        } else {
+            throw Exception("InvoiceOffers not found for update")
+        }
+    }
+    @Throws(Exception::class)
+    fun updatePurchaseOrderInvoiceCreated(purchaseOrderId: String)  {
+        val future = db.collection(BFN_PURCHASE_ORDERS)
+                .whereEqualTo("purchaseOrderId", purchaseOrderId)
+                .limit(1)
+                .get()
+        val qs: QuerySnapshot = future.get()
+        if (qs.documents.isNotEmpty()) {
+            val po = qs.documents[0].toObject(PurchaseOrderDTO::class.java)
+            po.invoiceCreatedDate = todaysDate()
+            val ref = qs.documents[0].reference
+            ref.set(po)
+            logger.info("${Emo.PEACH}${Emo.PEACH}${Emo.PEACH}${Emo.PEACH}${Emo.PEACH} " +
+                    "PurchaseOrderDTO has been updated with invoiceCreatedDate")
+        } else {
+            throw Exception("PurchaseOrderDTO not found for update")
+        }
+    }
     @Throws(Exception::class)
     fun updateNetworkOperator(operator: NetworkOperatorDTO)  {
         logger.info("\uD83D\uDD06 \uD83D\uDD06 about to update NetworkOperator, check properties: ${gson.toJson(operator)}")

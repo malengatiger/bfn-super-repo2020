@@ -78,9 +78,9 @@ class DemoDataController(rpc: NodeRPCConnection) {
                  "    \uD83E\uDDE1 \uD83D\uDC9B \uD83D\uDC9A \uD83D\uDC99 \uD83D\uDC9C\n\n")
         return result
     }
-    @GetMapping(value = ["/generatePurchaseOrders"], produces = [MediaType.TEXT_PLAIN_VALUE])
+    @GetMapping(value = ["/generatePurchaseOrders"])
     @Throws(Exception::class)
-    private fun generatePurchaseOrders( numberOfMonths: Int): String? {
+    private fun generatePurchaseOrders(@RequestParam numberOfMonths: Int): String? {
         logger.info("\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 " +
                 "starting DemoDataController: generatePurchaseOrders " +
                 "... \uD83C\uDF4F ")

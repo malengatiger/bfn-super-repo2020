@@ -16,6 +16,7 @@ import com.bfn.flows.investor.SupplierPaymentFlow
 import com.bfn.flows.invoices.InvoiceRegistrationFlow
 import com.bfn.flows.queries.*
 import com.bfn.flows.scheduled.CreateInvoiceOffersFlow
+import com.bfn.flows.services.InvoiceFinderService
 import com.bfn.flows.services.ProfileFinderService
 import com.bfn.flows.supplier.AcceptBestOfferForInvoiceFlow
 import com.bfn.flows.supplier.SupplierProfileFlow
@@ -107,21 +108,63 @@ class WorkerBeeService {
         return list
     }
 
-    fun getAllNodeAccounts(proxy: CordaRPCOps): List<AccountInfoDTO> {
-        val start = Date()
-        val node = proxy.nodeInfo()
-        logger.info("\uD83C\uDF50 \uD83C\uDF50 Current Node: ${node.legalIdentities[0].name}")
-        val accounts = proxy.vaultQuery(AccountInfo::class.java).states
-
+    fun getAllNodeAccountDTOs(proxy: CordaRPCOps): List<AccountInfoDTO> {
         val list: MutableList<AccountInfoDTO> = mutableListOf()
-        for ((state) in accounts) {
-            val acct = state.data
+        var pageNumber = DEFAULT_PAGE_NUM
+        val states = mutableListOf<StateAndRef<AccountInfo>>()
+        do {
+            val pageSpec = PageSpecification(pageNumber = pageNumber, pageSize = 200)
+            val results = proxy.vaultQueryByWithPagingSpec(
+                    contractStateType = AccountInfo::class.java,
+                    paging = pageSpec,
+                    criteria = VaultQueryCriteria(status = StateStatus.UNCONSUMED)
+            )
+
+            states.addAll(results.states)
+            pageNumber++
+        } while ((pageSpec.pageSize * (pageNumber - 1)) <= results.totalStatesAvailable)
+
+        for (state in states) {
+            val acct = state.state.data
             val dto = AccountInfoDTO(acct.identifier.id.toString(),
                     acct.host.toString(), acct.name)
             list.add(dto)
         }
 
-        return list
+        val sorted = list.sortedBy { it.name }
+        logger.info("\uD83E\uDDE9 Accounts found on node:  \uD83C\uDF00 ${sorted.size} " )
+        list.forEach {
+            logger.info("${Emo.PEACH}${Emo.PEACH} ACCOUNT on Node: ${gson.toJson(it)}")
+        }
+        return sorted
+    }
+    fun getAllNodeAccounts(proxy: CordaRPCOps): List<AccountInfo> {
+
+        val mList: MutableList<AccountInfo> = mutableListOf()
+        var pageNumber = DEFAULT_PAGE_NUM
+        val states = mutableListOf<StateAndRef<AccountInfo>>()
+        do {
+            val pageSpec = PageSpecification(pageNumber = pageNumber, pageSize = 200)
+            val results = proxy.vaultQueryByWithPagingSpec(
+                    contractStateType = AccountInfo::class.java,
+                    paging = pageSpec,
+                    criteria = VaultQueryCriteria(status = StateStatus.UNCONSUMED)
+            )
+
+            states.addAll(results.states)
+            pageNumber++
+        } while ((pageSpec.pageSize * (pageNumber - 1)) <= results.totalStatesAvailable)
+
+        logger.info("\uD83E\uDDE9 Accounts found on node:  \uD83C\uDF00 ${states.size} " )
+        states.forEach {
+
+            mList.add(it.state.data)
+        }
+        val sorted = mList.sortedBy { it.name }
+        sorted.forEach {
+            logger.info("${Emo.PEACH}${Emo.PEACH} ACCOUNT on Node: ${it.name} ${Emo.PEAR} ${it.host}")
+        }
+        return sorted
     }
 
     fun getNodeAccount(proxy: CordaRPCOps, identifier: String): AccountInfo? {
@@ -912,9 +955,9 @@ class WorkerBeeService {
 
     @Throws(Exception::class)
     fun startInvoiceRegistrationFlow(proxy: CordaRPCOps, invoice: InvoiceDTO): InvoiceDTO {
-//        logger.info("\uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 " +
-//                ".... starting startInvoiceRegistrationFlow ........ \uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C " +
-//                " \n\n")
+        logger.info("\uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 \uD83E\uDD66 " +
+                ".... starting startInvoiceRegistrationFlow ........ \uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C " +
+                " \n\n")
         if (invoice.customer!!.host == null) {
             throw Exception("\uD83D\uDE21 Customer object is missing data; invalid")
         }
@@ -922,17 +965,15 @@ class WorkerBeeService {
             throw Exception("\uD83D\uDE21 Supplier object is missing data; invalid")
         }
         return try {
-            val accounts = proxy.vaultQuery(AccountInfo::class.java).states
-//            logger.info("\uD83D\uDD35 \uD83D\uDD35 Vault Query for Accounts returned " +
-//                    "${accounts.size} from the Corda ledger")
+            val accounts = getAllNodeAccounts(proxy)
             var supplierInfo: AccountInfo? = null
             var customerInfo: AccountInfo? = null
-            for ((state) in accounts) {
-                if (state.data.identifier.id.toString().equals(invoice.customer!!.identifier, ignoreCase = true)) {
-                    customerInfo = state.data
+            for (account in accounts) {
+                if (account .identifier.id.toString().equals(invoice.customer!!.identifier, ignoreCase = true)) {
+                    customerInfo = account
                 }
-                if (state.data.identifier.id.toString().equals(invoice.supplier!!.identifier, ignoreCase = true)) {
-                    supplierInfo = state.data
+                if (account.identifier.id.toString().equals(invoice.supplier!!.identifier, ignoreCase = true)) {
+                    supplierInfo = account
                 }
             }
             if (supplierInfo == null) {
@@ -946,10 +987,6 @@ class WorkerBeeService {
             val totalTaxAmt = BigDecimal(invoice.amount).multiply(taxPercentage)
             val totalAmount = BigDecimal(invoice.amount).add(totalTaxAmt)
             invoice.totalAmount = "$totalAmount"
-            //
-//            logger.info("\uD83C\uDF51 \uD83C\uDF51 startInvoiceRegistrationFlow: " +
-//                    "\uD83D\uDC9C \uD83D\uDC9C \uD83D\uDC9C " +
-//                    "about to add InvoiceState to the Corda ledger .......profile: $profile")
 
             var mDate = invoice.dateRegistered
             if (profile == "prod") {
@@ -989,10 +1026,12 @@ class WorkerBeeService {
 
             val dto = invoiceState.let { DTOUtil.getDTO(it) }
             try {
-//                firebaseService.sendInvoiceMessage(dto)
+                firebaseService.sendInvoiceMessage(dto)
                 firebaseService.addInvoice(dto)
-                logger.info("\uD83E\uDDE9 \uD83E\uDDE9 \uD83E\uDDE9 " +
-                        "Invoice has been added to Firestore; \uD83D\uDC2C seems OK ")
+                if (poState != null) {
+                    firebaseService.updatePurchaseOrderInvoiceCreated(poState.purchaseOrderId)
+                }
+
             } catch (e: Exception) {
                 //todo - send email to support about this .... firebase shit failed but ledger is OK
                 e.printStackTrace()
@@ -1418,7 +1457,7 @@ class WorkerBeeService {
     @Throws(Exception::class)
     fun makeInvestorOffers(proxy: CordaRPCOps, investorId: String): List<InvoiceOfferDTO> {
         logger.info("\uD83C\uDFC0 \uD83C\uDFC0 .............. " +
-                "\uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 \uD83D\uDD35 Starting to make Offers for Anchor ... ")
+                " Starting to make Offers for Investor: $investorId ... ")
 
         val cordaFuture = proxy.startFlowDynamic(
                 MultiInvoiceOfferFlow::class.java, investorId).returnValue
@@ -1431,6 +1470,7 @@ class WorkerBeeService {
 
         mList.forEach() {
             logger.info("$xx OFFER: ${gson.toJson(it)}  $xx")
+            firebaseService.addInvoiceOffer(it)
         }
         logger.info("$xx makeOffers: Number of Anchor offers made OK: " +
                 "\uD83C\uDF53 ${mList.size} \uD83C\uDF53 ")
@@ -1451,37 +1491,6 @@ class WorkerBeeService {
             p
         } else {
             null
-        }
-    }
-
-    @Throws(Exception::class)
-    fun makeSupplierPaymentForOffer(proxy: CordaRPCOps,
-                                    investorId: String,
-                                    offerId: String): SupplierPaymentDTO {
-
-        logger.info("\n\n\n${Emo.RAIN_DROPS} starting makeSupplierPaymentForOffer, " +
-                "${Emo.RED_DOT} investor: $investorId offer: $offerId")
-        val suffix = "bfn/admin/makeSupplierPaymentForOffer"
-        val url = "$stellarAnchorUrl$suffix"
-        logger.info("${Emo.RAIN_DROPS} Stellar Anchor URL for processing this payment: ${Emo.RED_APPLE} $url")
-
-        logger.info("${Emo.PEAR} ${Emo.PEAR} starting corda flow with params: " +
-                "offerId: $offerId investorId: $investorId ${Emo.PEAR}")
-        val cordaFuture = proxy.startTrackedFlowDynamic(
-                SupplierPaymentFlow::class.java, offerId, investorId)
-                .returnValue
-        val supplierPaymentState = cordaFuture.get()
-        val supplierPayment = DTOUtil.getDTO(supplierPaymentState)
-        logger.info("\uD83C\uDF4F \uD83C\uDF4F .... SinglePaymentFlow completed on ledger ... " +
-                "\uD83D\uDC4C \uD83D\uDC4C \uD83D\uDC4C " +
-                "payment made: ${gson.toJson(supplierPayment)} ${Emo.DOG}")
-        try {
-            firebaseService.addSupplierPayment(supplierPayment)
-            return supplierPayment
-        } catch (e: Exception) {
-            logger.error("\uD83D\uDC7F \uD83D\uDC7F \uD83D\uDC7F\uD83D\uDC7F " +
-                    "Failed to add invoiceOffer to Firestore", e)
-            throw e
         }
     }
 

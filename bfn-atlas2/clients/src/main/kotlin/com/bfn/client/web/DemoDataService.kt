@@ -171,7 +171,7 @@ class DemoDataService {
                 "\uD83E\uDD6E \uD83E\uDD6E \uD83E\uDD6E\n"
         logger.info(msg)
         purchaseOrderCount = 0
-        accounts = workerBeeService.getAllNodeAccounts(mProxy)
+        accounts = workerBeeService.getAllNodeAccountDTOs(mProxy)
         val operator = firebaseService.getNetworkOperator() ?: throw Exception("Network Operator missing ${Emo.ERRORS}")
         accounts.forEach {
             logger.info("\uD83C\uDF4E Account found on node, " +
