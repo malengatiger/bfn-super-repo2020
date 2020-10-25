@@ -190,6 +190,10 @@ class NetworkRoyaltyService {
             val dto = DTOUtil.getDTO(supplierPaymentState)
             firebaseService.addSupplierPayment(dto)
             firebaseService.closeInvoiceOffers(supplierPaymentState.acceptedOffer.invoiceId.toString())
+            firebaseService.updateInvoiceSupplierPaymentMade(
+                    invoiceId =  supplierPaymentState.acceptedOffer.invoiceId.toString(),
+            supplierPaymentId = supplierPaymentState.supplierPaymentId)
+
             logger.info("${Emo.GLOBE}${Emo.GLOBE}${Emo.GLOBE} SupplierPayment made on ledger: " +
                     "${dto.acceptedOffer?.offerAmount} " +
                     "${Emo.SOCCER_BALL}${Emo.SOCCER_BALL}${Emo.SOCCER_BALL} \n\n\n")
@@ -211,6 +215,11 @@ class NetworkRoyaltyService {
                     "${Emo.LEAF} InvestorPayment recorded on Corda Ledger ${Emo.LEAF}")
             val dto = DTOUtil.getDTO(investorPaymentState)
             firebaseService.addInvestorPayment(dto)
+            firebaseService.updateInvoiceInvestorPaymentMade(invoiceId =
+                    investorPaymentState.supplierPayment.acceptedOffer.invoiceId.toString(),
+                    investorPaymentId = investorPaymentState.investorPaymentId
+                    )
+
             logger.info("${Emo.GLOBE}${Emo.GLOBE}${Emo.GLOBE} InvestorPayment made on ledger: " +
                     "${dto.supplierPayment?.acceptedOffer?.offerAmount} " +
                     "${Emo.SOCCER_BALL}${Emo.SOCCER_BALL}${Emo.SOCCER_BALL} \n\n\n")

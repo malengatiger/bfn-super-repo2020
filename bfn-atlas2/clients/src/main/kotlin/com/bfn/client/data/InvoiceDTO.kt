@@ -14,7 +14,11 @@ data class InvoiceDTO (
         var dateRegistered: String = "",
         var purchaseOrder: PurchaseOrderDTO? = null,
         var supplier: AccountInfoDTO? = null,
-        var customer: AccountInfoDTO? = null
+        var customer: AccountInfoDTO? = null,
+        var investorPaymentDate: String? = null,
+        var supplierPaymentDate: String? = null,
+        var investorPaymentId: String? = null,
+        var supplierPaymentId: String? = null
 )
 
 

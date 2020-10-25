@@ -401,6 +401,49 @@ class FirebaseService() {
             throw Exception("InvoiceOffers not found for update")
         }
     }
+
+    @Throws(Exception::class)
+    fun updateInvoiceSupplierPaymentMade(invoiceId: String, supplierPaymentId:String)  {
+        logger.info("${Emo.RAIN_DROPS} updateInvoiceSupplierPaymentMade ... " +
+                "invoiceId: $invoiceId")
+        val future = db.collection(BFN_INVOICES)
+                .whereEqualTo("invoiceId", invoiceId)
+                .limit(1)
+                .get()
+        val qs: QuerySnapshot = future.get()
+        if (qs.documents.isNotEmpty()) {
+            val po = qs.documents[0].toObject(InvoiceDTO::class.java)
+            po.supplierPaymentDate = todaysDate()
+            po.supplierPaymentId = supplierPaymentId
+            val ref = qs.documents[0].reference
+            ref.set(po)
+            logger.info("${Emo.PEAR}${Emo.PEAR}${Emo.PEAR}${Emo.PEAR}${Emo.PEAR} " +
+                    "Invoice has been updated with supplierPaymentDate and Id")
+        } else {
+            throw Exception("${Emo.ERRORS} Invoice not found for update")
+        }
+    }
+    @Throws(Exception::class)
+    fun updateInvoiceInvestorPaymentMade(invoiceId: String, investorPaymentId:String)  {
+        logger.info("${Emo.RAIN_DROPS} updateInvoiceInvestorPaymentMade ... " +
+                "invoiceId: $invoiceId")
+        val future = db.collection(BFN_INVOICES)
+                .whereEqualTo("invoiceId", invoiceId)
+                .limit(1)
+                .get()
+        val qs: QuerySnapshot = future.get()
+        if (qs.documents.isNotEmpty()) {
+            val po = qs.documents[0].toObject(InvoiceDTO::class.java)
+            po.investorPaymentDate = todaysDate()
+            po.investorPaymentId = investorPaymentId
+            val ref = qs.documents[0].reference
+            ref.set(po)
+            logger.info("${Emo.PEACH}${Emo.PEACH}${Emo.PEACH}${Emo.PEACH}${Emo.PEACH} " +
+                    "Invoice has been updated with investorPaymentDate and Id")
+        } else {
+            throw Exception("${Emo.ERRORS} Invoice not found for update")
+        }
+    }
     @Throws(Exception::class)
     fun updatePurchaseOrderInvoiceCreated(purchaseOrderId: String)  {
         logger.info("${Emo.RAIN_DROPS} updatePurchaseOrderInvoiceCreated ... " +
@@ -416,7 +459,7 @@ class FirebaseService() {
             val ref = qs.documents[0].reference
             ref.set(po)
             logger.info("${Emo.PEACH}${Emo.PEACH}${Emo.PEACH}${Emo.PEACH}${Emo.PEACH} " +
-                    "PurchaseOrderDTO has been updated with invoiceCreatedDate")
+                    "PurchaseOrder has been updated with invoiceCreatedDate")
         } else {
             throw Exception("${Emo.ERRORS} PurchaseOrder not found for update")
         }
