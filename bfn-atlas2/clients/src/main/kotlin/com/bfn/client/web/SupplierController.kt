@@ -71,7 +71,7 @@ class SupplierController(rpc: NodeRPCConnection) {
     @Throws(Exception::class)
     fun findInvoicesForSupplier(
             @RequestParam(value = "accountId", required = true) accountId: String): List<InvoiceDTO>? {
-        return workerBeeService.findInvoicesForSupplier(proxy, accountId)
+        return workerBeeService.findInvoicesOnLedgerForSupplier(proxy, accountId)
     }
 
     @GetMapping(value = ["findOffersForSupplier"])

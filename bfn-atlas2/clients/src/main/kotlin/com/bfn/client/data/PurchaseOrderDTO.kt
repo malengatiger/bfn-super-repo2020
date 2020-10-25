@@ -11,6 +11,7 @@ class PurchaseOrderDTO (
         var amount: String  = "",
         var dateRegistered: String = "",
         var description: String = "",
-        var invoiceCreatedDate: String? = null
+        var invoiceCreatedDate: String? = null,
+        var invoiceId: String? = null
 ) {
 }

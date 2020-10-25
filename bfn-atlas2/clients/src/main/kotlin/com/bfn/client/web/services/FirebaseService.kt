@@ -110,6 +110,204 @@ class FirebaseService() {
         return mList;
     }
     @Throws(Exception::class)
+    fun getSupplierPurchaseOrders(identifier:String): List<PurchaseOrderDTO> {
+        val mList: MutableList<PurchaseOrderDTO> = mutableListOf()
+        val querySnapshot = db.collection(BFN_PURCHASE_ORDERS)
+                .whereEqualTo("supplier.identifier", identifier)
+                .get().get()
+        querySnapshot.documents.forEach {
+            mList.add(it.toObject(PurchaseOrderDTO::class.java))
+        }
+
+        logger.info("Supplier PurchaseOrders found: ${mList.size}")
+        return mList;
+    }
+    @Throws(Exception::class)
+    fun getSupplierInvoices(identifier:String): List<InvoiceDTO> {
+        val mList: MutableList<InvoiceDTO> = mutableListOf()
+        val querySnapshot = db.collection(BFN_INVOICES)
+                .whereEqualTo("supplier.identifier", identifier)
+                .get().get()
+        querySnapshot.documents.forEach {
+            mList.add(it.toObject(InvoiceDTO::class.java))
+        }
+
+        logger.info("Supplier Invoices found: ${mList.size}")
+        return mList;
+    }
+    @Throws(Exception::class)
+    fun getSupplierInvoiceOffers(identifier:String): List<InvoiceOfferDTO> {
+        val mList: MutableList<InvoiceOfferDTO> = mutableListOf()
+        val querySnapshot = db.collection(BFN_INVOICE_OFFERS)
+                .whereEqualTo("supplier.identifier", identifier)
+                .get().get()
+        querySnapshot.documents.forEach {
+            mList.add(it.toObject(InvoiceOfferDTO::class.java))
+        }
+
+        logger.info("Supplier InvoiceOffers found: ${mList.size}")
+        return mList;
+    }
+    @Throws(Exception::class)
+    fun getSupplierAcceptedOffers(identifier:String): List<AcceptedOfferDTO> {
+        val mList: MutableList<AcceptedOfferDTO> = mutableListOf()
+        val querySnapshot = db.collection(BFN_ACCEPTED_OFFERS)
+                .whereEqualTo("supplier.account.identifier", identifier)
+                .get().get()
+        querySnapshot.documents.forEach {
+            mList.add(it.toObject(AcceptedOfferDTO::class.java))
+        }
+
+        logger.info("Supplier AcceptedOffers found: ${mList.size}")
+        return mList;
+    }
+    @Throws(Exception::class)
+    fun getInvestorAcceptedOffers(identifier:String): List<AcceptedOfferDTO> {
+        val mList: MutableList<AcceptedOfferDTO> = mutableListOf()
+        val querySnapshot = db.collection(BFN_ACCEPTED_OFFERS)
+                .whereEqualTo("investor.account.identifier", identifier)
+                .get().get()
+        querySnapshot.documents.forEach {
+            mList.add(it.toObject(AcceptedOfferDTO::class.java))
+        }
+
+        logger.info("Supplier AcceptedOffers found: ${mList.size}")
+        return mList;
+    }
+
+    @Throws(Exception::class)
+    fun getSupplierPaymentsBySupplier(identifier:String): List<SupplierPaymentDTO> {
+        val mList: MutableList<SupplierPaymentDTO> = mutableListOf()
+        val querySnapshot = db.collection(BFN_SUPPLIER_PAYMENTS)
+                .whereEqualTo("supplierProfile.account.identifier", identifier)
+                .get().get()
+        querySnapshot.documents.forEach {
+            mList.add(it.toObject(SupplierPaymentDTO::class.java))
+        }
+
+        logger.info("getSupplierPaymentsBySupplier found: ${mList.size}")
+        return mList;
+    }
+    @Throws(Exception::class)
+    fun getInvestorPaymentsBySupplier(identifier:String): List<InvestorPaymentDTO> {
+        val mList: MutableList<InvestorPaymentDTO> = mutableListOf()
+        val querySnapshot = db.collection(BFN_INVESTOR_PAYMENTS)
+                .whereEqualTo("supplierPayment.supplierProfile.account.identifier", identifier)
+                .get().get()
+        querySnapshot.documents.forEach {
+            mList.add(it.toObject(InvestorPaymentDTO::class.java))
+        }
+
+        logger.info("getInvestorPaymentsBySupplier found: ${mList.size}")
+        return mList;
+    }
+    @Throws(Exception::class)
+    fun getSupplierPaymentsByInvestor(identifier:String): List<SupplierPaymentDTO> {
+        val mList: MutableList<SupplierPaymentDTO> = mutableListOf()
+        val querySnapshot = db.collection(BFN_SUPPLIER_PAYMENTS)
+                .whereEqualTo("acceptedOffer.investor.account.identifier", identifier)
+                .get().get()
+        querySnapshot.documents.forEach {
+            mList.add(it.toObject(SupplierPaymentDTO::class.java))
+        }
+
+        logger.info("getSupplierPaymentsByInvestor found: ${mList.size}")
+        return mList;
+    }
+    @Throws(Exception::class)
+    fun getInvestorPaymentsByInvestor(identifier:String): List<InvestorPaymentDTO> {
+        val mList: MutableList<InvestorPaymentDTO> = mutableListOf()
+        val querySnapshot = db.collection(BFN_INVESTOR_PAYMENTS)
+                .whereEqualTo("investorProfile.account.identifier", identifier)
+                .get().get()
+        querySnapshot.documents.forEach {
+            mList.add(it.toObject(InvestorPaymentDTO::class.java))
+        }
+
+        logger.info("getInvestorPaymentsByInvestor found: ${mList.size}")
+        return mList;
+    }
+    @Throws(Exception::class)
+    fun getInvestorPayments(identifier:String): List<InvestorPaymentDTO> {
+        val mList: MutableList<InvestorPaymentDTO> = mutableListOf()
+        val querySnapshot = db.collection(BFN_INVESTOR_PAYMENTS)
+                .whereEqualTo("investorProfile.account.identifier", identifier)
+                .get().get()
+        querySnapshot.documents.forEach {
+            mList.add(it.toObject(InvestorPaymentDTO::class.java))
+        }
+
+        logger.info("${Emo.RAIN_DROPS}Supplier InvestorPayments found: ${mList.size}")
+        return mList;
+    }
+    @Throws(Exception::class)
+    fun getInvestorPaymentsByCustomer(identifier:String): List<InvestorPaymentDTO> {
+        val mList: MutableList<InvestorPaymentDTO> = mutableListOf()
+        val querySnapshot = db.collection(BFN_INVESTOR_PAYMENTS)
+                .whereEqualTo("customerProfile.account.identifier", identifier)
+                .get().get()
+        querySnapshot.documents.forEach {
+            mList.add(it.toObject(InvestorPaymentDTO::class.java))
+        }
+        logger.info("${Emo.RAIN_DROPS}InvestorPaymentsByCustomer found: ${mList.size}")
+        return mList;
+    }
+    @Throws(Exception::class)
+    fun getCustomerPurchaseOrders(identifier:String): List<PurchaseOrderDTO> {
+        val mList: MutableList<PurchaseOrderDTO> = mutableListOf()
+        val querySnapshot = db.collection(BFN_PURCHASE_ORDERS)
+                .whereEqualTo("customer.identifier", identifier)
+                .get().get()
+        querySnapshot.documents.forEach {
+            mList.add(it.toObject(PurchaseOrderDTO::class.java))
+        }
+
+        logger.info("${Emo.RAIN_DROPS}Customer PurchaseOrders found: ${mList.size}")
+        return mList;
+    }
+    @Throws(Exception::class)
+    fun getCustomerInvoices(identifier:String): List<InvoiceDTO> {
+        val mList: MutableList<InvoiceDTO> = mutableListOf()
+        val querySnapshot = db.collection(BFN_INVOICES)
+                .whereEqualTo("customer.identifier", identifier)
+                .get().get()
+        querySnapshot.documents.forEach {
+            mList.add(it.toObject(InvoiceDTO::class.java))
+        }
+
+        logger.info("${Emo.RAIN_DROPS}Customer Invoices found: ${mList.size}")
+        return mList;
+    }
+    @Throws(Exception::class)
+    fun getSupplierRoyalties(startDate:String,endDate:String): List<NetworkSupplierRoyaltyDTO> {
+        val mList: MutableList<NetworkSupplierRoyaltyDTO> = mutableListOf()
+        val querySnapshot = db.collection(BFN_SUPPLIER_ROYALTIES)
+                .whereGreaterThanOrEqualTo("dateRegistered", startDate)
+                .whereLessThanOrEqualTo("dateRegistered", endDate)
+                .get().get()
+        querySnapshot.documents.forEach {
+            mList.add(it.toObject(NetworkSupplierRoyaltyDTO::class.java))
+        }
+
+        logger.info("${Emo.RAIN_DROPS}NetworkSupplierRoyalties found: ${mList.size}")
+        return mList;
+    }
+    @Throws(Exception::class)
+    fun getInvestorRoyalties(startDate:String,endDate:String): List<NetworkInvestorRoyaltyDTO> {
+        val mList: MutableList<NetworkInvestorRoyaltyDTO> = mutableListOf()
+        val querySnapshot = db.collection(BFN_INVESTOR_ROYALTIES)
+                .whereGreaterThanOrEqualTo("dateRegistered", startDate)
+                .whereLessThanOrEqualTo("dateRegistered", endDate)
+                .get().get()
+        querySnapshot.documents.forEach {
+            mList.add(it.toObject(NetworkInvestorRoyaltyDTO::class.java))
+        }
+
+        logger.info("${Emo.RAIN_DROPS}NetworkInvestorRoyalties found: ${mList.size}")
+        return mList;
+    }
+
+    @Throws(Exception::class)
     fun getInvoices(startDate:String,endDate:String): List<InvoiceDTO> {
         val mList: MutableList<InvoiceDTO> = mutableListOf()
         val querySnapshot = db.collection(BFN_INVOICES)
@@ -152,7 +350,7 @@ class FirebaseService() {
         return mList;
     }
     @Throws(Exception::class)
-    fun getSupplierPayments(startDate:String,endDate:String): List<SupplierPaymentDTO> {
+    fun getSupplierPaymentsBySupplier(startDate:String, endDate:String): List<SupplierPaymentDTO> {
         val mList: MutableList<SupplierPaymentDTO> = mutableListOf()
         val querySnapshot = db.collection(BFN_SUPPLIER_PAYMENTS)
                 .whereGreaterThanOrEqualTo("date", startDate)
@@ -274,12 +472,12 @@ class FirebaseService() {
     }
     @Throws(ExecutionException::class, InterruptedException::class)
     fun addSupplierRoyalty(supplierRoyalty: NetworkSupplierRoyaltyDTO) {
-        val future: ApiFuture<DocumentReference> = db.collection(SUPPLIER_ROYALTIES).add(supplierRoyalty);
+        val future: ApiFuture<DocumentReference> = db.collection(BFN_SUPPLIER_ROYALTIES).add(supplierRoyalty);
         logger.info("\uD83D\uDE3C NetworkSupplierRoyalty added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
     @Throws(ExecutionException::class, InterruptedException::class)
     fun addInvestorRoyalty(investorRoyalty: NetworkInvestorRoyaltyDTO) {
-        val future: ApiFuture<DocumentReference> = db.collection(INVESTOR_ROYALTIES).add(investorRoyalty);
+        val future: ApiFuture<DocumentReference> = db.collection(BFN_INVESTOR_ROYALTIES).add(investorRoyalty);
         logger.info("\uD83D\uDE3C NetworkSupplierRoyalty added to Firestore: \uD83D\uDC9A ${future.getOrThrow().path}")
     }
     @Throws(ExecutionException::class, InterruptedException::class)
@@ -445,7 +643,7 @@ class FirebaseService() {
         }
     }
     @Throws(Exception::class)
-    fun updatePurchaseOrderInvoiceCreated(purchaseOrderId: String)  {
+    fun updatePurchaseOrderInvoiceCreated(purchaseOrderId: String, invoiceId:String)  {
         logger.info("${Emo.RAIN_DROPS} updatePurchaseOrderInvoiceCreated ... " +
                 "purchaseOrderId: $purchaseOrderId")
         val future = db.collection(BFN_PURCHASE_ORDERS)
@@ -456,6 +654,7 @@ class FirebaseService() {
         if (qs.documents.isNotEmpty()) {
             val po = qs.documents[0].toObject(PurchaseOrderDTO::class.java)
             po.invoiceCreatedDate = todaysDate()
+            po.invoiceId = invoiceId
             val ref = qs.documents[0].reference
             ref.set(po)
             logger.info("${Emo.PEACH}${Emo.PEACH}${Emo.PEACH}${Emo.PEACH}${Emo.PEACH} " +

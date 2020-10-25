@@ -12,7 +12,6 @@ import com.bfn.contractstates.states.AcceptedOfferState
 import com.bfn.flows.StellarPaymentDTO
 import com.google.firebase.auth.UserRecord
 import com.google.gson.GsonBuilder
-import khttp.request
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.node.services.Vault
 import net.corda.core.node.services.vault.PageSpecification
@@ -275,6 +274,91 @@ class AdminController(rpc: NodeRPCConnection) {
             @RequestParam endDate: String): List<PurchaseOrderDTO> {
         return firebaseService.getPurchaseOrders(startDate, endDate)
     }
+    @GetMapping(value = ["/getSupplierPurchaseOrders"])
+    @Throws(Exception::class)
+    fun getSupplierPurchaseOrders(
+            @RequestParam identifier: String): List<PurchaseOrderDTO> {
+        return firebaseService.getSupplierPurchaseOrders(identifier)
+    }
+    
+    @GetMapping(value = ["/getCustomerPurchaseOrders"])
+    @Throws(Exception::class)
+    fun getCustomerPurchaseOrders(
+            @RequestParam identifier: String): List<PurchaseOrderDTO> {
+        return firebaseService.getCustomerPurchaseOrders(identifier)
+    }
+    
+    @GetMapping(value = ["/getSupplierInvoiceOffers"])
+    @Throws(Exception::class)
+    fun getSupplierInvoiceOffers(
+            @RequestParam identifier: String): List<InvoiceOfferDTO> {
+        return firebaseService.getSupplierInvoiceOffers(identifier)
+    }
+    
+    @GetMapping(value = ["/getSupplierAcceptedOffers"])
+    @Throws(Exception::class)
+    fun getSupplierAcceptedOffers(
+            @RequestParam identifier: String): List<AcceptedOfferDTO> {
+        return firebaseService.getSupplierAcceptedOffers(identifier)
+    }
+    
+    @GetMapping(value = ["/getInvestorAcceptedOffers"])
+    @Throws(Exception::class)
+    fun getInvestorAcceptedOffers(
+            @RequestParam identifier: String): List<AcceptedOfferDTO> {
+        return firebaseService.getInvestorAcceptedOffers(identifier)
+    }
+    
+    @GetMapping(value = ["/getInvestorPaymentsByCustomer"])
+    @Throws(Exception::class)
+    fun getInvestorPaymentsByCustomer(
+            @RequestParam identifier: String): List<InvestorPaymentDTO> {
+        return firebaseService.getInvestorPaymentsByCustomer(identifier)
+    }
+
+    @GetMapping(value = ["/getSupplierPaymentsBySupplier"])
+    @Throws(Exception::class)
+    fun getSupplierPaymentsBySupplier(
+            @RequestParam identifier: String): List<SupplierPaymentDTO> {
+        return firebaseService.getSupplierPaymentsBySupplier(identifier)
+    }
+
+    @GetMapping(value = ["/getInvestorPaymentsBySupplier"])
+    @Throws(Exception::class)
+    fun getInvestorPaymentsBySupplier(
+            @RequestParam identifier: String): List<InvestorPaymentDTO> {
+        return firebaseService.getInvestorPaymentsBySupplier(identifier)
+    }
+
+    @GetMapping(value = ["/getSupplierPaymentsByInvestor"])
+    @Throws(Exception::class)
+    fun getSupplierPaymentsByInvestor(
+            @RequestParam identifier: String): List<SupplierPaymentDTO> {
+        return firebaseService.getSupplierPaymentsByInvestor(identifier)
+    }
+
+    @GetMapping(value = ["/getInvestorPaymentsByInvestor"])
+    @Throws(Exception::class)
+    fun getInvestorPaymentsByInvestor(
+            @RequestParam identifier: String): List<InvestorPaymentDTO> {
+        return firebaseService.getInvestorPaymentsByInvestor(identifier)
+    }
+
+    @GetMapping(value = ["/getSupplierRoyalties"])
+    @Throws(Exception::class)
+    fun getSupplierRoyalties(
+            @RequestParam startDate: String,
+            @RequestParam endDate: String): List<NetworkSupplierRoyaltyDTO> {
+        return firebaseService.getSupplierRoyalties(startDate, endDate)
+    }
+
+    @GetMapping(value = ["/getInvestorRoyalties"])
+    @Throws(Exception::class)
+    fun getInvestorRoyalties(
+            @RequestParam startDate: String,
+            @RequestParam endDate: String): List<NetworkInvestorRoyaltyDTO> {
+        return firebaseService.getInvestorRoyalties(startDate, endDate)
+    }
 
     @GetMapping(value = ["/getInvoices"])
     @Throws(Exception::class)
@@ -324,7 +408,7 @@ class AdminController(rpc: NodeRPCConnection) {
     fun getSupplierPayments(
             @RequestParam startDate: String,
             @RequestParam endDate: String): List<SupplierPaymentDTO> {
-        return firebaseService.getSupplierPayments(startDate, endDate)
+        return firebaseService.getSupplierPaymentsBySupplier(startDate, endDate)
     }
 
     @GetMapping(value = ["/getCustomerProfiles"])
@@ -355,33 +439,33 @@ class AdminController(rpc: NodeRPCConnection) {
     @GetMapping(value = ["/findInvoicesForCustomer"])
     @Throws(Exception::class)
     fun findInvoicesForCustomer(
-            @RequestParam(value = "accountId", required = true) accountId: String): List<InvoiceDTO> {
-        return workerBeeService.findInvoicesForCustomer(proxy, accountId)
+            @RequestParam(value = "identifier", required = true) identifier: String): List<InvoiceDTO> {
+        return workerBeeService.findInvoicesForCustomer(proxy, identifier)
     }
 
     @GetMapping(value = ["/findInvoicesForSupplier"])
     @Throws(Exception::class)
     fun findInvoicesForSupplier(
-            @RequestParam(value = "accountId", required = true) accountId: String): List<InvoiceDTO> {
-        return workerBeeService.findInvoicesForSupplier(proxy, accountId)
+            @RequestParam(value = "identifier", required = true) identifier: String): List<InvoiceDTO> {
+        return workerBeeService.findInvoicesOnLedgerForSupplier(proxy, identifier)
     }
 
     @GetMapping(value = ["/findInvoicesForNode"])
     @Throws(Exception::class)
     fun findInvoicesForNode(): List<InvoiceDTO> {
-        return workerBeeService.findInvoicesForNode(proxy)
+        return workerBeeService.findInvoicesOnLedgerForNode(proxy)
     }
 
     @GetMapping(value = ["/findPurchaseOrdersForNode"])
     @Throws(Exception::class)
     fun findPurchaseOrdersForNode(): List<PurchaseOrderDTO> {
-        return workerBeeService.findPurchaseOrdersForNode(proxy)
+        return workerBeeService.findPurchaseOrdersOnLedgerForNode(proxy)
     }
 
     @GetMapping(value = ["/findInvoicesForInvestor"])
     @Throws(Exception::class)
-    fun findInvoicesForInvestor(@RequestParam(value = "accountId", required = true) accountId: String): List<InvoiceDTO> {
-        return workerBeeService.findInvoicesForInvestor(proxy, accountId)
+    fun findInvoicesForInvestor(@RequestParam(value = "identifier", required = true) identifier: String): List<InvoiceDTO> {
+        return workerBeeService.findInvoicesOnLedgerForInvestor(proxy, identifier)
     }
 
     @GetMapping(value = ["/acceptBestOfferForInvoice"])
@@ -432,44 +516,44 @@ class AdminController(rpc: NodeRPCConnection) {
 
     @GetMapping(value = ["/findOffersForSupplier"])
     @Throws(Exception::class)
-    fun findOffersForSupplier(@RequestParam(value = "accountId", required = true) accountId: String): List<InvoiceOfferDTO> {
-        return workerBeeService.findOffersForSupplier(proxy, accountId)
+    fun findOffersForSupplier(@RequestParam(value = "identifier", required = true) identifier: String): List<InvoiceOfferDTO> {
+        return workerBeeService.findOffersForSupplier(proxy, identifier)
     }
 
     @GetMapping(value = ["/findSupplierPaymentsForNode"])
     @Throws(Exception::class)
     fun findSupplierPaymentsForNode(): List<SupplierPaymentDTO> {
-        return workerBeeService.findSupplierPaymentsForNode(proxy)
+        return workerBeeService.findSupplierPaymentsOnLedgerForNode(proxy)
     }
     @GetMapping(value = ["/findInvestorPaymentsForNode"])
     @Throws(Exception::class)
     fun findInvestorPaymentsForNode(): List<InvestorPaymentDTO> {
-        return workerBeeService.findInvestorPaymentsForNode(proxy)
+        return workerBeeService.findInvestorPaymentsOnLedgerForNode(proxy)
     }
     @GetMapping(value = ["/findSupplierPaymentsForInvestor"])
     @Throws(Exception::class)
     fun findSupplierPaymentsForInvestor(@RequestParam investorId: String): List<SupplierPaymentDTO> {
-        return workerBeeService.findSupplierPaymentsForInvestor(proxy, investorId = investorId)
+        return workerBeeService.findSupplierPaymentsOnLedgerForInvestor(proxy, investorId = investorId)
     }
     @GetMapping(value = ["/findInvestorPaymentsForInvestor"])
     @Throws(Exception::class)
     fun findInvestorPaymentsForInvestor(@RequestParam investorId: String): List<InvestorPaymentDTO> {
-        return workerBeeService.findInvestorPaymentsForInvestor(proxy, investorId = investorId)
+        return workerBeeService.findInvestorPaymentsOnLedgerForInvestor(proxy, investorId = investorId)
     }
     @GetMapping(value = ["/findSupplierPaymentsForSupplier"])
     @Throws(Exception::class)
     fun findSupplierPaymentsForSupplier(@RequestParam supplierId: String): List<SupplierPaymentDTO> {
-        return workerBeeService.findSupplierPaymentsForSupplier(proxy, supplierId = supplierId)
+        return workerBeeService.findSupplierPaymentsOnLedgerForSupplier(proxy, supplierId = supplierId)
     }
     @GetMapping(value = ["/findSupplierPaymentsForCustomer"])
     @Throws(Exception::class)
     fun findSupplierPaymentsForCustomer(@RequestParam customerId: String): List<SupplierPaymentDTO> {
-        return workerBeeService.findSupplierPaymentsForCustomer(proxy, customerId = customerId)
+        return workerBeeService.findSupplierPaymentsForOnLedgerCustomer(proxy, customerId = customerId)
     }
     @GetMapping(value = ["/findInvestorPaymentsForCustomer"])
     @Throws(Exception::class)
     fun findInvestorPaymentsForCustomer(@RequestParam customerId: String): List<InvestorPaymentDTO> {
-        return workerBeeService.findInvestorPaymentsForCustomer(proxy, customerId = customerId)
+        return workerBeeService.findInvestorPaymentsOnLedgerForCustomer(proxy, customerId = customerId)
     }
 
     @GetMapping(value = ["/findOffersForNode"])
@@ -499,14 +583,14 @@ class AdminController(rpc: NodeRPCConnection) {
 
     @GetMapping(value = ["/getSupplierProfile"])
     @Throws(Exception::class)
-    fun getSupplierProfile(@RequestParam(value = "accountId") accountId: String): SupplierProfileStateDTO? {
-        return workerBeeService.getSupplierProfile(proxy, accountId)
+    fun getSupplierProfile(@RequestParam(value = "identifier") identifier: String): SupplierProfileStateDTO? {
+        return workerBeeService.getSupplierProfile(proxy, identifier)
     }
 
     @GetMapping(value = ["/getInvestorProfile"])
     @Throws(Exception::class)
-    fun getInvestorProfile(@RequestParam(value = "accountId") accountId: String): InvestorProfileStateDTO? {
-        return firebaseService.getInvestorProfile(accountId)
+    fun getInvestorProfile(@RequestParam(value = "identifier") identifier: String): InvestorProfileStateDTO? {
+        return firebaseService.getInvestorProfile(identifier)
     }
 
     @GetMapping(value = ["/makeInvestorOffers"])
@@ -547,8 +631,8 @@ class AdminController(rpc: NodeRPCConnection) {
 
     @GetMapping(value = ["/getAccount"])
     @Throws(Exception::class)
-    fun getAccount(@RequestParam(value = "accountId") accountId: String?): AccountInfoDTO {
-        return workerBeeService.getAccount(proxy, accountId)
+    fun getAccount(@RequestParam(value = "identifier") identifier: String?): AccountInfoDTO {
+        return workerBeeService.getAccount(proxy, identifier)
     }
 
 

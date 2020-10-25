@@ -113,8 +113,8 @@ class DemoDataService {
         firebaseService.deleteCollection(collectionName = BFN_ACCEPTED_OFFERS)
         firebaseService.deleteCollection(collectionName = BFN_SUPPLIER_PAYMENTS)
         firebaseService.deleteCollection(collectionName = BFN_INVESTOR_PAYMENTS)
-        firebaseService.deleteCollection(collectionName = INVESTOR_ROYALTIES)
-        firebaseService.deleteCollection(collectionName = SUPPLIER_ROYALTIES)
+        firebaseService.deleteCollection(collectionName = BFN_INVESTOR_ROYALTIES)
+        firebaseService.deleteCollection(collectionName = BFN_SUPPLIER_ROYALTIES)
 
         logger.info("\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E Firebase clean up completed")
     }
@@ -643,7 +643,7 @@ class DemoDataService {
         if (operator != null) {
             logger.info("\uD83D\uDD35 generateOffersFromAccount starting ..... " +
                     "account: ${operator.account!!.name}: \uD83D\uDCA6 \uD83D\uDCA6")
-            nodeInvoices = workerBeeService.findInvoicesForNode(proxy)
+            nodeInvoices = workerBeeService.findInvoicesOnLedgerForNode(proxy)
             generateOffersFromInvestor(proxy, operator.account!!)
         }
         val msg = "\uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E \uD83C\uDF4E " +
@@ -656,7 +656,7 @@ class DemoDataService {
         logger.info("\n\n\n${Emo.RED_APPLES} generateOffersFromInvestor starting ..... " +
                 "${Emo.YELLOW_BIRD} INVESTOR: ${investor.name}: ${Emo.YELLOW_BIRD} from ${investor.host}")
         if (nodeInvoices.isEmpty()) {
-            nodeInvoices = workerBeeService.findInvoicesForNode(proxy)
+            nodeInvoices = workerBeeService.findInvoicesOnLedgerForNode(proxy)
         }
         logger.info("${Emo.RAIN_DROPS} Will attempt to generate offers " +
                 "for ${nodeInvoices.size} Invoices" +
@@ -704,7 +704,7 @@ class DemoDataService {
                 ".......... ${Emo.RAIN_DROPS}\n\n");
         val acctList = workerBeeService.getNodeAccounts(proxy)
         //todo - find invoices on ALL nodes ... eh?
-        nodeInvoices = workerBeeService.findInvoicesForNode(proxy)
+        nodeInvoices = workerBeeService.findInvoicesOnLedgerForNode(proxy)
 
         logger.info("${Emo.RED_APPLES}  Accounts on Node:  \uD83D\uDE21 \uD83D\uDE21 ️ ${acctList.size} ♻️")
         logger.info("${Emo.RED_APPLES}  Invoices on Node:  \uD83D\uDE21 \uD83D\uDE21 ️ ${nodeInvoices.size} \n\n️")
@@ -724,7 +724,7 @@ class DemoDataService {
     fun generateInvestorPayments(proxy:CordaRPCOps, token: String): List<InvestorPaymentDTO> {
 
         val mList: MutableList<InvestorPaymentDTO> = mutableListOf()
-        val supplierPayments = workerBeeService.findSupplierPaymentsForNode(proxy)
+        val supplierPayments = workerBeeService.findSupplierPaymentsOnLedgerForNode(proxy)
         supplierPayments.forEach {
             //todo -  🍎 🍎 🍎 send payment to Stellar Anchor ....  🍎
             val payment = stellarAnchorService.makeInvestorPaymentForOffer(

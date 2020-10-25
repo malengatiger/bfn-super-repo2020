@@ -10,14 +10,11 @@ import com.bfn.flows.customer.CustomerProfileFlow
 import com.bfn.flows.customer.InvestorPaymentFlow
 import com.bfn.flows.customer.PurchaseOrderFlow
 import com.bfn.flows.investor.InvestorProfileFlow
-import com.bfn.flows.invoices.InvoiceOfferFlow
 import com.bfn.flows.investor.MultiInvoiceOfferFlow
-import com.bfn.flows.investor.SupplierPaymentFlow
+import com.bfn.flows.invoices.InvoiceOfferFlow
 import com.bfn.flows.invoices.InvoiceRegistrationFlow
 import com.bfn.flows.queries.*
 import com.bfn.flows.scheduled.CreateInvoiceOffersFlow
-import com.bfn.flows.services.InvoiceFinderService
-import com.bfn.flows.services.ProfileFinderService
 import com.bfn.flows.supplier.AcceptBestOfferForInvoiceFlow
 import com.bfn.flows.supplier.SupplierProfileFlow
 import com.bfn.flows.todaysDate
@@ -26,9 +23,7 @@ import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.messaging.CordaRPCOps
-import net.corda.core.node.services.Vault
 import net.corda.core.node.services.Vault.StateStatus
-import net.corda.core.node.services.queryBy
 import net.corda.core.node.services.vault.DEFAULT_PAGE_NUM
 import net.corda.core.node.services.vault.DEFAULT_PAGE_SIZE
 import net.corda.core.node.services.vault.PageSpecification
@@ -132,12 +127,13 @@ class WorkerBeeService {
         }
 
         val sorted = list.sortedBy { it.name }
-        logger.info("\uD83E\uDDE9 Accounts found on node:  \uD83C\uDF00 ${sorted.size} " )
+        logger.info("\uD83E\uDDE9 Accounts found on node:  \uD83C\uDF00 ${sorted.size} ")
         list.forEach {
             logger.info("${Emo.PEACH}${Emo.PEACH} ACCOUNT on Node: ${gson.toJson(it)}")
         }
         return sorted
     }
+
     fun getAllNodeAccounts(proxy: CordaRPCOps): List<AccountInfo> {
 
         val mList: MutableList<AccountInfo> = mutableListOf()
@@ -155,7 +151,7 @@ class WorkerBeeService {
             pageNumber++
         } while ((pageSpec.pageSize * (pageNumber - 1)) <= results.totalStatesAvailable)
 
-        logger.info("\uD83E\uDDE9 Accounts found on node:  \uD83C\uDF00 ${states.size} " )
+        logger.info("\uD83E\uDDE9 Accounts found on node:  \uD83C\uDF00 ${states.size} ")
         states.forEach {
 
             mList.add(it.state.data)
@@ -302,9 +298,9 @@ class WorkerBeeService {
 
     @Throws(Exception::class)
     fun findInvoicesForCustomer(proxy: CordaRPCOps,
-                                accountId: String): List<InvoiceDTO> {
+                                identifier: String): List<InvoiceDTO> {
         val fut = proxy.startTrackedFlowDynamic(
-                InvoiceQueryFlow::class.java, accountId,
+                InvoiceQueryFlow::class.java, identifier,
                 InvoiceQueryFlow.FIND_FOR_CUSTOMER).returnValue
         val invoices = fut.get()
         val dtos: MutableList<InvoiceDTO> = mutableListOf()
@@ -318,8 +314,8 @@ class WorkerBeeService {
     }
 
     @Throws(Exception::class)
-    fun findInvoicesForSupplier(proxy: CordaRPCOps,
-                                accountId: String): List<InvoiceDTO> {
+    fun findInvoicesOnLedgerForSupplier(proxy: CordaRPCOps,
+                                        accountId: String): List<InvoiceDTO> {
         val fut = proxy.startTrackedFlowDynamic(
                 InvoiceQueryFlow::class.java, accountId,
                 InvoiceQueryFlow.FIND_FOR_SUPPLIER).returnValue
@@ -335,8 +331,8 @@ class WorkerBeeService {
     }
 
     @Throws(Exception::class)
-    fun findInvoicesForInvestor(proxy: CordaRPCOps,
-                                accountId: String): List<InvoiceDTO> {
+    fun findInvoicesOnLedgerForInvestor(proxy: CordaRPCOps,
+                                        accountId: String): List<InvoiceDTO> {
         val fut = proxy.startTrackedFlowDynamic(
                 InvoiceQueryFlow::class.java, accountId,
                 InvoiceQueryFlow.FIND_FOR_INVESTOR).returnValue
@@ -352,7 +348,7 @@ class WorkerBeeService {
     }
 
     @Throws(Exception::class)
-    fun findInvoicesForNode(proxy: CordaRPCOps): List<InvoiceDTO> {
+    fun findInvoicesOnLedgerForNode(proxy: CordaRPCOps): List<InvoiceDTO> {
         val fut = proxy.startTrackedFlowDynamic(
                 InvoiceQueryFlow::class.java, null,
                 InvoiceQueryFlow.FIND_FOR_NODE).returnValue
@@ -368,15 +364,16 @@ class WorkerBeeService {
         logger.info(m)
         return dtos
     }
+
     @Throws(Exception::class)
-    fun findPurchaseOrdersForNode(proxy: CordaRPCOps): List<PurchaseOrderDTO> {
+    fun findPurchaseOrdersOnLedgerForNode(proxy: CordaRPCOps): List<PurchaseOrderDTO> {
         val fut = proxy.startTrackedFlowDynamic(
                 PurchaseOrderQueryFlow::class.java, null,
                 PurchaseOrderQueryFlow.FIND_FOR_NODE).returnValue
         val purchaseOrders = fut.get()
         val dtos: MutableList<PurchaseOrderDTO> = mutableListOf()
         purchaseOrders.forEach() {
-                dtos.add(DTOUtil.getDTO(it))
+            dtos.add(DTOUtil.getDTO(it))
         }
         val m = "\uD83C\uDF3A done listing PurchaseOrders:  \uD83C\uDF3A " + purchaseOrders.size
         logger.info(m)
@@ -384,7 +381,7 @@ class WorkerBeeService {
     }
 
     @Throws(Exception::class)
-    fun findSupplierPaymentsForNode(proxy: CordaRPCOps): List<SupplierPaymentDTO> {
+    fun findSupplierPaymentsOnLedgerForNode(proxy: CordaRPCOps): List<SupplierPaymentDTO> {
         val fut = proxy.startFlowDynamic(
                 SupplierPaymentQueryFlow::class.java, null,
                 SupplierPaymentQueryFlow.FIND_FOR_NODE).returnValue
@@ -397,8 +394,9 @@ class WorkerBeeService {
         logger.info(m)
         return dtos
     }
+
     @Throws(Exception::class)
-    fun findInvestorPaymentsForNode(proxy: CordaRPCOps): List<InvestorPaymentDTO> {
+    fun findInvestorPaymentsOnLedgerForNode(proxy: CordaRPCOps): List<InvestorPaymentDTO> {
         val fut = proxy.startFlowDynamic(
                 InvestorPaymentQueryFlow::class.java, null,
                 InvestorPaymentQueryFlow.FIND_FOR_NODE).returnValue
@@ -411,8 +409,9 @@ class WorkerBeeService {
         logger.info(m)
         return dtos
     }
+
     @Throws(Exception::class)
-    fun findSupplierPaymentsForInvestor(proxy: CordaRPCOps, investorId: String): List<SupplierPaymentDTO> {
+    fun findSupplierPaymentsOnLedgerForInvestor(proxy: CordaRPCOps, investorId: String): List<SupplierPaymentDTO> {
         val fut = proxy.startFlowDynamic(
                 SupplierPaymentQueryFlow::class.java, investorId,
                 SupplierPaymentQueryFlow.FIND_FOR_INVESTOR).returnValue
@@ -425,8 +424,9 @@ class WorkerBeeService {
         logger.info(m)
         return dtos
     }
+
     @Throws(Exception::class)
-    fun findInvestorPaymentsForInvestor(proxy: CordaRPCOps, investorId: String): List<InvestorPaymentDTO> {
+    fun findInvestorPaymentsOnLedgerForInvestor(proxy: CordaRPCOps, investorId: String): List<InvestorPaymentDTO> {
         val fut = proxy.startFlowDynamic(
                 InvestorPaymentQueryFlow::class.java, investorId,
                 InvestorPaymentQueryFlow.FIND_FOR_INVESTOR).returnValue
@@ -439,6 +439,7 @@ class WorkerBeeService {
         logger.info(m)
         return dtos
     }
+
     @Throws(Exception::class)
     fun findInvestorPaymentStatesForInvestor(proxy: CordaRPCOps, investorId: String): List<InvestorPaymentState> {
         val fut = proxy.startFlowDynamic(
@@ -449,6 +450,7 @@ class WorkerBeeService {
         logger.info(m)
         return payments
     }
+
     @Throws(Exception::class)
     fun findSupplierPaymentStatesForInvestor(proxy: CordaRPCOps, investorId: String): List<SupplierPaymentState> {
         val fut = proxy.startFlowDynamic(
@@ -459,8 +461,9 @@ class WorkerBeeService {
         logger.info(m)
         return payments
     }
+
     @Throws(Exception::class)
-    fun findInvestorPaymentsForCustomer(proxy: CordaRPCOps, customerId: String): List<InvestorPaymentDTO> {
+    fun findInvestorPaymentsOnLedgerForCustomer(proxy: CordaRPCOps, customerId: String): List<InvestorPaymentDTO> {
         val fut = proxy.startFlowDynamic(
                 InvestorPaymentQueryFlow::class.java, customerId,
                 InvestorPaymentQueryFlow.FIND_FOR_CUSTOMER).returnValue
@@ -473,8 +476,9 @@ class WorkerBeeService {
         logger.info(m)
         return dtos
     }
+
     @Throws(Exception::class)
-    fun findSupplierPaymentsForCustomer(proxy: CordaRPCOps, customerId: String): List<SupplierPaymentDTO> {
+    fun findSupplierPaymentsForOnLedgerCustomer(proxy: CordaRPCOps, customerId: String): List<SupplierPaymentDTO> {
         val fut = proxy.startFlowDynamic(
                 SupplierPaymentQueryFlow::class.java, customerId,
                 SupplierPaymentQueryFlow.FIND_FOR_CUSTOMER).returnValue
@@ -487,8 +491,9 @@ class WorkerBeeService {
         logger.info(m)
         return dtos
     }
+
     @Throws(Exception::class)
-    fun findSupplierPaymentsForSupplier(proxy: CordaRPCOps, supplierId: String): List<SupplierPaymentDTO> {
+    fun findSupplierPaymentsOnLedgerForSupplier(proxy: CordaRPCOps, supplierId: String): List<SupplierPaymentDTO> {
         val fut = proxy.startFlowDynamic(
                 SupplierPaymentQueryFlow::class.java, supplierId,
                 SupplierPaymentQueryFlow.FIND_FOR_SUPPLIER).returnValue
@@ -646,6 +651,7 @@ class WorkerBeeService {
         logger.info(m)
         return dtos
     }
+
     @Throws(Exception::class)
     fun findOffersForInvestor(proxy: CordaRPCOps, accountId: String): List<InvoiceOfferDTO> {
         val fut = proxy.startTrackedFlowDynamic(
@@ -696,6 +702,7 @@ class WorkerBeeService {
         logger.info(m)
         return dtos
     }
+
     @Throws(Exception::class)
     fun findCustomerProfiles(proxy: CordaRPCOps): List<CustomerProfileStateDTO> {
         var pageNumber = DEFAULT_PAGE_NUM
@@ -716,12 +723,13 @@ class WorkerBeeService {
         logger.info("\uD83D\uDD35\uD83D\uDD35 There are ${states.size} customerProfiles on the ledger \uD83D\uDD35")
         val list = mutableListOf<CustomerProfileStateDTO>()
         states.forEach() {
-           list.add(DTOUtil.getDTO(it.state.data))
+            list.add(DTOUtil.getDTO(it.state.data))
         }
         val m = "\uD83D\uDCA6  done listing CustomerProfiles:  \uD83C\uDF3A " + list.size
         logger.info(m)
         return list
     }
+
     @Throws(Exception::class)
     fun findInvestorProfiles(proxy: CordaRPCOps): List<InvestorProfileStateDTO> {
         var pageNumber = DEFAULT_PAGE_NUM
@@ -746,6 +754,7 @@ class WorkerBeeService {
         logger.info(m)
         return list
     }
+
     @Throws(Exception::class)
     fun findSupplierProfiles(proxy: CordaRPCOps): List<SupplierProfileStateDTO> {
         var pageNumber = DEFAULT_PAGE_NUM
@@ -969,7 +978,7 @@ class WorkerBeeService {
             var supplierInfo: AccountInfo? = null
             var customerInfo: AccountInfo? = null
             for (account in accounts) {
-                if (account .identifier.id.toString().equals(invoice.customer!!.identifier, ignoreCase = true)) {
+                if (account.identifier.id.toString().equals(invoice.customer!!.identifier, ignoreCase = true)) {
                     customerInfo = account
                 }
                 if (account.identifier.id.toString().equals(invoice.supplier!!.identifier, ignoreCase = true)) {
@@ -1030,7 +1039,8 @@ class WorkerBeeService {
                 firebaseService.addInvoice(dto)
                 if (invoice.purchaseOrder != null) {
                     firebaseService.updatePurchaseOrderInvoiceCreated(
-                            invoice.purchaseOrder!!.purchaseOrderId)
+                            purchaseOrderId = invoice.purchaseOrder!!.purchaseOrderId,
+                            invoiceId = invoice.invoiceId)
                 }
 
             } catch (e: Exception) {
@@ -1379,7 +1389,7 @@ class WorkerBeeService {
     @Throws(Exception::class)
     fun startInvoiceOfferFlow(proxy: CordaRPCOps,
                               invoiceOffer: InvoiceOfferDTO,
-                              invoice:InvoiceDTO): InvoiceOfferDTO? {
+                              invoice: InvoiceDTO): InvoiceOfferDTO? {
         return try {
             val future = proxy.startFlowDynamic(FindInvoiceFlow::class.java,
                     invoiceOffer.invoiceId).returnValue
